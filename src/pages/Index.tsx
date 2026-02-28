@@ -47,15 +47,20 @@ const Index = () => {
 
   const isChatSection = activeSection === "chat";
 
+  // On mobile: when a chat is open, show only ChatWindow (full screen)
+  const isMobileChatOpen = activeChatId && isChatSection;
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      {/* Icon Nav Bar */}
-      <NavIconBar active={activeSection} onNavigate={handleNavigate} />
+      {/* Icon Nav Bar - hide on mobile when chat is open */}
+      <div className={`${isMobileChatOpen ? "hidden lg:flex" : "flex"}`}>
+        <NavIconBar active={activeSection} onNavigate={handleNavigate} />
+      </div>
 
       {/* Sidebar / Panel */}
       <div
         className={`h-full w-full flex-shrink-0 border-r border-border lg:w-[380px] ${
-          activeChatId && isChatSection ? "hidden lg:block" : "block"
+          isMobileChatOpen ? "hidden lg:block" : "block"
         }`}
       >
         {isChatSection ? (
@@ -66,7 +71,7 @@ const Index = () => {
       </div>
 
       {/* Main content area */}
-      <div className={`h-full flex-1 ${activeChatId && isChatSection ? "block" : "hidden lg:block"}`}>
+      <div className={`h-full flex-1 ${isMobileChatOpen ? "block" : "hidden lg:block"}`}>
         {isChatSection && activeChat ? (
           <ChatWindow chat={activeChat} onSendMessage={handleSendMessage} onBack={() => setActiveChatId(null)} />
         ) : (
