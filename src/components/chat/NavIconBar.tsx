@@ -92,9 +92,9 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
         })}
 
         {/* Profile avatar */}
-        <div className="mt-1 md:mt-2 flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full bg-primary/20 text-primary text-[10px] md:text-xs font-bold ring-2 ring-primary/30">
-          Y
-        </div>
+        
+
+
       </div>
     </div>);
 
