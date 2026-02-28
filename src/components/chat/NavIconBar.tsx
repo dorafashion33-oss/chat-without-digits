@@ -2,18 +2,18 @@ import { MessageCircle, CircleDot, Megaphone, Users, Image, Settings, User } fro
 
 export type NavSection = "chat" | "status" | "channels" | "community" | "media" | "settings" | "profile";
 
-const navItems: { id: NavSection; icon: typeof MessageCircle; label: string }[] = [
-  { id: "chat", icon: MessageCircle, label: "Chat" },
-  { id: "status", icon: CircleDot, label: "Status" },
-  { id: "channels", icon: Megaphone, label: "Channels" },
-  { id: "community", icon: Users, label: "Community" },
-  { id: "media", icon: Image, label: "Media" },
-];
+const navItems: {id: NavSection;icon: typeof MessageCircle;label: string;}[] = [
+{ id: "chat", icon: MessageCircle, label: "Chat" },
+{ id: "status", icon: CircleDot, label: "Status" },
+{ id: "channels", icon: Megaphone, label: "Channels" },
+{ id: "community", icon: Users, label: "Community" },
+{ id: "media", icon: Image, label: "Media" }];
 
-const bottomItems: { id: NavSection; icon: typeof Settings; label: string }[] = [
-  { id: "settings", icon: Settings, label: "Settings" },
-  { id: "profile", icon: User, label: "Profile" },
-];
+
+const bottomItems: {id: NavSection;icon: typeof Settings;label: string;}[] = [
+{ id: "settings", icon: Settings, label: "Settings" },
+{ id: "profile", icon: User, label: "Profile" }];
+
 
 interface NavIconBarProps {
   active: NavSection;
@@ -25,9 +25,9 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
     <div className="flex h-full w-[52px] md:w-[64px] flex-shrink-0 flex-col items-center justify-between border-r border-border bg-sidebar-background py-3 md:py-5">
       {/* Logo / brand mark */}
       <div className="flex flex-col items-center gap-4">
-        <div className="mb-1 md:mb-2 flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xs md:text-sm">
-          B
-        </div>
+        
+
+
 
         {/* Top nav items */}
         <div className="flex flex-col items-center gap-0.5">
@@ -40,14 +40,14 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
                   onClick={() => onNavigate(item.id)}
                   aria-label={item.label}
                   className={`relative flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-xl transition-all duration-200 ${
-                    isActive
-                      ? "bg-primary/15 text-primary"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                  }`}
-                >
-                  {isActive && (
-                    <div className="absolute left-[-6px] top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
-                  )}
+                  isActive ?
+                  "bg-primary/15 text-primary" :
+                  "text-muted-foreground hover:bg-accent hover:text-foreground"}`
+                  }>
+
+                  {isActive &&
+                  <div className="absolute left-[-6px] top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+                  }
                   <Icon className="h-[18px] w-[18px] md:h-[20px] md:w-[20px]" strokeWidth={isActive ? 2.2 : 1.7} />
                 </button>
                 {/* Tooltip */}
@@ -55,8 +55,8 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
                   {item.label}
                   <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-foreground" />
                 </div>
-              </div>
-            );
+              </div>);
+
           })}
         </div>
       </div>
@@ -72,14 +72,14 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
                 onClick={() => onNavigate(item.id)}
                 aria-label={item.label}
                 className={`relative flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-xl transition-all duration-200 ${
-                  isActive
-                    ? "bg-primary/15 text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                }`}
-              >
-                {isActive && (
-                  <div className="absolute left-[-6px] top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
-                )}
+                isActive ?
+                "bg-primary/15 text-primary" :
+                "text-muted-foreground hover:bg-accent hover:text-foreground"}`
+                }>
+
+                {isActive &&
+                <div className="absolute left-[-6px] top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+                }
                 <Icon className="h-[18px] w-[18px] md:h-[20px] md:w-[20px]" strokeWidth={isActive ? 2.2 : 1.7} />
               </button>
               {/* Tooltip */}
@@ -87,8 +87,8 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
                 {item.label}
                 <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-foreground" />
               </div>
-            </div>
-          );
+            </div>);
+
         })}
 
         {/* Profile avatar */}
@@ -96,8 +96,8 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
           Y
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default NavIconBar;
