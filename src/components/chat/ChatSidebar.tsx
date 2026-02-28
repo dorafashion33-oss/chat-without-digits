@@ -1,6 +1,6 @@
-import { Search, MessageSquarePlus, Pin, Sun, Moon } from "lucide-react";
+import { Search, MessageSquarePlus, Pin } from "lucide-react";
 import { useState } from "react";
-import { useTheme } from "next-themes";
+
 import type { Chat } from "@/data/mockData";
 
 interface ChatSidebarProps {
@@ -11,7 +11,7 @@ interface ChatSidebarProps {
 
 const ChatSidebar = ({ chats, activeChatId, onSelectChat }: ChatSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const { theme, setTheme } = useTheme();
+  
 
   const filtered = chats.filter(
     (c) =>
@@ -27,22 +27,9 @@ const ChatSidebar = ({ chats, activeChatId, onSelectChat }: ChatSidebarProps) =>
       {/* Header */}
       <div className="flex items-center justify-between border-b px-5 py-4">
         <h1 className="text-xl font-bold text-foreground">Chats</h1>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="rounded-full p-2 transition-colors hover:bg-accent"
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? (
-              <Sun className="h-5 w-5 text-muted-foreground" />
-            ) : (
-              <Moon className="h-5 w-5 text-muted-foreground" />
-            )}
-          </button>
-          <button className="rounded-full p-2 transition-colors hover:bg-accent">
-            <MessageSquarePlus className="h-5 w-5 text-primary" />
-          </button>
-        </div>
+        <button className="rounded-full p-2 transition-colors hover:bg-accent">
+          <MessageSquarePlus className="h-5 w-5 text-primary" />
+        </button>
       </div>
 
       {/* Search */}
