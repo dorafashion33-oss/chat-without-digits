@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import NavIconBar from "@/components/chat/NavIconBar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
 import EmptyChat from "@/components/chat/EmptyChat";
@@ -37,6 +38,8 @@ const Index = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
+      {/* Icon Nav Bar */}
+      <NavIconBar />
       {/* Sidebar */}
       <div
         className={`h-full w-full flex-shrink-0 border-r lg:w-[380px] ${
