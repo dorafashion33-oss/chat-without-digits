@@ -9,7 +9,7 @@ const EmptyChat = () => (
       <div>
         <h2 className="text-xl font-semibold text-foreground">Welcome to Buzz</h2>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          Select a conversation to start chatting. No phone number needed — just pick a username and go.
+          Select a stream to start chatting, check Moments, explore Circles, or Connect with a call.
         </p>
       </div>
     </div>

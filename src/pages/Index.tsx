@@ -10,7 +10,7 @@ import type { Chat } from "@/data/mockData";
 const Index = () => {
   const [chats, setChats] = useState<Chat[]>(initialChats);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<NavSection>("chat");
+  const [activeSection, setActiveSection] = useState<NavSection>("streams");
 
   const activeChat = chats.find((c) => c.id === activeChatId) || null;
 
@@ -40,39 +40,34 @@ const Index = () => {
 
   const handleNavigate = useCallback((section: NavSection) => {
     setActiveSection(section);
-    if (section !== "chat") {
+    if (section !== "streams") {
       setActiveChatId(null);
     }
   }, []);
 
-  const isChatSection = activeSection === "chat";
-
-  // On mobile: when a chat is open, show only ChatWindow (full screen)
-  const isMobileChatOpen = activeChatId && isChatSection;
+  const isStreamsSection = activeSection === "streams";
+  const isMobileChatOpen = activeChatId && isStreamsSection;
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      {/* Icon Nav Bar - hide on mobile when chat is open */}
       <div className={`${isMobileChatOpen ? "hidden lg:flex" : "flex"}`}>
         <NavIconBar active={activeSection} onNavigate={handleNavigate} />
       </div>
 
-      {/* Sidebar / Panel */}
       <div
         className={`h-full w-full flex-shrink-0 border-r border-border lg:w-[380px] ${
           isMobileChatOpen ? "hidden lg:block" : "block"
         }`}
       >
-        {isChatSection ? (
+        {isStreamsSection ? (
           <ChatSidebar chats={chats} activeChatId={activeChatId} onSelectChat={setActiveChatId} />
         ) : (
           <SectionPanel section={activeSection} />
         )}
       </div>
 
-      {/* Main content area */}
       <div className={`h-full flex-1 ${isMobileChatOpen ? "block" : "hidden lg:block"}`}>
-        {isChatSection && activeChat ? (
+        {isStreamsSection && activeChat ? (
           <ChatWindow chat={activeChat} onSendMessage={handleSendMessage} onBack={() => setActiveChatId(null)} />
         ) : (
           <EmptyChat />

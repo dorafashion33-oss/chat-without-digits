@@ -3,6 +3,8 @@ import { useState } from "react";
 
 import type { Chat } from "@/data/mockData";
 
+type StreamFilter = "all" | "personal" | "groups" | "unread";
+
 interface ChatSidebarProps {
   chats: Chat[];
   activeChatId: string | null;
@@ -11,22 +13,33 @@ interface ChatSidebarProps {
 
 const ChatSidebar = ({ chats, activeChatId, onSelectChat }: ChatSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  
+  const [filter, setFilter] = useState<StreamFilter>("all");
 
-  const filtered = chats.filter(
-    (c) =>
+  const filtered = chats.filter((c) => {
+    const matchesSearch =
       c.user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.user.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      c.user.username.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+    if (filter === "unread") return c.unreadCount > 0;
+    // personal/groups filters would use a field like c.isGroup — for now show all
+    return true;
+  });
 
   const pinned = filtered.filter((c) => c.isPinned);
   const unpinned = filtered.filter((c) => !c.isPinned);
+
+  const filters: { id: StreamFilter; label: string }[] = [
+    { id: "all", label: "All" },
+    { id: "personal", label: "Personal" },
+    { id: "groups", label: "Groups" },
+    { id: "unread", label: "Unread" },
+  ];
 
   return (
     <div className="flex h-full flex-col bg-chat-sidebar">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-5 py-4">
-        <h1 className="text-xl font-bold text-foreground">Chats</h1>
+        <h1 className="text-xl font-bold text-foreground">Streams</h1>
         <button className="rounded-full p-2 transition-colors hover:bg-accent">
           <MessageSquarePlus className="h-5 w-5 text-primary" />
         </button>
@@ -38,12 +51,29 @@ const ChatSidebar = ({ chats, activeChatId, onSelectChat }: ChatSidebarProps) =>
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search conversations..."
+            placeholder="Search streams..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>
+      </div>
+
+      {/* Smart Filters */}
+      <div className="flex gap-1.5 px-3 pb-2">
+        {filters.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFilter(f.id)}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              filter === f.id
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-muted-foreground hover:bg-accent"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       {/* Chat list */}
