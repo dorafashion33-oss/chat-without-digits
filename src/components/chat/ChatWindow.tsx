@@ -1,4 +1,4 @@
-import { Send, Paperclip, Phone, Video, MoreVertical, ArrowLeft, Check, CheckCheck, X, FileText } from "lucide-react";
+import { Send, Paperclip, Phone, Video, MoreVertical, ArrowLeft, Check, CheckCheck, X, FileText, Info } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Chat, Message } from "@/data/mockData";
 import TypingIndicator from "./TypingIndicator";
@@ -108,6 +108,9 @@ const ChatWindow = ({ chat, onSendMessage, onBack }: ChatWindowProps) => {
           </button>
           <button className="rounded-full p-2 transition-colors hover:bg-accent">
             <Video className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <button className="rounded-full p-2 transition-colors hover:bg-accent">
+            <Info className="h-4 w-4 text-muted-foreground" />
           </button>
           <button className="rounded-full p-2 transition-colors hover:bg-accent">
             <MoreVertical className="h-4 w-4 text-muted-foreground" />
