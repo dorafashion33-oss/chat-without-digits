@@ -1,7 +1,10 @@
-import { Search, MessageSquarePlus, Pin } from "lucide-react";
+import { Search, MessageSquarePlus, Pin, Menu, Settings, User, Moon, Sun } from "lucide-react";
 import { useState } from "react";
+import { useTheme } from "next-themes";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 
 import type { Chat } from "@/data/mockData";
+import type { NavSection } from "./NavIconBar";
 
 type StreamFilter = "all" | "personal" | "groups" | "unread";
 
@@ -9,11 +12,14 @@ interface ChatSidebarProps {
   chats: Chat[];
   activeChatId: string | null;
   onSelectChat: (chatId: string) => void;
+  username?: string;
+  onNavigate?: (section: NavSection) => void;
 }
 
-const ChatSidebar = ({ chats, activeChatId, onSelectChat }: ChatSidebarProps) => {
+const ChatSidebar = ({ chats, activeChatId, onSelectChat, username, onNavigate }: ChatSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<StreamFilter>("all");
+  const { theme, setTheme } = useTheme();
 
   const filtered = chats.filter((c) => {
     const matchesSearch =
@@ -21,7 +27,6 @@ const ChatSidebar = ({ chats, activeChatId, onSelectChat }: ChatSidebarProps) =>
       c.user.username.toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
     if (filter === "unread") return c.unreadCount > 0;
-    // personal/groups filters would use a field like c.isGroup — for now show all
     return true;
   });
 
@@ -36,10 +41,61 @@ const ChatSidebar = ({ chats, activeChatId, onSelectChat }: ChatSidebarProps) =>
   ];
 
   return (
-    <div className="flex h-full flex-col bg-chat-sidebar">
+    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-5 py-4">
-        <h1 className="text-xl font-bold text-foreground">Streams</h1>
+        <div className="flex items-center gap-3">
+          {/* Hamburger - mobile only */}
+          <Drawer>
+            <DrawerTrigger asChild>
+              <button className="rounded-lg p-1.5 transition-colors hover:bg-accent lg:hidden">
+                <Menu className="h-5 w-5 text-foreground" />
+              </button>
+            </DrawerTrigger>
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>Menu</DrawerTitle>
+              </DrawerHeader>
+              <div className="px-4 pb-6 space-y-2">
+                {/* User info */}
+                <div className="flex items-center gap-3 rounded-xl bg-accent/50 p-4 mb-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                    {username?.[0]?.toUpperCase() || "U"}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">@{username || "user"}</p>
+                    <p className="text-xs text-muted-foreground">Online</p>
+                  </div>
+                </div>
+                {/* Theme toggle */}
+                <button
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent"
+                >
+                  {theme === "dark" ? <Sun className="h-5 w-5 text-orange-500" /> : <Moon className="h-5 w-5 text-purple-500" />}
+                  <span className="text-sm font-medium text-foreground">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+                </button>
+                {/* Settings */}
+                <button
+                  onClick={() => onNavigate?.("settings")}
+                  className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent"
+                >
+                  <Settings className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">Settings</span>
+                </button>
+                {/* Profile */}
+                <button
+                  onClick={() => onNavigate?.("profile")}
+                  className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent"
+                >
+                  <User className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">Profile</span>
+                </button>
+              </div>
+            </DrawerContent>
+          </Drawer>
+          <h1 className="text-xl font-bold text-foreground">Streams</h1>
+        </div>
         <button className="rounded-full p-2 transition-colors hover:bg-accent">
           <MessageSquarePlus className="h-5 w-5 text-primary" />
         </button>
@@ -141,7 +197,7 @@ const ChatItem = ({
         <div className="flex items-center justify-between">
           <p className="truncate text-xs text-muted-foreground">{chat.lastMessage}</p>
           {chat.unreadCount > 0 && (
-            <span className="ml-2 flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+            <span className="ml-2 flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground animate-pulse">
               {chat.unreadCount}
             </span>
           )}

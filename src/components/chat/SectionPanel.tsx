@@ -1,33 +1,38 @@
-import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, Phone, Video, PhoneIncoming, PhoneOutgoing, PhoneMissed, Plus, Megaphone, Hash, MessageSquare } from "lucide-react";
+import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, Phone, Video, PhoneIncoming, PhoneOutgoing, PhoneMissed, Plus, Megaphone, Hash, MessageSquare, ArrowLeft } from "lucide-react";
 import { useTheme } from "next-themes";
 import type { NavSection } from "./NavIconBar";
 
 interface SectionPanelProps {
   section: NavSection;
+  onBack?: () => void;
+  username?: string;
 }
 
-const SectionPanel = ({ section }: SectionPanelProps) => {
+const SectionPanel = ({ section, onBack, username }: SectionPanelProps) => {
   switch (section) {
     case "moments":
-      return <MomentsPanel />;
+      return <MomentsPanel onBack={onBack} />;
     case "circles":
-      return <CirclesPanel />;
+      return <CirclesPanel onBack={onBack} />;
     case "connect":
-      return <ConnectPanel />;
+      return <ConnectPanel onBack={onBack} />;
     case "settings":
-      return <SettingsPanel />;
+      return <SettingsPanel onBack={onBack} />;
     case "profile":
-      return <ProfilePanel />;
+      return <ProfilePanel onBack={onBack} username={username} />;
     default:
       return null;
   }
 };
 
 /* ─── Moments ─── */
-const MomentsPanel = () => (
-  <div className="flex h-full flex-col bg-chat-sidebar">
-    <div className="border-b px-5 py-4">
-      <h1 className="text-xl font-bold text-foreground">Moments</h1>
+const MomentsPanel = ({ onBack }: { onBack?: () => void }) => (
+  <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
+    <div className="border-b bg-gradient-to-r from-orange-500/10 to-amber-500/10 px-5 py-4">
+      <div className="flex items-center gap-2">
+        {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-accent lg:hidden"><ArrowLeft className="h-5 w-5" /></button>}
+        <h1 className="text-xl font-bold text-foreground">Moments</h1>
+      </div>
     </div>
     <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
       {/* My Moment */}
@@ -93,10 +98,13 @@ const MomentsPanel = () => (
 );
 
 /* ─── Circles ─── */
-const CirclesPanel = () => (
-  <div className="flex h-full flex-col bg-chat-sidebar">
-    <div className="border-b px-5 py-4">
-      <h1 className="text-xl font-bold text-foreground">Circles</h1>
+const CirclesPanel = ({ onBack }: { onBack?: () => void }) => (
+  <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
+    <div className="border-b bg-gradient-to-r from-purple-500/10 to-violet-500/10 px-5 py-4">
+      <div className="flex items-center gap-2">
+        {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-accent lg:hidden"><ArrowLeft className="h-5 w-5" /></button>}
+        <h1 className="text-xl font-bold text-foreground">Circles</h1>
+      </div>
     </div>
     <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
       {[
@@ -165,7 +173,7 @@ const CirclesPanel = () => (
 );
 
 /* ─── Connect ─── */
-const ConnectPanel = () => {
+const ConnectPanel = ({ onBack }: { onBack?: () => void }) => {
   const callHistory = [
     { name: "Alex Rivers", avatar: "AR", color: "bg-primary", type: "outgoing" as const, callType: "video" as const, time: "Today, 2:30 PM" },
     { name: "Maya Chen", avatar: "MC", color: "bg-emerald-500", type: "incoming" as const, callType: "voice" as const, time: "Today, 11:15 AM" },
@@ -181,11 +189,14 @@ const ConnectPanel = () => {
   };
 
   return (
-    <div className="flex h-full flex-col bg-chat-sidebar">
-      <div className="flex items-center justify-between border-b px-5 py-4">
-        <h1 className="text-xl font-bold text-foreground">Connect</h1>
+    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
+      <div className="flex items-center justify-between border-b bg-gradient-to-r from-blue-500/10 to-cyan-500/10 px-5 py-4">
+        <div className="flex items-center gap-2">
+          {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-accent lg:hidden"><ArrowLeft className="h-5 w-5" /></button>}
+          <h1 className="text-xl font-bold text-foreground">Connect</h1>
+        </div>
         <button className="rounded-full p-2 transition-colors hover:bg-accent">
-          <Phone className="h-5 w-5 text-primary" />
+          <Phone className="h-5 w-5 text-blue-500" />
         </button>
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin">
@@ -241,7 +252,7 @@ const ConnectPanel = () => {
 };
 
 /* ─── Settings ─── */
-const SettingsPanel = () => {
+const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
   const { theme, setTheme } = useTheme();
 
   const settingGroups = [
@@ -264,9 +275,12 @@ const SettingsPanel = () => {
   ];
 
   return (
-    <div className="flex h-full flex-col bg-chat-sidebar">
-      <div className="border-b px-5 py-4">
-        <h1 className="text-xl font-bold text-foreground">Settings</h1>
+    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
+      <div className="border-b bg-gradient-to-r from-primary/10 to-emerald-500/10 px-5 py-4">
+        <div className="flex items-center gap-2">
+          {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-accent lg:hidden"><ArrowLeft className="h-5 w-5" /></button>}
+          <h1 className="text-xl font-bold text-foreground">Settings</h1>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         <div className="border-b px-4 py-3">
@@ -304,23 +318,26 @@ const SettingsPanel = () => {
 };
 
 /* ─── Profile ─── */
-const ProfilePanel = () => (
-  <div className="flex h-full flex-col bg-chat-sidebar">
-    <div className="border-b px-5 py-4">
-      <h1 className="text-xl font-bold text-foreground">Profile</h1>
+const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: string }) => (
+  <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
+    <div className="border-b bg-gradient-to-r from-primary/10 to-teal-500/10 px-5 py-4">
+      <div className="flex items-center gap-2">
+        {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-accent lg:hidden"><ArrowLeft className="h-5 w-5" /></button>}
+        <h1 className="text-xl font-bold text-foreground">Profile</h1>
+      </div>
     </div>
     <div className="flex-1 overflow-y-auto scrollbar-thin">
       <div className="flex flex-col items-center py-8">
         <div className="relative">
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-bold text-primary-foreground">
-            Y
+            {username?.[0]?.toUpperCase() || "U"}
           </div>
           <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-opacity">
             <Camera className="h-4 w-4" />
           </button>
         </div>
-        <h2 className="mt-3 text-lg font-bold text-foreground">You</h2>
-        <p className="text-sm text-muted-foreground">@you</p>
+        <h2 className="mt-3 text-lg font-bold text-foreground">{username || "User"}</h2>
+        <p className="text-sm text-muted-foreground">@{username || "user"}</p>
       </div>
       <div className="px-5 space-y-4">
         {[
