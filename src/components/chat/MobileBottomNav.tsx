@@ -1,4 +1,4 @@
-import { MessageCircle, CircleDot, Users, Phone } from "lucide-react";
+import { MessageCircle, CircleDot, Phone } from "lucide-react";
 import type { NavSection } from "./NavIconBar";
 
 interface MobileBottomNavProps {
@@ -10,7 +10,6 @@ interface MobileBottomNavProps {
 const tabs: { id: NavSection; icon: typeof MessageCircle; label: string; color: string; activeBg: string }[] = [
   { id: "streams", icon: MessageCircle, label: "Streams", color: "text-teal-500", activeBg: "bg-teal-500/15" },
   { id: "moments", icon: CircleDot, label: "Moments", color: "text-orange-500", activeBg: "bg-orange-500/15" },
-  { id: "circles", icon: Users, label: "Circles", color: "text-purple-500", activeBg: "bg-purple-500/15" },
   { id: "connect", icon: Phone, label: "Connect", color: "text-blue-500", activeBg: "bg-blue-500/15" },
 ];
 
@@ -24,7 +23,7 @@ const MobileBottomNav = ({ active, onNavigate, unreadCount = 0 }: MobileBottomNa
           <button
             key={tab.id}
             onClick={() => onNavigate(tab.id)}
-            className={`relative flex flex-col items-center gap-0.5 rounded-xl px-4 py-1.5 transition-all duration-200 ${
+            className={`relative flex flex-col items-center gap-0.5 rounded-xl px-5 py-1.5 transition-all duration-200 ${
               isActive ? `${tab.activeBg} scale-105` : "text-muted-foreground"
             }`}
           >

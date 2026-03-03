@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageCircle, CircleDot, Users, Phone, ArrowRight, Sparkles } from "lucide-react";
+import { MessageCircle, CircleDot, Phone, ArrowRight, Sparkles } from "lucide-react";
 
 interface OnboardingFlowProps {
   onComplete: (username: string) => void;
@@ -31,14 +31,12 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   const features = [
     { icon: MessageCircle, label: "Streams", desc: "Real-time messaging with smart filters", color: "text-teal-500", bg: "bg-teal-500/15" },
     { icon: CircleDot, label: "Moments", desc: "Share 24-hour stories with friends", color: "text-orange-500", bg: "bg-orange-500/15" },
-    { icon: Users, label: "Circles", desc: "Communities & topic-based rooms", color: "text-purple-500", bg: "bg-purple-500/15" },
     { icon: Phone, label: "Connect", desc: "Voice & video calls with quick dial", color: "text-blue-500", bg: "bg-blue-500/15" },
   ];
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background p-6">
       <div className="w-full max-w-md animate-fade-in">
-        {/* Step 0: Welcome */}
         {step === 0 && (
           <div className="flex flex-col items-center text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary text-3xl font-bold text-primary-foreground animate-scale-in shadow-lg">
@@ -53,7 +51,6 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
           </div>
         )}
 
-        {/* Step 1: Username */}
         {step === 1 && (
           <div className="flex flex-col items-center text-center">
             <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/15 text-primary">
@@ -76,7 +73,6 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
           </div>
         )}
 
-        {/* Step 2: Feature tour */}
         {step === 2 && (
           <div className="flex flex-col items-center text-center">
             <h2 className="text-2xl font-bold text-foreground">Hey, @{username}! 🎉</h2>
@@ -100,7 +96,6 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
           </div>
         )}
 
-        {/* Next button */}
         <button
           onClick={handleNext}
           className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:opacity-90 active:scale-[0.98]"
@@ -109,7 +104,6 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
           <ArrowRight className="h-4 w-4" />
         </button>
 
-        {/* Step indicator */}
         <div className="mt-5 flex justify-center gap-2">
           {[0, 1, 2].map((s) => (
             <div key={s} className={`h-2 rounded-full transition-all duration-300 ${s === step ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30"}`} />

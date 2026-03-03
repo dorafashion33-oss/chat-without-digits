@@ -1,17 +1,16 @@
-import { MessageCircle, CircleDot, Users, Phone, Settings, User } from "lucide-react";
+import { MessageCircle, CircleDot, Phone, Settings, User } from "lucide-react";
 
-export type NavSection = "streams" | "moments" | "circles" | "connect" | "settings" | "profile";
+export type NavSection = "streams" | "moments" | "connect" | "settings" | "profile";
 
 const navItems: { id: NavSection; icon: typeof MessageCircle; label: string; color: string }[] = [
   { id: "streams", icon: MessageCircle, label: "Streams", color: "text-teal-500" },
   { id: "moments", icon: CircleDot, label: "Moments", color: "text-orange-500" },
-  { id: "circles", icon: Users, label: "Circles", color: "text-purple-500" },
   { id: "connect", icon: Phone, label: "Connect", color: "text-blue-500" },
 ];
 
-const bottomItems: { id: NavSection; icon: typeof Settings; label: string }[] = [
-  { id: "settings", icon: Settings, label: "Settings" },
-  { id: "profile", icon: User, label: "Profile" },
+const bottomItems: { id: NavSection; icon: typeof Settings; label: string; color: string }[] = [
+  { id: "settings", icon: Settings, label: "Settings", color: "text-muted-foreground" },
+  { id: "profile", icon: User, label: "Profile", color: "text-muted-foreground" },
 ];
 
 interface NavIconBarProps {
