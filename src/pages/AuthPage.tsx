@@ -1,133 +1,152 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageCircle, ArrowRight, Sparkles, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Sparkles, User, MessageCircle, CircleDot, Phone } from "lucide-react";
 import { toast } from "sonner";
+import buzzLogo from "@/assets/buzz-logo.jpeg";
 
 interface AuthPageProps {
   onAuth: () => void;
 }
 
 const AuthPage = ({ onAuth }: AuthPageProps) => {
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [step, setStep] = useState(0);
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const validateUsername = (val: string) => {
+    if (val.length < 3) return "Username must be at least 3 characters";
+    if (!/^[a-zA-Z0-9_]+$/.test(val)) return "Only letters, numbers, and underscores";
+    return "";
+  };
 
-    try {
-      if (mode === "signup") {
-        if (username.length < 3) {
-          toast.error("Username must be at least 3 characters");
-          setLoading(false);
-          return;
+  const handleNext = async () => {
+    if (step === 0) {
+      setStep(1);
+      return;
+    }
+
+    if (step === 1) {
+      const err = validateUsername(username);
+      if (err) { setError(err); return; }
+      setStep(2);
+      return;
+    }
+
+    if (step === 2) {
+      setLoading(true);
+      try {
+        // Sign in anonymously
+        const { data, error: anonError } = await supabase.auth.signInAnonymously();
+        if (anonError) throw anonError;
+
+        // Update user metadata with username
+        if (data.user) {
+          await supabase.auth.updateUser({
+            data: { username, display_name: username }
+          });
+
+          // Update profile
+          await supabase.from("profiles").update({
+            username,
+            display_name: username,
+          }).eq("user_id", data.user.id);
         }
-        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-          toast.error("Username can only contain letters, numbers, and underscores");
-          setLoading(false);
-          return;
-        }
 
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { username, display_name: username },
-            emailRedirectTo: window.location.origin,
-          },
-        });
-        if (error) throw error;
-        toast.success("Check your email to verify your account!");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        toast.success(`Welcome to Buzz, @${username}! 🎉`);
         onAuth();
+      } catch (err: any) {
+        toast.error(err.message || "Something went wrong");
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      toast.error(err.message || "Authentication failed");
-    } finally {
-      setLoading(false);
     }
   };
+
+  const features = [
+    { icon: MessageCircle, label: "Streams", desc: "Real-time messaging with smart filters", color: "text-blue-400", bg: "bg-blue-500/15" },
+    { icon: CircleDot, label: "Moments", desc: "Share 24-hour stories with friends", color: "text-purple-400", bg: "bg-purple-500/15" },
+    { icon: Phone, label: "Connect", desc: "Voice & video calls with quick dial", color: "text-pink-400", bg: "bg-pink-500/15" },
+  ];
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background p-6">
       <div className="w-full max-w-md animate-fade-in">
-        {/* Logo */}
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground animate-scale-in shadow-lg">
-            B
+        {step === 0 && (
+          <div className="flex flex-col items-center text-center">
+            <div className="mb-6 relative">
+              <img src={buzzLogo} alt="Buzz" className="h-24 w-24 rounded-3xl shadow-2xl glow-purple animate-scale-in object-cover" />
+            </div>
+            <h1 className="text-3xl font-extrabold text-foreground">
+              Welcome to <span className="gradient-brand-text">Buzz</span>
+            </h1>
+            <p className="mt-3 text-muted-foreground">Your smart communication platform for 2026 and beyond</p>
+            <div className="mt-2 flex items-center gap-1">
+              <Sparkles className="h-4 w-4 text-purple-500" />
+              <span className="text-sm font-medium gradient-brand-text">Encrypted · Fast · Beautiful</span>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {mode === "login" ? "Welcome back" : "Join"} <span className="text-primary">Buzz</span>
-          </h1>
-          <div className="mt-1 flex items-center gap-1 text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs">Encrypted · Fast · Beautiful</span>
-          </div>
-        </div>
+        )}
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {mode === "signup" && (
-            <div className="flex items-center gap-2 rounded-xl border border-border bg-secondary px-4 py-3">
-              <User className="h-4 w-4 text-muted-foreground" />
+        {step === 1 && (
+          <div className="flex flex-col items-center text-center">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full gradient-brand">
+              <User className="h-7 w-7 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground">Choose your username</h2>
+            <p className="mt-2 text-sm text-muted-foreground">This is how others will find you on Buzz</p>
+            <div className="mt-6 w-full">
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Choose a username"
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                required
+                onChange={(e) => { setUsername(e.target.value); setError(""); }}
+                placeholder="e.g. coolbuzzer"
+                className="w-full rounded-xl border border-border bg-secondary px-4 py-3 text-center text-base outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground"
+                autoFocus
+                onKeyDown={(e) => e.key === "Enter" && handleNext()}
               />
+              {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
             </div>
-          )}
-          <div className="flex items-center gap-2 rounded-xl border border-border bg-secondary px-4 py-3">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email address"
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              required
-            />
           </div>
-          <div className="flex items-center gap-2 rounded-xl border border-border bg-secondary px-4 py-3">
-            <Lock className="h-4 w-4 text-muted-foreground" />
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              required
-              minLength={6}
-            />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-muted-foreground hover:text-foreground">
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+        )}
+
+        {step === 2 && (
+          <div className="flex flex-col items-center text-center">
+            <h2 className="text-2xl font-bold text-foreground">Hey, @{username}! 🎉</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Here's what you can do on Buzz</p>
+            <div className="mt-6 w-full space-y-3">
+              {features.map((f, i) => {
+                const Icon = f.icon;
+                return (
+                  <div key={i} className="flex items-center gap-3 rounded-xl border border-border p-3.5 text-left animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${f.bg}`}>
+                      <Icon className={`h-5 w-5 ${f.color}`} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{f.label}</p>
+                      <p className="text-xs text-muted-foreground">{f.desc}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
+        )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
-          >
-            {loading ? "Please wait..." : mode === "login" ? "Sign In" : "Create Account"}
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        </form>
+        <button
+          onClick={handleNext}
+          disabled={loading}
+          className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl gradient-brand py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50 glow-purple"
+        >
+          {loading ? "Setting up..." : step === 2 ? "Start Buzzing" : "Continue"}
+          <ArrowRight className="h-4 w-4" />
+        </button>
 
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
-          <button onClick={() => setMode(mode === "login" ? "signup" : "login")} className="font-semibold text-primary hover:underline">
-            {mode === "login" ? "Sign Up" : "Sign In"}
-          </button>
-        </p>
+        <div className="mt-5 flex justify-center gap-2">
+          {[0, 1, 2].map((s) => (
+            <div key={s} className={`h-2 rounded-full transition-all duration-300 ${s === step ? "w-6 gradient-brand" : "w-2 bg-muted-foreground/30"}`} />
+          ))}
+        </div>
       </div>
     </div>
   );

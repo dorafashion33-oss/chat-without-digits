@@ -2,6 +2,7 @@ import { Search, MessageSquarePlus, Pin, Menu, Settings, User, Moon, Sun } from 
 import { useState } from "react";
 import { useTheme } from "next-themes";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import buzzLogo from "@/assets/buzz-logo.jpeg";
 
 import type { Chat } from "@/data/mockData";
 import type { NavSection } from "./NavIconBar";
@@ -58,8 +59,8 @@ const ChatSidebar = ({ chats, activeChatId, onSelectChat, username, onNavigate }
               </DrawerHeader>
               <div className="px-4 pb-6 space-y-2">
                 {/* User info */}
-                <div className="flex items-center gap-3 rounded-xl bg-accent/50 p-4 mb-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                <div className="flex items-center gap-3 rounded-xl p-4 mb-3" style={{ background: "linear-gradient(135deg, hsl(var(--brand-purple) / 0.1), hsl(var(--brand-magenta) / 0.1))" }}>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full gradient-brand text-sm font-bold text-white">
                     {username?.[0]?.toUpperCase() || "U"}
                   </div>
                   <div>
@@ -72,7 +73,7 @@ const ChatSidebar = ({ chats, activeChatId, onSelectChat, username, onNavigate }
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                   className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent"
                 >
-                  {theme === "dark" ? <Sun className="h-5 w-5 text-orange-500" /> : <Moon className="h-5 w-5 text-purple-500" />}
+                  {theme === "dark" ? <Sun className="h-5 w-5 text-amber-400" /> : <Moon className="h-5 w-5 text-purple-500" />}
                   <span className="text-sm font-medium text-foreground">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
                 </button>
                 {/* Settings */}
@@ -94,7 +95,7 @@ const ChatSidebar = ({ chats, activeChatId, onSelectChat, username, onNavigate }
               </div>
             </DrawerContent>
           </Drawer>
-          <h1 className="text-xl font-bold text-foreground">Streams</h1>
+          <h1 className="text-xl font-bold gradient-brand-text">Streams</h1>
         </div>
         <button className="rounded-full p-2 transition-colors hover:bg-accent">
           <MessageSquarePlus className="h-5 w-5 text-primary" />
@@ -123,7 +124,7 @@ const ChatSidebar = ({ chats, activeChatId, onSelectChat, username, onNavigate }
             onClick={() => setFilter(f.id)}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               filter === f.id
-                ? "bg-primary text-primary-foreground"
+                ? "gradient-brand text-white"
                 : "bg-secondary text-muted-foreground hover:bg-accent"
             }`}
           >
@@ -167,8 +168,8 @@ const ChatItem = ({
   onSelect: (id: string) => void;
 }) => {
   const colors = [
-    "bg-primary", "bg-emerald-500", "bg-sky-500", "bg-amber-500",
-    "bg-rose-500", "bg-violet-500", "bg-cyan-500", "bg-orange-500",
+    "bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500",
+    "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600",
   ];
   const colorIndex = chat.user.id.charCodeAt(0) % colors.length;
 
@@ -197,7 +198,7 @@ const ChatItem = ({
         <div className="flex items-center justify-between">
           <p className="truncate text-xs text-muted-foreground">{chat.lastMessage}</p>
           {chat.unreadCount > 0 && (
-            <span className="ml-2 flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground animate-pulse">
+            <span className="ml-2 flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full gradient-brand px-1.5 text-[10px] font-bold text-white animate-pulse">
               {chat.unreadCount}
             </span>
           )}
