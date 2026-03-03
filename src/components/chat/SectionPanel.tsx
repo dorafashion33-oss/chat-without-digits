@@ -1,5 +1,7 @@
-import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, Phone, Video, PhoneIncoming, PhoneOutgoing, PhoneMissed, Plus, Megaphone, Hash, MessageSquare, ArrowLeft } from "lucide-react";
+import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, Phone, Video, PhoneIncoming, PhoneOutgoing, PhoneMissed, ArrowLeft, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { NavSection } from "./NavIconBar";
 
 interface SectionPanelProps {
@@ -12,8 +14,6 @@ const SectionPanel = ({ section, onBack, username }: SectionPanelProps) => {
   switch (section) {
     case "moments":
       return <MomentsPanel onBack={onBack} />;
-    case "circles":
-      return <CirclesPanel onBack={onBack} />;
     case "connect":
       return <ConnectPanel onBack={onBack} />;
     case "settings":
@@ -35,7 +35,6 @@ const MomentsPanel = ({ onBack }: { onBack?: () => void }) => (
       </div>
     </div>
     <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
-      {/* My Moment */}
       <div className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60 cursor-pointer">
         <div className="relative">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/20 text-primary font-bold text-lg">Y</div>
@@ -49,7 +48,6 @@ const MomentsPanel = ({ onBack }: { onBack?: () => void }) => (
         </div>
       </div>
 
-      {/* Privacy */}
       <div className="mt-3 flex gap-2 px-3">
         {["Public", "Friends", "Custom"].map((p) => (
           <button key={p} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${p === "Friends" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:bg-accent"}`}>
@@ -58,7 +56,6 @@ const MomentsPanel = ({ onBack }: { onBack?: () => void }) => (
         ))}
       </div>
 
-      {/* Recent */}
       <p className="mt-5 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Recent Moments</p>
       {[
         { name: "Alex Rivers", avatar: "AR", time: "12 min ago", color: "bg-primary" },
@@ -66,8 +63,8 @@ const MomentsPanel = ({ onBack }: { onBack?: () => void }) => (
         { name: "Zara Knight", avatar: "ZK", time: "2h ago", color: "bg-amber-500" },
         { name: "Leo Park", avatar: "LP", time: "5h ago", color: "bg-rose-500" },
       ].map((s, i) => (
-        <div key={i} className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60 cursor-pointer">
-          <div className={`flex h-13 w-13 items-center justify-center rounded-full ring-[2.5px] ring-primary ${s.color} text-sm font-semibold text-white h-12 w-12`}>
+        <div key={i} className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60 cursor-pointer animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
+          <div className={`flex h-12 w-12 items-center justify-center rounded-full ring-[2.5px] ring-primary ${s.color} text-sm font-semibold text-white`}>
             {s.avatar}
           </div>
           <div className="flex-1">
@@ -77,7 +74,6 @@ const MomentsPanel = ({ onBack }: { onBack?: () => void }) => (
         </div>
       ))}
 
-      {/* Viewed */}
       <p className="mt-5 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Viewed</p>
       {[
         { name: "Sam Torres", avatar: "ST", time: "Yesterday", color: "bg-sky-500" },
@@ -93,81 +89,6 @@ const MomentsPanel = ({ onBack }: { onBack?: () => void }) => (
           </div>
         </div>
       ))}
-    </div>
-  </div>
-);
-
-/* ─── Circles ─── */
-const CirclesPanel = ({ onBack }: { onBack?: () => void }) => (
-  <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
-    <div className="border-b bg-gradient-to-r from-purple-500/10 to-violet-500/10 px-5 py-4">
-      <div className="flex items-center gap-2">
-        {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-accent lg:hidden"><ArrowLeft className="h-5 w-5" /></button>}
-        <h1 className="text-xl font-bold text-foreground">Circles</h1>
-      </div>
-    </div>
-    <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">
-      {[
-        {
-          name: "React Developers",
-          icon: "⚛️",
-          members: 12400,
-          subGroups: ["General", "Help", "Show & Tell"],
-          announcement: "v19 released!",
-        },
-        {
-          name: "UI/UX Designers",
-          icon: "✨",
-          members: 8900,
-          subGroups: ["Inspiration", "Critique", "Jobs"],
-          announcement: "Design jam this Friday",
-        },
-        {
-          name: "Startup Founders",
-          icon: "💡",
-          members: 3200,
-          subGroups: ["Pitch Deck", "Funding", "Growth"],
-          announcement: null,
-        },
-      ].map((c, i) => (
-        <div key={i} className="mb-3 rounded-xl border border-border p-4 transition-colors hover:bg-accent/40 cursor-pointer">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-xl">{c.icon}</div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground">{c.name}</p>
-              <p className="text-xs text-muted-foreground">{c.members.toLocaleString()} members</p>
-            </div>
-          </div>
-          {/* Announcement */}
-          {c.announcement && (
-            <div className="mt-2.5 flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2">
-              <Megaphone className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-              <p className="text-xs text-primary font-medium truncate">{c.announcement}</p>
-            </div>
-          )}
-          {/* Sub-groups */}
-          <div className="mt-2.5 flex flex-wrap gap-1.5">
-            {c.subGroups.map((g) => (
-              <span key={g} className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-                <Hash className="h-2.5 w-2.5" /> {g}
-              </span>
-            ))}
-          </div>
-        </div>
-      ))}
-
-      {/* Topic rooms */}
-      <p className="mt-2 px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">Topic Rooms</p>
-      {["🔥 Trending", "📚 Learning", "🎮 Gaming", "🎵 Music"].map((room) => (
-        <div key={room} className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60 cursor-pointer">
-          <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-foreground">{room}</span>
-        </div>
-      ))}
-
-      <button className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border p-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary">
-        <Plus className="h-4 w-4" /> Create a Circle
-      </button>
     </div>
   </div>
 );
@@ -200,7 +121,6 @@ const ConnectPanel = ({ onBack }: { onBack?: () => void }) => {
         </button>
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        {/* Quick dial */}
         <div className="border-b px-4 py-3">
           <p className="px-1 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Quick Dial</p>
           <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin">
@@ -211,7 +131,7 @@ const ConnectPanel = ({ onBack }: { onBack?: () => void }) => {
               { name: "Leo", avatar: "LP", color: "bg-rose-500" },
               { name: "Sam", avatar: "ST", color: "bg-sky-500" },
             ].map((q, i) => (
-              <div key={i} className="flex flex-col items-center gap-1.5 cursor-pointer">
+              <div key={i} className="flex flex-col items-center gap-1.5 cursor-pointer hover-scale">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-full ${q.color} text-xs font-semibold text-white`}>
                   {q.avatar}
                 </div>
@@ -221,11 +141,10 @@ const ConnectPanel = ({ onBack }: { onBack?: () => void }) => {
           </div>
         </div>
 
-        {/* Call timeline */}
         <div className="px-4 py-2">
           <p className="px-1 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Call Timeline</p>
           {callHistory.map((call, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60 cursor-pointer">
+            <div key={i} className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60 cursor-pointer animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
               <div className={`flex h-11 w-11 items-center justify-center rounded-full ${call.color} text-xs font-semibold text-white`}>
                 {call.avatar}
               </div>
@@ -254,6 +173,11 @@ const ConnectPanel = ({ onBack }: { onBack?: () => void }) => {
 /* ─── Settings ─── */
 const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
   const { theme, setTheme } = useTheme();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Logged out successfully");
+  };
 
   const settingGroups = [
     {
@@ -288,7 +212,7 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60"
           >
-            {theme === "dark" ? <Sun className="h-5 w-5 text-primary" /> : <Moon className="h-5 w-5 text-primary" />}
+            {theme === "dark" ? <Sun className="h-5 w-5 text-orange-500" /> : <Moon className="h-5 w-5 text-purple-500" />}
             <div className="text-left">
               <p className="text-sm font-semibold text-foreground">Theme</p>
               <p className="text-xs text-muted-foreground">{theme === "dark" ? "Dark mode" : "Light mode"}</p>
@@ -312,6 +236,16 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
             })}
           </div>
         ))}
+        {/* Logout */}
+        <div className="px-4 py-3">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-xl p-3 text-destructive transition-colors hover:bg-destructive/10"
+          >
+            <LogOut className="h-5 w-5" />
+            <span className="text-sm font-semibold">Log Out</span>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -329,7 +263,7 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
     <div className="flex-1 overflow-y-auto scrollbar-thin">
       <div className="flex flex-col items-center py-8">
         <div className="relative">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-bold text-primary-foreground">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-bold text-primary-foreground shadow-lg">
             {username?.[0]?.toUpperCase() || "U"}
           </div>
           <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-opacity">
