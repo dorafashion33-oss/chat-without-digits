@@ -1,16 +1,17 @@
 import { MessageCircle, CircleDot, Phone, Settings, User } from "lucide-react";
+import buzzLogo from "@/assets/buzz-logo.jpeg";
 
 export type NavSection = "streams" | "moments" | "connect" | "settings" | "profile";
 
 const navItems: { id: NavSection; icon: typeof MessageCircle; label: string; color: string }[] = [
-  { id: "streams", icon: MessageCircle, label: "Streams", color: "text-teal-500" },
-  { id: "moments", icon: CircleDot, label: "Moments", color: "text-orange-500" },
-  { id: "connect", icon: Phone, label: "Connect", color: "text-blue-500" },
+  { id: "streams", icon: MessageCircle, label: "Streams", color: "text-blue-400" },
+  { id: "moments", icon: CircleDot, label: "Moments", color: "text-purple-400" },
+  { id: "connect", icon: Phone, label: "Connect", color: "text-pink-400" },
 ];
 
-const bottomItems: { id: NavSection; icon: typeof Settings; label: string; color: string }[] = [
-  { id: "settings", icon: Settings, label: "Settings", color: "text-muted-foreground" },
-  { id: "profile", icon: User, label: "Profile", color: "text-muted-foreground" },
+const bottomItems: { id: NavSection; icon: typeof Settings; label: string }[] = [
+  { id: "settings", icon: Settings, label: "Settings" },
+  { id: "profile", icon: User, label: "Profile" },
 ];
 
 interface NavIconBarProps {
@@ -22,10 +23,8 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
   return (
     <div className="flex h-full w-[52px] md:w-[64px] flex-shrink-0 flex-col items-center justify-between border-r border-border bg-sidebar-background py-3 md:py-5">
       <div className="flex flex-col items-center gap-4">
-        {/* Brand */}
-        <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-xl bg-primary text-xs md:text-sm font-bold text-primary-foreground">
-          B
-        </div>
+        {/* Brand Logo */}
+        <img src={buzzLogo} alt="Buzz" className="h-8 w-8 md:h-9 md:w-9 rounded-xl object-cover shadow-md" />
 
         {/* Top nav items */}
         <div className="flex flex-col items-center gap-0.5">
@@ -44,7 +43,7 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
                   }`}
                 >
                   {isActive && (
-                    <div className="absolute left-[-6px] top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+                    <div className="absolute left-[-6px] top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full gradient-brand" />
                   )}
                   <Icon className={`h-[18px] w-[18px] md:h-[20px] md:w-[20px] ${isActive ? item.color : ""}`} strokeWidth={isActive ? 2.2 : 1.7} />
                 </button>
@@ -75,7 +74,7 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
                 }`}
               >
                 {isActive && (
-                  <div className="absolute left-[-6px] top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+                  <div className="absolute left-[-6px] top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full gradient-brand" />
                 )}
                 <Icon className="h-[18px] w-[18px] md:h-[20px] md:w-[20px]" strokeWidth={isActive ? 2.2 : 1.7} />
               </button>

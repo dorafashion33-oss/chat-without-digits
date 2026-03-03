@@ -8,9 +8,9 @@ interface MobileBottomNavProps {
 }
 
 const tabs: { id: NavSection; icon: typeof MessageCircle; label: string; color: string; activeBg: string }[] = [
-  { id: "streams", icon: MessageCircle, label: "Streams", color: "text-teal-500", activeBg: "bg-teal-500/15" },
-  { id: "moments", icon: CircleDot, label: "Moments", color: "text-orange-500", activeBg: "bg-orange-500/15" },
-  { id: "connect", icon: Phone, label: "Connect", color: "text-blue-500", activeBg: "bg-blue-500/15" },
+  { id: "streams", icon: MessageCircle, label: "Streams", color: "text-blue-400", activeBg: "bg-blue-500/15" },
+  { id: "moments", icon: CircleDot, label: "Moments", color: "text-purple-400", activeBg: "bg-purple-500/15" },
+  { id: "connect", icon: Phone, label: "Connect", color: "text-pink-400", activeBg: "bg-pink-500/15" },
 ];
 
 const MobileBottomNav = ({ active, onNavigate, unreadCount = 0 }: MobileBottomNavProps) => {

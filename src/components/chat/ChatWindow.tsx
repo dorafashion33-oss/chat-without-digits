@@ -41,7 +41,6 @@ const ChatWindow = ({ chat, onSendMessage, onBack }: ChatWindowProps) => {
     setImagePreview(null);
     setAttachedFile(null);
     
-    // Simulate typing indicator
     setShowTyping(true);
     setTimeout(() => setShowTyping(false), 1500);
   };
@@ -74,8 +73,8 @@ const ChatWindow = ({ chat, onSendMessage, onBack }: ChatWindowProps) => {
   };
 
   const colors = [
-    "bg-primary", "bg-emerald-500", "bg-sky-500", "bg-amber-500",
-    "bg-rose-500", "bg-violet-500", "bg-cyan-500", "bg-orange-500",
+    "bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500",
+    "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600",
   ];
   const colorIndex = chat.user.id.charCodeAt(0) % colors.length;
 
@@ -182,7 +181,7 @@ const ChatWindow = ({ chat, onSendMessage, onBack }: ChatWindowProps) => {
           {input.trim() || attachedFile ? (
             <button
               onClick={handleSend}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:opacity-90"
+              className="flex h-10 w-10 items-center justify-center rounded-full gradient-brand text-white transition-all hover:opacity-90 glow-purple"
             >
               <Send className="h-4 w-4" />
             </button>

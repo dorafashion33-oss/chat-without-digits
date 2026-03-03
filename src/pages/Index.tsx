@@ -10,6 +10,7 @@ import AuthPage from "@/pages/AuthPage";
 import { chats as initialChats } from "@/data/mockData";
 import type { Chat } from "@/data/mockData";
 import type { Session } from "@supabase/supabase-js";
+import buzzLogo from "@/assets/buzz-logo.jpeg";
 
 const Index = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -80,8 +81,8 @@ const Index = () => {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3 animate-fade-in">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground animate-pulse">B</div>
-          <p className="text-sm text-muted-foreground">Loading Buzz...</p>
+          <img src={buzzLogo} alt="Buzz" className="h-14 w-14 rounded-2xl shadow-lg glow-purple animate-pulse object-cover" />
+          <p className="text-sm text-muted-foreground">Loading <span className="gradient-brand-text font-semibold">Buzz</span>...</p>
         </div>
       </div>
     );
