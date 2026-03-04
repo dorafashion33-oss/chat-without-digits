@@ -19,9 +19,8 @@ const Index = () => {
   const [username, setUsername] = useState<string>("");
 
   const currentUserId = session?.user?.id;
-  const { threads, profiles, sendMessage, markAsRead } = useRealtimeMessages(currentUserId);
+  const { threads, profiles, sendMessage, deleteMessage, editMessage, markAsRead, sendTyping, typingUsers } = useRealtimeMessages(currentUserId);
 
-  // Auth listener
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
@@ -44,15 +43,13 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Mark messages as read when opening a chat
   useEffect(() => {
-    if (activeChatId) {
-      markAsRead(activeChatId);
-    }
+    if (activeChatId) markAsRead(activeChatId);
   }, [activeChatId, markAsRead]);
 
   const activeThread = threads.find((t) => t.id === activeChatId) || null;
   const totalUnread = threads.reduce((sum, t) => sum + t.unreadCount, 0);
+  const isOtherTyping = activeChatId ? typingUsers.has(activeChatId) : false;
 
   const handleSendMessage = useCallback((receiverId: string, text: string) => {
     sendMessage(receiverId, text);
@@ -60,9 +57,7 @@ const Index = () => {
 
   const handleNavigate = useCallback((section: NavSection) => {
     setActiveSection(section);
-    if (section !== "streams") {
-      setActiveChatId(null);
-    }
+    if (section !== "streams") setActiveChatId(null);
   }, []);
 
   const handleStartChat = useCallback((userId: string) => {
@@ -81,48 +76,35 @@ const Index = () => {
     );
   }
 
-  if (!session) {
-    return <AuthPage onAuth={() => {}} />;
-  }
+  if (!session) return <AuthPage onAuth={() => {}} />;
 
   const isStreamsSection = activeSection === "streams";
   const isMobileChatOpen = activeChatId && isStreamsSection;
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      {/* Desktop left nav */}
       <div className="hidden lg:flex">
         <NavIconBar active={activeSection} onNavigate={handleNavigate} />
       </div>
 
-      {/* Sidebar panel */}
-      <div
-        className={`h-full w-full flex-shrink-0 border-r border-border lg:w-[380px] ${
-          isMobileChatOpen ? "hidden lg:block" : "block"
-        }`}
-      >
+      <div className={`h-full w-full flex-shrink-0 border-r border-border lg:w-[380px] ${isMobileChatOpen ? "hidden lg:block" : "block"}`}>
         {isStreamsSection ? (
-          <ChatSidebar
-            threads={threads}
-            profiles={profiles}
-            activeChatId={activeChatId}
-            onSelectChat={setActiveChatId}
-            onStartChat={handleStartChat}
-            username={username}
-            onNavigate={handleNavigate}
-          />
+          <ChatSidebar threads={threads} profiles={profiles} activeChatId={activeChatId} onSelectChat={setActiveChatId} onStartChat={handleStartChat} username={username} onNavigate={handleNavigate} />
         ) : (
           <SectionPanel section={activeSection} onBack={() => setActiveSection("streams")} username={username} />
         )}
       </div>
 
-      {/* Main content */}
       <div className={`h-full flex-1 ${isMobileChatOpen ? "block" : "hidden lg:block"}`}>
         {isStreamsSection && activeThread ? (
           <ChatWindow
             thread={activeThread}
             currentUserId={currentUserId!}
             onSendMessage={handleSendMessage}
+            onDeleteMessage={deleteMessage}
+            onEditMessage={editMessage}
+            onTyping={sendTyping}
+            isOtherTyping={isOtherTyping}
             onBack={() => setActiveChatId(null)}
           />
         ) : (
@@ -130,7 +112,6 @@ const Index = () => {
         )}
       </div>
 
-      {/* Mobile bottom nav */}
       {!isMobileChatOpen && (
         <MobileBottomNav active={activeSection} onNavigate={handleNavigate} unreadCount={totalUnread} />
       )}
