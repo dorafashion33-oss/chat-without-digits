@@ -1,20 +1,22 @@
 import { Send, Paperclip, Phone, Video, MoreVertical, ArrowLeft, Check, CheckCheck, X, FileText, Info } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
-import type { Chat, Message } from "@/data/mockData";
-import TypingIndicator from "./TypingIndicator";
+import type { ChatThread } from "@/hooks/useRealtimeMessages";
+import type { Tables } from "@/integrations/supabase/types";
 import EmojiPicker from "./EmojiPicker";
 import MessageReactions from "./MessageReactions";
 import VoiceMessageButton from "./VoiceMessageButton";
 
+type DbMessage = Tables<"messages">;
+
 interface ChatWindowProps {
-  chat: Chat;
-  onSendMessage: (chatId: string, text: string) => void;
+  thread: ChatThread;
+  currentUserId: string;
+  onSendMessage: (receiverId: string, text: string) => void;
   onBack?: () => void;
 }
 
-const ChatWindow = ({ chat, onSendMessage, onBack }: ChatWindowProps) => {
+const ChatWindow = ({ thread, currentUserId, onSendMessage, onBack }: ChatWindowProps) => {
   const [input, setInput] = useState("");
-  const [showTyping, setShowTyping] = useState(false);
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
@@ -24,25 +26,22 @@ const ChatWindow = ({ chat, onSendMessage, onBack }: ChatWindowProps) => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chat.messages, showTyping]);
+  }, [thread.messages]);
 
   const handleSend = () => {
     const text = input.trim();
     if (!text && !attachedFile) return;
-    
+
     const msgText = attachedFile
       ? imagePreview
         ? `📷 ${attachedFile.name}${text ? `\n${text}` : ""}`
         : `📎 ${attachedFile.name} (${(attachedFile.size / 1024).toFixed(1)} KB)${text ? `\n${text}` : ""}`
       : text;
-    
-    onSendMessage(chat.id, msgText);
+
+    onSendMessage(thread.id, msgText);
     setInput("");
     setImagePreview(null);
     setAttachedFile(null);
-    
-    setShowTyping(true);
-    setTimeout(() => setShowTyping(false), 1500);
   };
 
   const handleEmojiSelect = useCallback((emoji: string) => {
@@ -72,11 +71,13 @@ const ChatWindow = ({ chat, onSendMessage, onBack }: ChatWindowProps) => {
     e.target.value = "";
   };
 
+  const displayName = thread.profile.display_name || thread.profile.username;
+  const initials = displayName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
   const colors = [
     "bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500",
     "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600",
   ];
-  const colorIndex = chat.user.id.charCodeAt(0) % colors.length;
+  const colorIndex = thread.profile.username.charCodeAt(0) % colors.length;
 
   return (
     <div className="flex h-full flex-col">
@@ -89,31 +90,23 @@ const ChatWindow = ({ chat, onSendMessage, onBack }: ChatWindowProps) => {
         )}
         <div className="relative">
           <div className={`flex h-10 w-10 items-center justify-center rounded-full ${colors[colorIndex]} text-sm font-semibold text-white`}>
-            {chat.user.avatar}
+            {initials}
           </div>
-          {chat.user.isOnline && (
+          {thread.profile.is_online && (
             <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-chat-header bg-online" />
           )}
         </div>
         <div className="flex-1">
-          <h2 className="text-sm font-semibold text-foreground">{chat.user.displayName}</h2>
+          <h2 className="text-sm font-semibold text-foreground">{displayName}</h2>
           <p className="text-xs text-muted-foreground">
-            {chat.user.isOnline ? "Online" : `Last seen ${chat.user.lastSeen}`}
+            {thread.profile.is_online ? "Online" : thread.profile.last_seen ? `Last seen ${formatLastSeen(thread.profile.last_seen)}` : "Offline"}
           </p>
         </div>
         <div className="flex items-center gap-1">
-          <button className="rounded-full p-2 transition-colors hover:bg-accent">
-            <Phone className="h-4 w-4 text-muted-foreground" />
-          </button>
-          <button className="rounded-full p-2 transition-colors hover:bg-accent">
-            <Video className="h-4 w-4 text-muted-foreground" />
-          </button>
-          <button className="rounded-full p-2 transition-colors hover:bg-accent">
-            <Info className="h-4 w-4 text-muted-foreground" />
-          </button>
-          <button className="rounded-full p-2 transition-colors hover:bg-accent">
-            <MoreVertical className="h-4 w-4 text-muted-foreground" />
-          </button>
+          <button className="rounded-full p-2 transition-colors hover:bg-accent"><Phone className="h-4 w-4 text-muted-foreground" /></button>
+          <button className="rounded-full p-2 transition-colors hover:bg-accent"><Video className="h-4 w-4 text-muted-foreground" /></button>
+          <button className="rounded-full p-2 transition-colors hover:bg-accent"><Info className="h-4 w-4 text-muted-foreground" /></button>
+          <button className="rounded-full p-2 transition-colors hover:bg-accent"><MoreVertical className="h-4 w-4 text-muted-foreground" /></button>
         </div>
       </div>
 
@@ -123,16 +116,16 @@ const ChatWindow = ({ chat, onSendMessage, onBack }: ChatWindowProps) => {
         backgroundSize: "24px 24px",
       }}>
         <div className="mx-auto max-w-3xl space-y-1">
-          {chat.messages.map((msg, i) => (
+          {thread.messages.map((msg, i) => (
             <MessageBubble
               key={msg.id}
               message={msg}
-              showTail={i === 0 || chat.messages[i - 1].senderId !== msg.senderId}
+              isOwn={msg.sender_id === currentUserId}
+              showTail={i === 0 || thread.messages[i - 1].sender_id !== msg.sender_id}
               reactions={reactions[msg.id] || {}}
               onReact={(emoji) => handleReact(msg.id, emoji)}
             />
           ))}
-          {showTyping && <TypingIndicator />}
           <div ref={messagesEndRef} />
         </div>
       </div>
@@ -196,16 +189,18 @@ const ChatWindow = ({ chat, onSendMessage, onBack }: ChatWindowProps) => {
 
 const MessageBubble = ({
   message,
+  isOwn,
   showTail,
   reactions,
   onReact,
 }: {
-  message: Message;
+  message: DbMessage;
+  isOwn: boolean;
   showTail: boolean;
   reactions: Record<string, number>;
   onReact: (emoji: string) => void;
 }) => {
-  const isOwn = message.senderId === "me";
+  const time = new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"} ${showTail ? "mt-3" : "mt-0.5"} animate-fade-in`}>
@@ -219,9 +214,9 @@ const MessageBubble = ({
         >
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
           <div className="mt-0.5 flex items-center justify-end gap-1">
-            <span className="text-[10px] opacity-60">{message.timestamp}</span>
+            <span className="text-[10px] opacity-60">{time}</span>
             {isOwn && (
-              message.status === "read" ? (
+              message.read_at ? (
                 <CheckCheck className="h-3.5 w-3.5 text-primary transition-all" />
               ) : (
                 <Check className="h-3.5 w-3.5 opacity-50 transition-all" />
@@ -234,5 +229,17 @@ const MessageBubble = ({
     </div>
   );
 };
+
+function formatLastSeen(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffHrs = Math.floor(diffMin / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+}
 
 export default ChatWindow;

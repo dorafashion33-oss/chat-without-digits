@@ -7,18 +7,19 @@ import EmptyChat from "@/components/chat/EmptyChat";
 import SectionPanel from "@/components/chat/SectionPanel";
 import MobileBottomNav from "@/components/chat/MobileBottomNav";
 import AuthPage from "@/pages/AuthPage";
-import { chats as initialChats } from "@/data/mockData";
-import type { Chat } from "@/data/mockData";
+import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import type { Session } from "@supabase/supabase-js";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
 
 const Index = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [chats, setChats] = useState<Chat[]>(initialChats);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<NavSection>("streams");
   const [username, setUsername] = useState<string>("");
+
+  const currentUserId = session?.user?.id;
+  const { threads, profiles, sendMessage, markAsRead } = useRealtimeMessages(currentUserId);
 
   // Auth listener
   useEffect(() => {
@@ -43,38 +44,30 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const activeChat = chats.find((c) => c.id === activeChatId) || null;
-  const totalUnread = chats.reduce((sum, c) => sum + c.unreadCount, 0);
+  // Mark messages as read when opening a chat
+  useEffect(() => {
+    if (activeChatId) {
+      markAsRead(activeChatId);
+    }
+  }, [activeChatId, markAsRead]);
 
-  const handleSendMessage = useCallback((chatId: string, text: string) => {
-    setChats((prev) =>
-      prev.map((chat) =>
-        chat.id === chatId
-          ? {
-              ...chat,
-              messages: [
-                ...chat.messages,
-                {
-                  id: `m-${Date.now()}`,
-                  senderId: "me",
-                  text,
-                  timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-                  status: "sent" as const,
-                },
-              ],
-              lastMessage: text,
-              lastMessageTime: "Now",
-            }
-          : chat
-      )
-    );
-  }, []);
+  const activeThread = threads.find((t) => t.id === activeChatId) || null;
+  const totalUnread = threads.reduce((sum, t) => sum + t.unreadCount, 0);
+
+  const handleSendMessage = useCallback((receiverId: string, text: string) => {
+    sendMessage(receiverId, text);
+  }, [sendMessage]);
 
   const handleNavigate = useCallback((section: NavSection) => {
     setActiveSection(section);
     if (section !== "streams") {
       setActiveChatId(null);
     }
+  }, []);
+
+  const handleStartChat = useCallback((userId: string) => {
+    setActiveChatId(userId);
+    setActiveSection("streams");
   }, []);
 
   if (loading) {
@@ -109,7 +102,15 @@ const Index = () => {
         }`}
       >
         {isStreamsSection ? (
-          <ChatSidebar chats={chats} activeChatId={activeChatId} onSelectChat={setActiveChatId} username={username} onNavigate={handleNavigate} />
+          <ChatSidebar
+            threads={threads}
+            profiles={profiles}
+            activeChatId={activeChatId}
+            onSelectChat={setActiveChatId}
+            onStartChat={handleStartChat}
+            username={username}
+            onNavigate={handleNavigate}
+          />
         ) : (
           <SectionPanel section={activeSection} onBack={() => setActiveSection("streams")} username={username} />
         )}
@@ -117,8 +118,13 @@ const Index = () => {
 
       {/* Main content */}
       <div className={`h-full flex-1 ${isMobileChatOpen ? "block" : "hidden lg:block"}`}>
-        {isStreamsSection && activeChat ? (
-          <ChatWindow chat={activeChat} onSendMessage={handleSendMessage} onBack={() => setActiveChatId(null)} />
+        {isStreamsSection && activeThread ? (
+          <ChatWindow
+            thread={activeThread}
+            currentUserId={currentUserId!}
+            onSendMessage={handleSendMessage}
+            onBack={() => setActiveChatId(null)}
+          />
         ) : (
           <EmptyChat />
         )}

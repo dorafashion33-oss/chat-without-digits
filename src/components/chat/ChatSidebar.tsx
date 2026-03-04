@@ -2,42 +2,41 @@ import { Search, MessageSquarePlus, Pin, Menu, Settings, User, Moon, Sun } from 
 import { useState } from "react";
 import { useTheme } from "next-themes";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import buzzLogo from "@/assets/buzz-logo.jpeg";
-
-import type { Chat } from "@/data/mockData";
+import NewChatDialog from "./NewChatDialog";
+import type { ChatThread, DbProfile } from "@/hooks/useRealtimeMessages";
 import type { NavSection } from "./NavIconBar";
 
-type StreamFilter = "all" | "personal" | "groups" | "unread";
+type StreamFilter = "all" | "personal" | "unread";
 
 interface ChatSidebarProps {
-  chats: Chat[];
+  threads: ChatThread[];
+  profiles: DbProfile[];
   activeChatId: string | null;
   onSelectChat: (chatId: string) => void;
+  onStartChat: (userId: string) => void;
   username?: string;
   onNavigate?: (section: NavSection) => void;
 }
 
-const ChatSidebar = ({ chats, activeChatId, onSelectChat, username, onNavigate }: ChatSidebarProps) => {
+const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartChat, username, onNavigate }: ChatSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<StreamFilter>("all");
+  const [showNewChat, setShowNewChat] = useState(false);
   const { theme, setTheme } = useTheme();
 
-  const filtered = chats.filter((c) => {
+  const filtered = threads.filter((t) => {
+    const name = t.profile.display_name || t.profile.username;
     const matchesSearch =
-      c.user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.user.username.toLowerCase().includes(searchQuery.toLowerCase());
+      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.profile.username.toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
-    if (filter === "unread") return c.unreadCount > 0;
+    if (filter === "unread") return t.unreadCount > 0;
     return true;
   });
-
-  const pinned = filtered.filter((c) => c.isPinned);
-  const unpinned = filtered.filter((c) => !c.isPinned);
 
   const filters: { id: StreamFilter; label: string }[] = [
     { id: "all", label: "All" },
     { id: "personal", label: "Personal" },
-    { id: "groups", label: "Groups" },
     { id: "unread", label: "Unread" },
   ];
 
@@ -46,7 +45,6 @@ const ChatSidebar = ({ chats, activeChatId, onSelectChat, username, onNavigate }
       {/* Header */}
       <div className="flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-3">
-          {/* Hamburger - mobile only */}
           <Drawer>
             <DrawerTrigger asChild>
               <button className="rounded-lg p-1.5 transition-colors hover:bg-accent lg:hidden">
@@ -58,7 +56,6 @@ const ChatSidebar = ({ chats, activeChatId, onSelectChat, username, onNavigate }
                 <DrawerTitle>Menu</DrawerTitle>
               </DrawerHeader>
               <div className="px-4 pb-6 space-y-2">
-                {/* User info */}
                 <div className="flex items-center gap-3 rounded-xl p-4 mb-3" style={{ background: "linear-gradient(135deg, hsl(var(--brand-purple) / 0.1), hsl(var(--brand-magenta) / 0.1))" }}>
                   <div className="flex h-12 w-12 items-center justify-center rounded-full gradient-brand text-sm font-bold text-white">
                     {username?.[0]?.toUpperCase() || "U"}
@@ -68,27 +65,15 @@ const ChatSidebar = ({ chats, activeChatId, onSelectChat, username, onNavigate }
                     <p className="text-xs text-muted-foreground">Online</p>
                   </div>
                 </div>
-                {/* Theme toggle */}
-                <button
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent"
-                >
+                <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent">
                   {theme === "dark" ? <Sun className="h-5 w-5 text-amber-400" /> : <Moon className="h-5 w-5 text-purple-500" />}
                   <span className="text-sm font-medium text-foreground">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
                 </button>
-                {/* Settings */}
-                <button
-                  onClick={() => onNavigate?.("settings")}
-                  className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent"
-                >
+                <button onClick={() => onNavigate?.("settings")} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent">
                   <Settings className="h-5 w-5 text-muted-foreground" />
                   <span className="text-sm font-medium text-foreground">Settings</span>
                 </button>
-                {/* Profile */}
-                <button
-                  onClick={() => onNavigate?.("profile")}
-                  className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent"
-                >
+                <button onClick={() => onNavigate?.("profile")} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent">
                   <User className="h-5 w-5 text-muted-foreground" />
                   <span className="text-sm font-medium text-foreground">Profile</span>
                 </button>
@@ -97,7 +82,7 @@ const ChatSidebar = ({ chats, activeChatId, onSelectChat, username, onNavigate }
           </Drawer>
           <h1 className="text-xl font-bold gradient-brand-text">Streams</h1>
         </div>
-        <button className="rounded-full p-2 transition-colors hover:bg-accent">
+        <button onClick={() => setShowNewChat(true)} className="rounded-full p-2 transition-colors hover:bg-accent">
           <MessageSquarePlus className="h-5 w-5 text-primary" />
         </button>
       </div>
@@ -135,35 +120,49 @@ const ChatSidebar = ({ chats, activeChatId, onSelectChat, username, onNavigate }
 
       {/* Chat list */}
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        {pinned.length > 0 && (
-          <div className="px-4 pb-1 pt-3">
-            <span className="flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <Pin className="h-3 w-3" /> Pinned
-            </span>
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4">
+            <MessageSquarePlus className="h-10 w-10 text-muted-foreground/40 mb-3" />
+            <p className="text-sm text-muted-foreground text-center">No conversations yet</p>
+            <button
+              onClick={() => setShowNewChat(true)}
+              className="mt-3 rounded-full gradient-brand px-4 py-2 text-xs font-medium text-white hover:opacity-90 transition-opacity"
+            >
+              Start a chat
+            </button>
           </div>
+        ) : (
+          filtered.map((thread) => (
+            <ThreadItem
+              key={thread.id}
+              thread={thread}
+              isActive={thread.id === activeChatId}
+              onSelect={onSelectChat}
+            />
+          ))
         )}
-        {pinned.map((chat) => (
-          <ChatItem key={chat.id} chat={chat} isActive={chat.id === activeChatId} onSelect={onSelectChat} />
-        ))}
-        {unpinned.length > 0 && pinned.length > 0 && (
-          <div className="px-4 pb-1 pt-3">
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">All Messages</span>
-          </div>
-        )}
-        {unpinned.map((chat) => (
-          <ChatItem key={chat.id} chat={chat} isActive={chat.id === activeChatId} onSelect={onSelectChat} />
-        ))}
       </div>
+
+      {showNewChat && (
+        <NewChatDialog
+          profiles={profiles}
+          onSelect={(userId) => {
+            setShowNewChat(false);
+            onStartChat(userId);
+          }}
+          onClose={() => setShowNewChat(false)}
+        />
+      )}
     </div>
   );
 };
 
-const ChatItem = ({
-  chat,
+const ThreadItem = ({
+  thread,
   isActive,
   onSelect,
 }: {
-  chat: Chat;
+  thread: ChatThread;
   isActive: boolean;
   onSelect: (id: string) => void;
 }) => {
@@ -171,35 +170,42 @@ const ChatItem = ({
     "bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500",
     "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600",
   ];
-  const colorIndex = chat.user.id.charCodeAt(0) % colors.length;
+  const colorIndex = thread.profile.username.charCodeAt(0) % colors.length;
+  const displayName = thread.profile.display_name || thread.profile.username;
+  const initials = displayName
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <button
-      onClick={() => onSelect(chat.id)}
+      onClick={() => onSelect(thread.id)}
       className={`flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-accent/60 ${
         isActive ? "bg-accent" : ""
       }`}
     >
       <div className="relative flex-shrink-0">
         <div className={`flex h-12 w-12 items-center justify-center rounded-full ${colors[colorIndex]} text-sm font-semibold text-white`}>
-          {chat.user.avatar}
+          {initials}
         </div>
-        {chat.user.isOnline && (
+        {thread.profile.is_online && (
           <div className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-chat-sidebar bg-online" />
         )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col text-left">
         <div className="flex items-center justify-between">
-          <span className="truncate text-sm font-semibold text-foreground">{chat.user.displayName}</span>
-          <span className={`text-xs ${chat.unreadCount > 0 ? "font-semibold text-primary" : "text-muted-foreground"}`}>
-            {chat.lastMessageTime}
+          <span className="truncate text-sm font-semibold text-foreground">{displayName}</span>
+          <span className={`text-xs ${thread.unreadCount > 0 ? "font-semibold text-primary" : "text-muted-foreground"}`}>
+            {thread.lastMessageTime}
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <p className="truncate text-xs text-muted-foreground">{chat.lastMessage}</p>
-          {chat.unreadCount > 0 && (
+          <p className="truncate text-xs text-muted-foreground">{thread.lastMessage}</p>
+          {thread.unreadCount > 0 && (
             <span className="ml-2 flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full gradient-brand px-1.5 text-[10px] font-bold text-white animate-pulse">
-              {chat.unreadCount}
+              {thread.unreadCount}
             </span>
           )}
         </div>
