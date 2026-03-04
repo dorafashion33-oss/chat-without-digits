@@ -1,4 +1,4 @@
-import { MessageCircle, CircleDot, Phone } from "lucide-react";
+import { MessageCircle, CircleDot, Phone, Compass } from "lucide-react";
 import type { NavSection } from "./NavIconBar";
 
 interface MobileBottomNavProps {
@@ -7,10 +7,11 @@ interface MobileBottomNavProps {
   unreadCount?: number;
 }
 
-const tabs: { id: NavSection; icon: typeof MessageCircle; label: string; color: string; activeBg: string }[] = [
-  { id: "streams", icon: MessageCircle, label: "Streams", color: "text-blue-400", activeBg: "bg-blue-500/15" },
-  { id: "moments", icon: CircleDot, label: "Moments", color: "text-purple-400", activeBg: "bg-purple-500/15" },
-  { id: "connect", icon: Phone, label: "Connect", color: "text-pink-400", activeBg: "bg-pink-500/15" },
+const tabs: { id: NavSection; icon: typeof MessageCircle; label: string }[] = [
+  { id: "streams", icon: MessageCircle, label: "Streams" },
+  { id: "moments", icon: CircleDot, label: "Moments" },
+  { id: "connect", icon: Phone, label: "Connect" },
+  { id: "discover", icon: Compass, label: "Discover" },
 ];
 
 const MobileBottomNav = ({ active, onNavigate, unreadCount = 0 }: MobileBottomNavProps) => {
@@ -23,14 +24,17 @@ const MobileBottomNav = ({ active, onNavigate, unreadCount = 0 }: MobileBottomNa
           <button
             key={tab.id}
             onClick={() => onNavigate(tab.id)}
-            className={`relative flex flex-col items-center gap-0.5 rounded-xl px-5 py-1.5 transition-all duration-200 ${
-              isActive ? `${tab.activeBg} scale-105` : "text-muted-foreground"
+            className={`relative flex flex-col items-center gap-0.5 rounded-xl px-4 py-1.5 transition-all duration-200 ${
+              isActive ? "scale-105" : "text-muted-foreground"
             }`}
           >
-            <div className="relative">
+            <div className={`relative flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200 ${
+              isActive ? "gradient-brand text-white shadow-sm" : ""
+            }`}>
               <Icon
-                className={`h-5 w-5 transition-colors ${isActive ? tab.color : ""}`}
+                className={`h-[18px] w-[18px] transition-colors`}
                 strokeWidth={isActive ? 2.3 : 1.7}
+                fill={isActive ? "currentColor" : "none"}
               />
               {tab.id === "streams" && unreadCount > 0 && (
                 <span className="absolute -right-2 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground animate-pulse">
@@ -38,7 +42,7 @@ const MobileBottomNav = ({ active, onNavigate, unreadCount = 0 }: MobileBottomNa
                 </span>
               )}
             </div>
-            <span className={`text-[10px] font-medium ${isActive ? tab.color : ""}`}>
+            <span className={`text-[10px] font-medium ${isActive ? "text-primary" : ""}`}>
               {tab.label}
             </span>
           </button>

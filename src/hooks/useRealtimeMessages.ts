@@ -6,7 +6,7 @@ export type DbMessage = Tables<"messages">;
 export type DbProfile = Tables<"profiles">;
 
 export interface ChatThread {
-  id: string; // the other user's user_id
+  id: string;
   profile: DbProfile;
   messages: DbMessage[];
   lastMessage: string;
@@ -18,62 +18,32 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [profiles, setProfiles] = useState<DbProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
 
-  // Fetch all profiles (for user discovery)
-  const fetchProfiles = useCallback(async () => {
-    if (!currentUserId) return;
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .neq("user_id", currentUserId);
-    if (data) setProfiles(data);
-  }, [currentUserId]);
-
-  // Build threads from messages
   const buildThreads = useCallback(
     (messages: DbMessage[], allProfiles: DbProfile[]) => {
       if (!currentUserId) return [];
       const threadMap = new Map<string, DbMessage[]>();
 
       for (const msg of messages) {
-        const otherId =
-          msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id;
+        const otherId = msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id;
         if (!threadMap.has(otherId)) threadMap.set(otherId, []);
         threadMap.get(otherId)!.push(msg);
       }
 
       const result: ChatThread[] = [];
       for (const [otherId, msgs] of threadMap) {
-        const sorted = msgs.sort(
-          (a, b) =>
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
+        const sorted = msgs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
         const last = sorted[sorted.length - 1];
         const profile = allProfiles.find((p) => p.user_id === otherId);
         if (!profile) continue;
-
-        const unread = sorted.filter(
-          (m) => m.sender_id !== currentUserId && !m.read_at
-        ).length;
-
-        result.push({
-          id: otherId,
-          profile,
-          messages: sorted,
-          lastMessage: last.text,
-          lastMessageTime: formatTime(last.created_at),
-          unreadCount: unread,
-        });
+        const unread = sorted.filter((m) => m.sender_id !== currentUserId && !m.read_at).length;
+        result.push({ id: otherId, profile, messages: sorted, lastMessage: last.text, lastMessageTime: formatTime(last.created_at), unreadCount: unread });
       }
 
-      // Sort by last message time descending
       result.sort((a, b) => {
-        const aTime = new Date(
-          a.messages[a.messages.length - 1].created_at
-        ).getTime();
-        const bTime = new Date(
-          b.messages[b.messages.length - 1].created_at
-        ).getTime();
+        const aTime = new Date(a.messages[a.messages.length - 1].created_at).getTime();
+        const bTime = new Date(b.messages[b.messages.length - 1].created_at).getTime();
         return bTime - aTime;
       });
 
@@ -82,7 +52,6 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
     [currentUserId]
   );
 
-  // Fetch messages and build threads
   const fetchMessages = useCallback(async () => {
     if (!currentUserId) return;
     const { data: messages } = await supabase
@@ -103,7 +72,7 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
     setLoading(false);
   }, [currentUserId, buildThreads]);
 
-  // Subscribe to realtime
+  // Subscribe to realtime messages + typing broadcast
   useEffect(() => {
     if (!currentUserId) return;
 
@@ -111,26 +80,36 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
 
     const channel = supabase
       .channel("messages-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "messages",
-        },
-        () => {
-          // Refetch on any change
-          fetchMessages();
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
+        fetchMessages();
+      })
+      .subscribe();
+
+    // Typing indicator channel
+    const typingChannel = supabase
+      .channel("typing-indicators")
+      .on("broadcast", { event: "typing" }, (payload) => {
+        const senderId = payload.payload?.user_id;
+        if (senderId && senderId !== currentUserId) {
+          setTypingUsers((prev) => new Set(prev).add(senderId));
+          // Auto-remove after 3 seconds
+          setTimeout(() => {
+            setTypingUsers((prev) => {
+              const next = new Set(prev);
+              next.delete(senderId);
+              return next;
+            });
+          }, 3000);
         }
-      )
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(typingChannel);
     };
   }, [currentUserId, fetchMessages]);
 
-  // Send message
   const sendMessage = useCallback(
     async (receiverId: string, text: string) => {
       if (!currentUserId || !text.trim()) return;
@@ -143,7 +122,23 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
     [currentUserId]
   );
 
-  // Mark messages as read
+  const deleteMessage = useCallback(
+    async (messageId: string) => {
+      if (!currentUserId) return;
+      await supabase.from("messages").delete().eq("id", messageId).eq("sender_id", currentUserId);
+    },
+    [currentUserId]
+  );
+
+  const editMessage = useCallback(
+    async (messageId: string, newText: string) => {
+      if (!currentUserId || !newText.trim()) return;
+      // We update as sender
+      await supabase.from("messages").update({ text: newText.trim() }).eq("id", messageId).eq("sender_id", currentUserId);
+    },
+    [currentUserId]
+  );
+
   const markAsRead = useCallback(
     async (senderId: string) => {
       if (!currentUserId) return;
@@ -157,12 +152,28 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
     [currentUserId]
   );
 
+  const sendTyping = useCallback(
+    async (receiverId: string) => {
+      if (!currentUserId) return;
+      await supabase.channel("typing-indicators").send({
+        type: "broadcast",
+        event: "typing",
+        payload: { user_id: currentUserId, receiver_id: receiverId },
+      });
+    },
+    [currentUserId]
+  );
+
   return {
     threads,
     profiles,
     loading,
     sendMessage,
+    deleteMessage,
+    editMessage,
     markAsRead,
+    sendTyping,
+    typingUsers,
     refetch: fetchMessages,
   };
 }
