@@ -1,4 +1,4 @@
-import { Search, MessageSquarePlus, Pin, Menu, Settings, User, Moon, Sun } from "lucide-react";
+import { Search, MessageSquarePlus, Menu, Settings, User, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "next-themes";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
@@ -6,7 +6,7 @@ import NewChatDialog from "./NewChatDialog";
 import type { ChatThread, DbProfile } from "@/hooks/useRealtimeMessages";
 import type { NavSection } from "./NavIconBar";
 
-type StreamFilter = "all" | "personal" | "unread";
+type StreamFilter = "all" | "unread";
 
 interface ChatSidebarProps {
   threads: ChatThread[];
@@ -36,19 +36,22 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
 
   const filters: { id: StreamFilter; label: string }[] = [
     { id: "all", label: "All" },
-    { id: "personal", label: "Personal" },
     { id: "unread", label: "Unread" },
   ];
 
   return (
     <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b px-5 py-4">
-        <div className="flex items-center gap-3">
+      {/* WhatsApp-style header */}
+      <div className="flex items-center justify-between gradient-brand px-5 py-3">
+        <h1 className="text-lg font-bold text-white">Buzz</h1>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setShowNewChat(true)} className="rounded-full p-2 transition-colors hover:bg-white/20">
+            <MessageSquarePlus className="h-5 w-5 text-white" />
+          </button>
           <Drawer>
             <DrawerTrigger asChild>
-              <button className="rounded-lg p-1.5 transition-colors hover:bg-accent lg:hidden">
-                <Menu className="h-5 w-5 text-foreground" />
+              <button className="rounded-full p-2 transition-colors hover:bg-white/20 lg:hidden">
+                <Menu className="h-5 w-5 text-white" />
               </button>
             </DrawerTrigger>
             <DrawerContent>
@@ -80,20 +83,16 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
               </div>
             </DrawerContent>
           </Drawer>
-          <h1 className="text-xl font-bold gradient-brand-text">Streams</h1>
         </div>
-        <button onClick={() => setShowNewChat(true)} className="rounded-full p-2 transition-colors hover:bg-accent">
-          <MessageSquarePlus className="h-5 w-5 text-primary" />
-        </button>
       </div>
 
       {/* Search */}
-      <div className="px-3 py-2">
+      <div className="px-3 py-2 bg-chat-sidebar">
         <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search streams..."
+            placeholder="Search chats..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
@@ -101,7 +100,7 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
         </div>
       </div>
 
-      {/* Smart Filters */}
+      {/* Filters */}
       <div className="flex gap-1.5 px-3 pb-2">
         {filters.map((f) => (
           <button
@@ -172,12 +171,7 @@ const ThreadItem = ({
   ];
   const colorIndex = thread.profile.username.charCodeAt(0) % colors.length;
   const displayName = thread.profile.display_name || thread.profile.username;
-  const initials = displayName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const initials = displayName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 
   return (
     <button
@@ -187,9 +181,13 @@ const ThreadItem = ({
       }`}
     >
       <div className="relative flex-shrink-0">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-full ${colors[colorIndex]} text-sm font-semibold text-white`}>
-          {initials}
-        </div>
+        {thread.profile.avatar_url ? (
+          <img src={thread.profile.avatar_url} alt={displayName} className="h-12 w-12 rounded-full object-cover" />
+        ) : (
+          <div className={`flex h-12 w-12 items-center justify-center rounded-full ${colors[colorIndex]} text-sm font-semibold text-white`}>
+            {initials}
+          </div>
+        )}
         {thread.profile.is_online && (
           <div className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-chat-sidebar bg-online" />
         )}
@@ -204,7 +202,7 @@ const ThreadItem = ({
         <div className="flex items-center justify-between">
           <p className="truncate text-xs text-muted-foreground">{thread.lastMessage}</p>
           {thread.unreadCount > 0 && (
-            <span className="ml-2 flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full gradient-brand px-1.5 text-[10px] font-bold text-white animate-pulse">
+            <span className="ml-2 flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full gradient-brand px-1.5 text-[10px] font-bold text-white">
               {thread.unreadCount}
             </span>
           )}
