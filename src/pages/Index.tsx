@@ -47,7 +47,24 @@ const Index = () => {
     if (activeChatId) markAsRead(activeChatId);
   }, [activeChatId, markAsRead]);
 
-  const activeThread = threads.find((t) => t.id === activeChatId) || null;
+  const isStreamsSection = activeSection === "streams";
+
+  // Build a virtual thread if no messages exist yet with this user
+  const activeThread = (() => {
+    const existing = threads.find((t) => t.id === activeChatId);
+    if (existing) return existing;
+    if (!activeChatId || !isStreamsSection) return null;
+    const profile = profiles.find((p) => p.user_id === activeChatId);
+    if (!profile) return null;
+    return {
+      id: activeChatId,
+      profile,
+      messages: [],
+      lastMessage: "",
+      lastMessageTime: "",
+      unreadCount: 0,
+    } as import("@/hooks/useRealtimeMessages").ChatThread;
+  })();
   const totalUnread = threads.reduce((sum, t) => sum + t.unreadCount, 0);
   const isOtherTyping = activeChatId ? typingUsers.has(activeChatId) : false;
 
@@ -78,7 +95,7 @@ const Index = () => {
 
   if (!session) return <AuthPage onAuth={() => {}} />;
 
-  const isStreamsSection = activeSection === "streams";
+  // isStreamsSection already declared above
   const isMobileChatOpen = !!activeChatId && isStreamsSection;
 
   return (
