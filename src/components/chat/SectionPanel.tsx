@@ -4,21 +4,23 @@ import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { NavSection } from "./NavIconBar";
+import type { DbProfile } from "@/hooks/useRealtimeMessages";
 
 interface SectionPanelProps {
   section: NavSection;
   onBack?: () => void;
   username?: string;
+  onStartChat?: (userId: string) => void;
 }
 
-const SectionPanel = ({ section, onBack, username }: SectionPanelProps) => {
+const SectionPanel = ({ section, onBack, username, onStartChat }: SectionPanelProps) => {
   switch (section) {
     case "moments":
       return <MomentsPanel onBack={onBack} />;
     case "connect":
       return <ConnectPanel onBack={onBack} />;
     case "discover":
-      return <DiscoverPanel onBack={onBack} />;
+      return <DiscoverPanel onBack={onBack} onStartChat={onStartChat} />;
     case "settings":
       return <SettingsPanel onBack={onBack} />;
     case "profile":
@@ -51,143 +53,68 @@ const MomentsPanel = ({ onBack }: { onBack?: () => void }) => (
         </div>
       </div>
 
-      <div className="mt-3 flex gap-2 px-3">
-        {["Public", "Friends", "Custom"].map((p) => (
-          <button key={p} className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${p === "Friends" ? "gradient-brand text-white" : "bg-secondary text-muted-foreground hover:bg-accent"}`}>
-            {p}
-          </button>
-        ))}
-      </div>
-
       <p className="mt-5 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Recent Moments</p>
-      {[
-        { name: "Alex Rivers", avatar: "AR", time: "12 min ago", color: "bg-blue-500" },
-        { name: "Maya Chen", avatar: "MC", time: "45 min ago", color: "bg-purple-500" },
-        { name: "Zara Knight", avatar: "ZK", time: "2h ago", color: "bg-pink-500" },
-        { name: "Leo Park", avatar: "LP", time: "5h ago", color: "bg-violet-500" },
-      ].map((s, i) => (
-        <div key={i} className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60 cursor-pointer animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
-          <div className={`flex h-12 w-12 items-center justify-center rounded-full ring-[2.5px] ring-primary ${s.color} text-sm font-semibold text-white`}>
-            {s.avatar}
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-foreground">{s.name}</p>
-            <p className="text-xs text-muted-foreground">{s.time}</p>
-          </div>
-        </div>
-      ))}
-
-      <p className="mt-5 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Viewed</p>
-      {[
-        { name: "Sam Torres", avatar: "ST", time: "Yesterday", color: "bg-indigo-500" },
-        { name: "Nina Patel", avatar: "NP", time: "Yesterday", color: "bg-fuchsia-500" },
-      ].map((s, i) => (
-        <div key={i} className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60 cursor-pointer opacity-60">
-          <div className={`flex h-12 w-12 items-center justify-center rounded-full ring-2 ring-muted-foreground/30 ${s.color} text-sm font-semibold text-white`}>
-            {s.avatar}
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-foreground">{s.name}</p>
-            <p className="text-xs text-muted-foreground">{s.time}</p>
-          </div>
-        </div>
-      ))}
+      <div className="mt-2 flex flex-col items-center py-8 text-muted-foreground">
+        <CircleDotIcon className="h-10 w-10 mb-2 opacity-30" />
+        <p className="text-sm">No moments yet</p>
+      </div>
     </div>
   </div>
 );
 
+const CircleDotIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="1" />
+  </svg>
+);
+
 /* ─── Connect ─── */
-const ConnectPanel = ({ onBack }: { onBack?: () => void }) => {
-  const callHistory = [
-    { name: "Alex Rivers", avatar: "AR", color: "bg-blue-500", type: "outgoing" as const, callType: "video" as const, time: "Today, 2:30 PM" },
-    { name: "Maya Chen", avatar: "MC", color: "bg-purple-500", type: "incoming" as const, callType: "voice" as const, time: "Today, 11:15 AM" },
-    { name: "Zara Knight", avatar: "ZK", color: "bg-pink-500", type: "missed" as const, callType: "voice" as const, time: "Yesterday, 9:45 PM" },
-    { name: "Leo Park", avatar: "LP", color: "bg-violet-500", type: "outgoing" as const, callType: "voice" as const, time: "Yesterday, 3:00 PM" },
-    { name: "Sam Torres", avatar: "ST", color: "bg-indigo-500", type: "incoming" as const, callType: "video" as const, time: "Mon, 5:20 PM" },
-  ];
-
-  const CallIcon = ({ type }: { type: string }) => {
-    if (type === "outgoing") return <PhoneOutgoing className="h-3.5 w-3.5 text-primary" />;
-    if (type === "missed") return <PhoneMissed className="h-3.5 w-3.5 text-destructive" />;
-    return <PhoneIncoming className="h-3.5 w-3.5 text-green-500" />;
-  };
-
-  return (
-    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
-      <div className="flex items-center justify-between border-b px-5 py-4" style={{ background: "linear-gradient(135deg, hsl(var(--brand-blue) / 0.1), hsl(var(--brand-purple) / 0.1))" }}>
-        <div className="flex items-center gap-2">
-          {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-accent lg:hidden"><ArrowLeft className="h-5 w-5" /></button>}
-          <h1 className="text-xl font-bold text-foreground">Connect</h1>
-        </div>
-        <button className="rounded-full p-2 transition-colors hover:bg-accent">
-          <Phone className="h-5 w-5 text-primary" />
-        </button>
+const ConnectPanel = ({ onBack }: { onBack?: () => void }) => (
+  <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
+    <div className="flex items-center justify-between border-b px-5 py-4" style={{ background: "linear-gradient(135deg, hsl(var(--brand-blue) / 0.1), hsl(var(--brand-purple) / 0.1))" }}>
+      <div className="flex items-center gap-2">
+        {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-accent lg:hidden"><ArrowLeft className="h-5 w-5" /></button>}
+        <h1 className="text-xl font-bold text-foreground">Connect</h1>
       </div>
-      <div className="flex-1 overflow-y-auto scrollbar-thin">
-        <div className="border-b px-4 py-3">
-          <p className="px-1 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Quick Dial</p>
-          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin">
-            {[
-              { name: "Alex", avatar: "AR", color: "bg-blue-500" },
-              { name: "Maya", avatar: "MC", color: "bg-purple-500" },
-              { name: "Zara", avatar: "ZK", color: "bg-pink-500" },
-              { name: "Leo", avatar: "LP", color: "bg-violet-500" },
-              { name: "Sam", avatar: "ST", color: "bg-indigo-500" },
-            ].map((q, i) => (
-              <div key={i} className="flex flex-col items-center gap-1.5 cursor-pointer hover-scale">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-full ${q.color} text-xs font-semibold text-white`}>
-                  {q.avatar}
-                </div>
-                <span className="text-[11px] text-muted-foreground">{q.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="px-4 py-2">
-          <p className="px-1 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Call Timeline</p>
-          {callHistory.map((call, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60 cursor-pointer animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
-              <div className={`flex h-11 w-11 items-center justify-center rounded-full ${call.color} text-xs font-semibold text-white`}>
-                {call.avatar}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-semibold ${call.type === "missed" ? "text-destructive" : "text-foreground"}`}>{call.name}</p>
-                <div className="flex items-center gap-1.5">
-                  <CallIcon type={call.type} />
-                  <span className="text-xs text-muted-foreground">{call.time}</span>
-                </div>
-              </div>
-              <button className="rounded-full p-2 hover:bg-accent transition-colors">
-                {call.callType === "video" ? (
-                  <Video className="h-4 w-4 text-primary" />
-                ) : (
-                  <Phone className="h-4 w-4 text-primary" />
-                )}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+      <button className="rounded-full p-2 transition-colors hover:bg-accent">
+        <Phone className="h-5 w-5 text-primary" />
+      </button>
     </div>
-  );
-};
+    <div className="flex-1 overflow-y-auto scrollbar-thin flex flex-col items-center justify-center text-muted-foreground py-16">
+      <Phone className="h-10 w-10 mb-2 opacity-30" />
+      <p className="text-sm">No call history</p>
+      <p className="text-xs mt-1">Start a call from any chat</p>
+    </div>
+  </div>
+);
 
-/* ─── Discover ─── */
-const DiscoverPanel = ({ onBack }: { onBack?: () => void }) => {
+/* ─── Discover (Real user search) ─── */
+const DiscoverPanel = ({ onBack, onStartChat }: { onBack?: () => void; onStartChat?: (userId: string) => void }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [allUsers, setAllUsers] = useState<DbProfile[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const trending = [
-    { tag: "#BuzzUpdates", posts: "2.4K posts", icon: TrendingUp },
-    { tag: "#TechTalk", posts: "1.8K posts", icon: Hash },
-    { tag: "#DesignInspo", posts: "956 posts", icon: Sparkles },
-  ];
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setCurrentUserId(user.id);
+      const { data } = await supabase.from("profiles").select("*");
+      if (data) setAllUsers(data);
+    })();
+  }, []);
 
-  const suggestedUsers = [
-    { name: "Sarah Kim", username: "sarah.design", avatar: "SK", color: "bg-pink-500", bio: "UI/UX Designer ✨" },
-    { name: "Dev Patel", username: "dev.codes", avatar: "DP", color: "bg-blue-500", bio: "Full-stack developer 🚀" },
-    { name: "Luna Rose", username: "luna.creates", avatar: "LR", color: "bg-violet-500", bio: "Digital artist 🎨" },
-    { name: "Max Zhang", username: "max.tech", avatar: "MZ", color: "bg-indigo-500", bio: "Tech enthusiast 💻" },
+  const filtered = searchQuery.trim()
+    ? allUsers.filter(
+        (p) =>
+          p.user_id !== currentUserId &&
+          (p.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (p.display_name || "").toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : allUsers.filter((p) => p.user_id !== currentUserId);
+
+  const colors = [
+    "bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500",
+    "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600",
   ];
 
   return (
@@ -199,58 +126,62 @@ const DiscoverPanel = ({ onBack }: { onBack?: () => void }) => {
         </div>
       </div>
 
-      {/* Search */}
       <div className="px-4 py-3">
         <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search people, topics..."
+            placeholder="Search by username..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            autoFocus
           />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        {/* Trending */}
-        <div className="px-4 py-2">
-          <p className="px-1 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Trending Now</p>
-          {trending.map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <div key={i} className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60 cursor-pointer animate-fade-in" style={{ animationDelay: `${i * 60}ms` }}>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                  <Icon className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{item.tag}</p>
-                  <p className="text-xs text-muted-foreground">{item.posts}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Suggested */}
-        <div className="px-4 py-2 border-t">
-          <p className="px-1 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Suggested for You</p>
-          {suggestedUsers.map((user, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60 cursor-pointer animate-fade-in" style={{ animationDelay: `${i * 60}ms` }}>
-              <div className={`flex h-11 w-11 items-center justify-center rounded-full ${user.color} text-xs font-semibold text-white`}>
-                {user.avatar}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground">{user.name}</p>
-                <p className="text-xs text-muted-foreground">@{user.username} · {user.bio}</p>
-              </div>
-              <button className="rounded-full gradient-brand px-3 py-1.5 text-[11px] font-medium text-white hover:opacity-90 transition-opacity">
-                Follow
-              </button>
-            </div>
-          ))}
-        </div>
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <Users className="h-10 w-10 mb-2 opacity-30" />
+            <p className="text-sm">{searchQuery ? "No users found" : "No other users yet"}</p>
+          </div>
+        ) : (
+          <div className="px-2">
+            <p className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {searchQuery ? "Search Results" : "All Users"} ({filtered.length})
+            </p>
+            {filtered.map((user) => {
+              const ci = user.username.charCodeAt(0) % colors.length;
+              const initials = (user.display_name || user.username).split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+              return (
+                <button
+                  key={user.user_id}
+                  onClick={() => onStartChat?.(user.user_id)}
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-accent"
+                >
+                  <div className="relative">
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt={user.username} className="h-12 w-12 rounded-full object-cover" />
+                    ) : (
+                      <div className={`flex h-12 w-12 items-center justify-center rounded-full ${colors[ci]} text-sm font-semibold text-white`}>
+                        {initials}
+                      </div>
+                    )}
+                    {user.is_online && (
+                      <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-chat-sidebar bg-online" />
+                    )}
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className="text-sm font-semibold text-foreground">{user.display_name || user.username}</p>
+                    <p className="text-xs text-muted-foreground">@{user.username}</p>
+                    {user.about && <p className="text-xs text-muted-foreground/70 truncate mt-0.5">{user.about}</p>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -339,28 +270,16 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-
       const fileExt = file.name.split(".").pop();
       const filePath = `${user.id}/avatar.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file, { upsert: true });
-
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(filePath);
-
-      // Add cache buster
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(filePath);
       const urlWithCache = `${publicUrl}?t=${Date.now()}`;
-
       await supabase.from("profiles").update({ avatar_url: urlWithCache }).eq("user_id", user.id);
       setAvatarUrl(urlWithCache);
       toast.success("Avatar updated! 🎉");
@@ -372,7 +291,6 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
     e.target.value = "";
   };
 
-  // Load avatar on mount
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -417,7 +335,6 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
         <div className="px-5 space-y-4">
           {[
             { label: "About", value: "Hey there! I'm using Buzz 💬" },
-            { label: "Phone", value: "+1 (555) 000-0000" },
             { label: "Username", value: `@${username || "user"}` },
           ].map((info, i) => (
             <div key={i} className="rounded-xl bg-accent/50 p-3.5">

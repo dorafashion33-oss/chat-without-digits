@@ -79,22 +79,33 @@ const Index = () => {
   if (!session) return <AuthPage onAuth={() => {}} />;
 
   const isStreamsSection = activeSection === "streams";
-  const isMobileChatOpen = activeChatId && isStreamsSection;
+  const isMobileChatOpen = !!activeChatId && isStreamsSection;
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
+      {/* Desktop sidebar nav */}
       <div className="hidden lg:flex">
         <NavIconBar active={activeSection} onNavigate={handleNavigate} />
       </div>
 
+      {/* Left panel: chat list or section */}
       <div className={`h-full w-full flex-shrink-0 border-r border-border lg:w-[380px] ${isMobileChatOpen ? "hidden lg:block" : "block"}`}>
         {isStreamsSection ? (
-          <ChatSidebar threads={threads} profiles={profiles} activeChatId={activeChatId} onSelectChat={setActiveChatId} onStartChat={handleStartChat} username={username} onNavigate={handleNavigate} />
+          <ChatSidebar
+            threads={threads}
+            profiles={profiles}
+            activeChatId={activeChatId}
+            onSelectChat={setActiveChatId}
+            onStartChat={handleStartChat}
+            username={username}
+            onNavigate={handleNavigate}
+          />
         ) : (
-          <SectionPanel section={activeSection} onBack={() => setActiveSection("streams")} username={username} />
+          <SectionPanel section={activeSection} onBack={() => setActiveSection("streams")} username={username} onStartChat={handleStartChat} />
         )}
       </div>
 
+      {/* Right panel: chat or empty */}
       <div className={`h-full flex-1 ${isMobileChatOpen ? "block" : "hidden lg:block"}`}>
         {isStreamsSection && activeThread ? (
           <ChatWindow
@@ -112,6 +123,7 @@ const Index = () => {
         )}
       </div>
 
+      {/* Mobile bottom nav - only when no chat is open */}
       {!isMobileChatOpen && (
         <MobileBottomNav active={activeSection} onNavigate={handleNavigate} unreadCount={totalUnread} />
       )}
