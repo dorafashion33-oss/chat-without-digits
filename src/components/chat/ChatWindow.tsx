@@ -138,8 +138,8 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
           </p>
         </div>
         <div className="flex items-center gap-1">
-          <button className="rounded-full p-2 transition-colors hover:bg-accent"><Phone className="h-4 w-4 text-muted-foreground" /></button>
-          <button className="rounded-full p-2 transition-colors hover:bg-accent"><Video className="h-4 w-4 text-muted-foreground" /></button>
+          <button onClick={() => onStartCall?.(thread.id, "voice")} className="rounded-full p-2 transition-colors hover:bg-accent"><Phone className="h-4 w-4 text-muted-foreground" /></button>
+          <button onClick={() => onStartCall?.(thread.id, "video")} className="rounded-full p-2 transition-colors hover:bg-accent"><Video className="h-4 w-4 text-muted-foreground" /></button>
           <button className="rounded-full p-2 transition-colors hover:bg-accent"><Info className="h-4 w-4 text-muted-foreground" /></button>
         </div>
       </div>
