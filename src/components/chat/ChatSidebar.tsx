@@ -1,4 +1,4 @@
-import { Search, MessageSquarePlus, Menu, Settings, User, Moon, Sun } from "lucide-react";
+import { Search, MessageSquarePlus, Menu, Settings, User, Moon, Sun, Users } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "next-themes";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
@@ -14,11 +14,12 @@ interface ChatSidebarProps {
   activeChatId: string | null;
   onSelectChat: (chatId: string) => void;
   onStartChat: (userId: string) => void;
+  onToggleGroups?: () => void;
   username?: string;
   onNavigate?: (section: NavSection) => void;
 }
 
-const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartChat, username, onNavigate }: ChatSidebarProps) => {
+const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartChat, username, onNavigate, onToggleGroups }: ChatSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<StreamFilter>("all");
   const [showNewChat, setShowNewChat] = useState(false);
@@ -45,6 +46,11 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
       <div className="flex items-center justify-between gradient-brand px-5 py-3">
         <h1 className="text-lg font-bold text-white">Buzz</h1>
         <div className="flex items-center gap-1">
+          {onToggleGroups && (
+            <button onClick={onToggleGroups} className="rounded-full p-2 transition-colors hover:bg-white/20">
+              <Users className="h-5 w-5 text-white" />
+            </button>
+          )}
           <button onClick={() => setShowNewChat(true)} className="rounded-full p-2 transition-colors hover:bg-white/20">
             <MessageSquarePlus className="h-5 w-5 text-white" />
           </button>
