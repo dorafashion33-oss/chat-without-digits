@@ -14,6 +14,7 @@ interface ChatSidebarProps {
   activeChatId: string | null;
   onSelectChat: (chatId: string) => void;
   onStartChat: (userId: string) => void;
+  onToggleGroups?: () => void;
   username?: string;
   onNavigate?: (section: NavSection) => void;
 }
