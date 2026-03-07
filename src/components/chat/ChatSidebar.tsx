@@ -19,7 +19,7 @@ interface ChatSidebarProps {
   onNavigate?: (section: NavSection) => void;
 }
 
-const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartChat, username, onNavigate }: ChatSidebarProps) => {
+const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartChat, username, onNavigate, onToggleGroups }: ChatSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<StreamFilter>("all");
   const [showNewChat, setShowNewChat] = useState(false);

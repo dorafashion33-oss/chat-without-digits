@@ -21,7 +21,7 @@ interface ChatWindowProps {
   onStartCall?: (userId: string, type: "voice" | "video") => void;
 }
 
-const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onEditMessage, onTyping, isOtherTyping, onBack }: ChatWindowProps) => {
+const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onEditMessage, onTyping, isOtherTyping, onBack, onStartCall }: ChatWindowProps) => {
   const [input, setInput] = useState("");
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
