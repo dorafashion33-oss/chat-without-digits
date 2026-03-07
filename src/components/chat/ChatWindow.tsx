@@ -18,6 +18,7 @@ interface ChatWindowProps {
   onTyping?: (receiverId: string) => void;
   isOtherTyping?: boolean;
   onBack?: () => void;
+  onStartCall?: (userId: string, type: "voice" | "video") => void;
 }
 
 const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onEditMessage, onTyping, isOtherTyping, onBack }: ChatWindowProps) => {
