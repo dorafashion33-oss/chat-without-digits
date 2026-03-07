@@ -46,6 +46,11 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
       <div className="flex items-center justify-between gradient-brand px-5 py-3">
         <h1 className="text-lg font-bold text-white">Buzz</h1>
         <div className="flex items-center gap-1">
+          {onToggleGroups && (
+            <button onClick={onToggleGroups} className="rounded-full p-2 transition-colors hover:bg-white/20">
+              <Users className="h-5 w-5 text-white" />
+            </button>
+          )}
           <button onClick={() => setShowNewChat(true)} className="rounded-full p-2 transition-colors hover:bg-white/20">
             <MessageSquarePlus className="h-5 w-5 text-white" />
           </button>
