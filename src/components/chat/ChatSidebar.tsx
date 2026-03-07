@@ -1,4 +1,4 @@
-import { Search, MessageSquarePlus, Menu, Settings, User, Moon, Sun } from "lucide-react";
+import { Search, MessageSquarePlus, Menu, Settings, User, Moon, Sun, Users } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "next-themes";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
