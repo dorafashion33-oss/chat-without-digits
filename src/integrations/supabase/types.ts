@@ -14,6 +14,133 @@ export type Database = {
   }
   public: {
     Tables: {
+      call_signals: {
+        Row: {
+          call_type: string
+          callee_id: string
+          caller_id: string
+          created_at: string
+          id: string
+          signal_data: Json
+          signal_type: string
+          status: string
+        }
+        Insert: {
+          call_type?: string
+          callee_id: string
+          caller_id: string
+          created_at?: string
+          id?: string
+          signal_data?: Json
+          signal_type: string
+          status?: string
+        }
+        Update: {
+          call_type?: string
+          callee_id?: string
+          caller_id?: string
+          created_at?: string
+          id?: string
+          signal_data?: Json
+          signal_type?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_messages: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          sender_id: string
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          sender_id: string
+          text: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          sender_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           created_at: string
@@ -38,6 +165,33 @@ export type Database = {
           receiver_id?: string
           sender_id?: string
           text?: string
+        }
+        Relationships: []
+      }
+      moments: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          image_url: string | null
+          text: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          image_url?: string | null
+          text?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          image_url?: string | null
+          text?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -85,7 +239,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
