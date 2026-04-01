@@ -1,5 +1,6 @@
 import { MessageCircle, CircleDot, Phone, Settings, User, Compass } from "lucide-react";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
+import InstallAppDialog from "./InstallAppDialog";
 
 export type NavSection = "streams" | "moments" | "connect" | "discover" | "settings" | "profile";
 
