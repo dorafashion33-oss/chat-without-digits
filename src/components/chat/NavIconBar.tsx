@@ -57,7 +57,9 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-0.5">
+      <div className="flex flex-col items-center gap-1">
+        <InstallAppDialog />
+        <div className="h-px w-6 bg-border my-1" />
         {bottomItems.map((item) => {
           const isActive = active === item.id;
           const Icon = item.icon;
