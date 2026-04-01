@@ -163,4 +163,8 @@
   .glow-purple {
     box-shadow: 0 0 20px hsl(var(--brand-purple) / 0.3), 0 0 40px hsl(var(--brand-magenta) / 0.15);
   }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }

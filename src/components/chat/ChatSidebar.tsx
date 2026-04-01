@@ -1,10 +1,13 @@
-import { Search, MessageSquarePlus, Menu, Settings, User, Moon, Sun, Users } from "lucide-react";
+import { Search, MessageSquarePlus, Menu, Settings, User, Moon, Sun, Users, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "next-themes";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import NewChatDialog from "./NewChatDialog";
 import type { ChatThread, DbProfile } from "@/hooks/useRealtimeMessages";
 import type { NavSection } from "./NavIconBar";
+import buzzLogo from "@/assets/buzz-logo.jpeg";
 
 type StreamFilter = "all" | "unread";
 
@@ -40,23 +43,31 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
     { id: "unread", label: "Unread" },
   ];
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Logged out");
+  };
+
   return (
     <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0">
-      {/* WhatsApp-style header */}
-      <div className="flex items-center justify-between gradient-brand px-5 py-3">
-        <h1 className="text-lg font-bold text-white">Buzz</h1>
-        <div className="flex items-center gap-1">
+      {/* Header */}
+      <div className="flex items-center justify-between gradient-brand px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <img src={buzzLogo} alt="Buzz" className="h-8 w-8 rounded-xl object-cover shadow-sm lg:hidden" />
+          <h1 className="text-lg font-bold text-white tracking-tight">Buzz</h1>
+        </div>
+        <div className="flex items-center gap-0.5">
           {onToggleGroups && (
-            <button onClick={onToggleGroups} className="rounded-full p-2 transition-colors hover:bg-white/20">
+            <button onClick={onToggleGroups} className="rounded-full p-2 transition-colors hover:bg-white/20" title="Groups">
               <Users className="h-5 w-5 text-white" />
             </button>
           )}
-          <button onClick={() => setShowNewChat(true)} className="rounded-full p-2 transition-colors hover:bg-white/20">
+          <button onClick={() => setShowNewChat(true)} className="rounded-full p-2 transition-colors hover:bg-white/20" title="New Chat">
             <MessageSquarePlus className="h-5 w-5 text-white" />
           </button>
           <Drawer>
             <DrawerTrigger asChild>
-              <button className="rounded-full p-2 transition-colors hover:bg-white/20 lg:hidden">
+              <button className="rounded-full p-2 transition-colors hover:bg-white/20 lg:hidden" title="Menu">
                 <Menu className="h-5 w-5 text-white" />
               </button>
             </DrawerTrigger>
@@ -64,9 +75,9 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
               <DrawerHeader>
                 <DrawerTitle>Menu</DrawerTitle>
               </DrawerHeader>
-              <div className="px-4 pb-6 space-y-2">
-                <div className="flex items-center gap-3 rounded-xl p-4 mb-3" style={{ background: "linear-gradient(135deg, hsl(var(--brand-purple) / 0.1), hsl(var(--brand-magenta) / 0.1))" }}>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full gradient-brand text-sm font-bold text-white">
+              <div className="px-4 pb-6 space-y-1">
+                <div className="flex items-center gap-3 rounded-2xl p-4 mb-3 bg-accent/50">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full gradient-brand text-sm font-bold text-white shadow-sm">
                     {username?.[0]?.toUpperCase() || "U"}
                   </div>
                   <div>
@@ -75,7 +86,7 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
                   </div>
                 </div>
                 <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent">
-                  {theme === "dark" ? <Sun className="h-5 w-5 text-amber-400" /> : <Moon className="h-5 w-5 text-purple-500" />}
+                  {theme === "dark" ? <Sun className="h-5 w-5 text-amber-400" /> : <Moon className="h-5 w-5 text-primary" />}
                   <span className="text-sm font-medium text-foreground">{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
                 </button>
                 <button onClick={() => onNavigate?.("settings")} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent">
@@ -86,6 +97,11 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
                   <User className="h-5 w-5 text-muted-foreground" />
                   <span className="text-sm font-medium text-foreground">Profile</span>
                 </button>
+                <div className="h-px bg-border my-2" />
+                <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-destructive/10 text-destructive">
+                  <LogOut className="h-5 w-5" />
+                  <span className="text-sm font-medium">Log Out</span>
+                </button>
               </div>
             </DrawerContent>
           </Drawer>
@@ -93,8 +109,8 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
       </div>
 
       {/* Search */}
-      <div className="px-3 py-2 bg-chat-sidebar">
-        <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5">
+      <div className="px-3 py-2">
+        <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-primary/20">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
             type="text"
@@ -112,9 +128,9 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
           <button
             key={f.id}
             onClick={() => setFilter(f.id)}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+            className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-200 ${
               filter === f.id
-                ? "gradient-brand text-white"
+                ? "gradient-brand text-white shadow-sm"
                 : "bg-secondary text-muted-foreground hover:bg-accent"
             }`}
           >
@@ -127,11 +143,14 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4">
-            <MessageSquarePlus className="h-10 w-10 text-muted-foreground/40 mb-3" />
-            <p className="text-sm text-muted-foreground text-center">No conversations yet</p>
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
+              <MessageSquarePlus className="h-7 w-7 text-primary/50" />
+            </div>
+            <p className="text-sm font-medium text-foreground">No conversations yet</p>
+            <p className="text-xs text-muted-foreground mt-1">Start chatting with someone!</p>
             <button
               onClick={() => setShowNewChat(true)}
-              className="mt-3 rounded-full gradient-brand px-4 py-2 text-xs font-medium text-white hover:opacity-90 transition-opacity"
+              className="mt-4 rounded-full gradient-brand px-5 py-2.5 text-xs font-semibold text-white hover:opacity-90 transition-opacity shadow-sm"
             >
               Start a chat
             </button>
@@ -162,33 +181,22 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
   );
 };
 
-const ThreadItem = ({
-  thread,
-  isActive,
-  onSelect,
-}: {
-  thread: ChatThread;
-  isActive: boolean;
-  onSelect: (id: string) => void;
-}) => {
-  const colors = [
-    "bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500",
-    "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600",
-  ];
-  const colorIndex = thread.profile.username.charCodeAt(0) % colors.length;
+const ThreadItem = ({ thread, isActive, onSelect }: { thread: ChatThread; isActive: boolean; onSelect: (id: string) => void }) => {
   const displayName = thread.profile.display_name || thread.profile.username;
   const initials = displayName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+  const colors = ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500", "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600"];
+  const colorIndex = thread.profile.username.charCodeAt(0) % colors.length;
 
   return (
     <button
       onClick={() => onSelect(thread.id)}
-      className={`flex w-full items-center gap-3 px-4 py-3 transition-colors hover:bg-accent/60 ${
+      className={`flex w-full items-center gap-3 px-4 py-3 transition-all duration-150 hover:bg-accent/60 ${
         isActive ? "bg-accent" : ""
       }`}
     >
       <div className="relative flex-shrink-0">
         {thread.profile.avatar_url ? (
-          <img src={thread.profile.avatar_url} alt={displayName} className="h-12 w-12 rounded-full object-cover" />
+          <img src={thread.profile.avatar_url} alt={displayName} className="h-12 w-12 rounded-full object-cover ring-2 ring-transparent" />
         ) : (
           <div className={`flex h-12 w-12 items-center justify-center rounded-full ${colors[colorIndex]} text-sm font-semibold text-white`}>
             {initials}
@@ -201,11 +209,11 @@ const ThreadItem = ({
       <div className="flex min-w-0 flex-1 flex-col text-left">
         <div className="flex items-center justify-between">
           <span className="truncate text-sm font-semibold text-foreground">{displayName}</span>
-          <span className={`text-xs ${thread.unreadCount > 0 ? "font-semibold text-primary" : "text-muted-foreground"}`}>
+          <span className={`ml-2 text-[11px] flex-shrink-0 ${thread.unreadCount > 0 ? "font-semibold text-primary" : "text-muted-foreground"}`}>
             {thread.lastMessageTime}
           </span>
         </div>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mt-0.5">
           <p className="truncate text-xs text-muted-foreground">{thread.lastMessage}</p>
           {thread.unreadCount > 0 && (
             <span className="ml-2 flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-full gradient-brand px-1.5 text-[10px] font-bold text-white">
