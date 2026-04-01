@@ -1,4 +1,4 @@
-import { Send, Paperclip, Phone, Video, MoreVertical, ArrowLeft, Check, CheckCheck, X, FileText, Info, Trash2, Pencil } from "lucide-react";
+import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, X, FileText, Info, Trash2, Pencil } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { ChatThread } from "@/hooks/useRealtimeMessages";
 import type { Tables } from "@/integrations/supabase/types";
@@ -102,22 +102,19 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
 
   const displayName = thread.profile.display_name || thread.profile.username;
   const initials = displayName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-  const colors = [
-    "bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500",
-    "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600",
-  ];
+  const colors = ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500", "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600"];
   const colorIndex = thread.profile.username.charCodeAt(0) % colors.length;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-background">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b bg-chat-header px-4 py-3">
+      <div className="flex items-center gap-3 border-b bg-chat-header px-3 py-2.5 shadow-sm">
         {onBack && (
-          <button onClick={onBack} className="mr-1 rounded-full p-1 hover:bg-accent lg:hidden">
+          <button onClick={onBack} className="mr-0.5 rounded-full p-1.5 hover:bg-accent lg:hidden transition-colors">
             <ArrowLeft className="h-5 w-5 text-foreground" />
           </button>
         )}
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           {thread.profile.avatar_url ? (
             <img src={thread.profile.avatar_url} alt={displayName} className="h-10 w-10 rounded-full object-cover" />
           ) : (
@@ -129,27 +126,43 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
             <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-chat-header bg-online" />
           )}
         </div>
-        <div className="flex-1">
-          <h2 className="text-sm font-semibold text-foreground">{displayName}</h2>
-          <p className="text-xs text-muted-foreground">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-semibold text-foreground truncate">{displayName}</h2>
+          <p className="text-[11px] text-muted-foreground">
             {isOtherTyping ? (
-              <span className="text-primary font-medium">typing...</span>
-            ) : thread.profile.is_online ? "Online" : thread.profile.last_seen ? `Last seen ${formatLastSeen(thread.profile.last_seen)}` : "Offline"}
+              <span className="text-primary font-medium animate-pulse">typing...</span>
+            ) : thread.profile.is_online ? (
+              <span className="text-online">Online</span>
+            ) : thread.profile.last_seen ? (
+              `Last seen ${formatLastSeen(thread.profile.last_seen)}`
+            ) : "Offline"}
           </p>
         </div>
-        <div className="flex items-center gap-1">
-          <button onClick={() => onStartCall?.(thread.id, "voice")} className="rounded-full p-2 transition-colors hover:bg-accent"><Phone className="h-4 w-4 text-muted-foreground" /></button>
-          <button onClick={() => onStartCall?.(thread.id, "video")} className="rounded-full p-2 transition-colors hover:bg-accent"><Video className="h-4 w-4 text-muted-foreground" /></button>
-          <button className="rounded-full p-2 transition-colors hover:bg-accent"><Info className="h-4 w-4 text-muted-foreground" /></button>
+        <div className="flex items-center gap-0.5">
+          <button onClick={() => onStartCall?.(thread.id, "voice")} className="rounded-full p-2 transition-colors hover:bg-accent" title="Voice call">
+            <Phone className="h-[18px] w-[18px] text-muted-foreground" />
+          </button>
+          <button onClick={() => onStartCall?.(thread.id, "video")} className="rounded-full p-2 transition-colors hover:bg-accent" title="Video call">
+            <Video className="h-[18px] w-[18px] text-muted-foreground" />
+          </button>
+          <button className="rounded-full p-2 transition-colors hover:bg-accent" title="Info">
+            <Info className="h-[18px] w-[18px] text-muted-foreground" />
+          </button>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto bg-chat-bg-pattern p-4 scrollbar-thin" style={{
-        backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--border) / 0.3) 1px, transparent 0)`,
-        backgroundSize: "24px 24px",
+      <div className="flex-1 overflow-y-auto p-3 scrollbar-thin" style={{
+        backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--border) / 0.2) 1px, transparent 0)`,
+        backgroundSize: "20px 20px",
       }}>
-        <div className="mx-auto max-w-3xl space-y-1">
+        <div className="mx-auto max-w-3xl space-y-0.5">
+          {thread.messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <p className="text-sm">No messages yet</p>
+              <p className="text-xs mt-1">Say hello! 👋</p>
+            </div>
+          )}
           {thread.messages.map((msg, i) => {
             const isOwn = msg.sender_id === currentUserId;
             const isEditing = editingId === msg.id;
@@ -181,17 +194,17 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
         <div className="border-t bg-chat-header px-4 py-2">
           <div className="mx-auto max-w-3xl flex items-center gap-3">
             {imagePreview ? (
-              <img src={imagePreview} alt="Preview" className="h-16 w-16 rounded-lg object-cover" />
+              <img src={imagePreview} alt="Preview" className="h-14 w-14 rounded-xl object-cover" />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-accent">
-                <FileText className="h-6 w-6 text-muted-foreground" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-accent">
+                <FileText className="h-5 w-5 text-muted-foreground" />
               </div>
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{attachedFile.name}</p>
               <p className="text-xs text-muted-foreground">{(attachedFile.size / 1024).toFixed(1)} KB</p>
             </div>
-            <button onClick={() => { setAttachedFile(null); setImagePreview(null); }} className="rounded-full p-1 hover:bg-accent">
+            <button onClick={() => { setAttachedFile(null); setImagePreview(null); }} className="rounded-full p-1.5 hover:bg-accent transition-colors">
               <X className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
@@ -199,14 +212,14 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
       )}
 
       {/* Input */}
-      <div className="border-t bg-chat-header px-4 py-3">
-        <div className="mx-auto flex max-w-3xl items-center gap-2">
+      <div className="border-t bg-chat-header px-3 py-2.5">
+        <div className="mx-auto flex max-w-3xl items-center gap-1.5">
           <EmojiPicker onSelect={handleEmojiSelect} />
-          <button onClick={() => fileInputRef.current?.click()} className="rounded-full p-2 transition-colors hover:bg-accent">
+          <button onClick={() => fileInputRef.current?.click()} className="rounded-full p-2 transition-colors hover:bg-accent" title="Attach file">
             <Paperclip className="h-5 w-5 text-muted-foreground" />
           </button>
           <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*,.pdf,.doc,.docx,.txt,.zip" />
-          <div className="flex flex-1 items-center rounded-2xl bg-chat-input-bg px-4 py-2.5">
+          <div className="flex flex-1 items-center rounded-2xl bg-chat-input-bg px-4 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-primary/20">
             <input
               ref={inputRef}
               type="text"
@@ -220,7 +233,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
           {input.trim() || attachedFile ? (
             <button
               onClick={handleSend}
-              className="flex h-10 w-10 items-center justify-center rounded-full gradient-brand text-white transition-all hover:opacity-90 glow-purple"
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full gradient-brand text-white transition-all hover:opacity-90 shadow-sm"
             >
               <Send className="h-4 w-4" />
             </button>
@@ -234,39 +247,22 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
 };
 
 const MessageBubble = ({
-  message,
-  isOwn,
-  showTail,
-  reactions,
-  onReact,
-  onDelete,
-  onEdit,
-  isEditing,
-  editText,
-  onEditTextChange,
-  onSaveEdit,
-  onCancelEdit,
+  message, isOwn, showTail, reactions, onReact, onDelete, onEdit,
+  isEditing, editText, onEditTextChange, onSaveEdit, onCancelEdit,
 }: {
-  message: DbMessage;
-  isOwn: boolean;
-  showTail: boolean;
-  reactions: Record<string, number>;
-  onReact: (emoji: string) => void;
-  onDelete?: () => void;
-  onEdit?: () => void;
-  isEditing?: boolean;
-  editText?: string;
-  onEditTextChange?: (text: string) => void;
-  onSaveEdit?: () => void;
-  onCancelEdit?: () => void;
+  message: DbMessage; isOwn: boolean; showTail: boolean;
+  reactions: Record<string, number>; onReact: (emoji: string) => void;
+  onDelete?: () => void; onEdit?: () => void;
+  isEditing?: boolean; editText?: string;
+  onEditTextChange?: (text: string) => void; onSaveEdit?: () => void; onCancelEdit?: () => void;
 }) => {
   const time = new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className={`flex ${isOwn ? "justify-end" : "justify-start"} ${showTail ? "mt-3" : "mt-0.5"} animate-fade-in`}>
-      <div className="relative group max-w-[75%]">
+    <div className={`flex ${isOwn ? "justify-end" : "justify-start"} ${showTail ? "mt-2.5" : "mt-0.5"} animate-fade-in`}>
+      <div className="relative group max-w-[78%] sm:max-w-[70%]">
         <div
-          className={`relative rounded-2xl px-3.5 py-2 ${
+          className={`relative rounded-2xl px-3 py-2 shadow-sm ${
             isOwn
               ? `bg-chat-bubble-own text-chat-bubble-own-foreground ${showTail ? "rounded-br-md" : ""}`
               : `bg-chat-bubble-other text-chat-bubble-other-foreground ${showTail ? "rounded-bl-md" : ""}`
@@ -284,27 +280,27 @@ const MessageBubble = ({
               />
               <div className="flex gap-2 justify-end">
                 <button onClick={onCancelEdit} className="text-[10px] text-muted-foreground hover:text-foreground">Cancel</button>
-                <button onClick={onSaveEdit} className="text-[10px] text-primary font-medium hover:text-primary/80">Save</button>
+                <button onClick={onSaveEdit} className="text-[10px] text-primary font-medium">Save</button>
               </div>
             </div>
           ) : (
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
+            <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">{message.text}</p>
           )}
           <div className="mt-0.5 flex items-center justify-end gap-1">
-            <span className="text-[10px] opacity-60">{time}</span>
+            <span className="text-[10px] opacity-50">{time}</span>
             {isOwn && (
               message.read_at ? (
-                <CheckCheck className="h-3.5 w-3.5 text-primary transition-all" />
+                <CheckCheck className="h-3.5 w-3.5 text-primary" />
               ) : (
-                <Check className="h-3.5 w-3.5 opacity-50 transition-all" />
+                <Check className="h-3.5 w-3.5 opacity-40" />
               )
             )}
           </div>
         </div>
 
-        {/* Edit/Delete actions for own messages */}
+        {/* Edit/Delete actions */}
         {isOwn && !isEditing && (
-          <div className={`absolute -top-8 right-0 z-10 hidden group-hover:flex items-center gap-0.5 rounded-lg border bg-popover px-1 py-0.5 shadow-md animate-scale-in`}>
+          <div className="absolute -top-7 right-0 z-10 hidden group-hover:flex items-center gap-0.5 rounded-lg border bg-popover px-1 py-0.5 shadow-md animate-scale-in">
             {onEdit && (
               <button onClick={onEdit} className="rounded p-1 hover:bg-accent transition-colors" title="Edit">
                 <Pencil className="h-3 w-3 text-muted-foreground" />
