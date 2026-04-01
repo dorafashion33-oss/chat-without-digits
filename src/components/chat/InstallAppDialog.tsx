@@ -73,8 +73,8 @@ const InstallAppDialog = () => {
 
         {isInstalled ? (
           <div className="flex flex-col items-center gap-4 py-6">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-              <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent">
+              <CheckCircle2 className="h-8 w-8 text-primary" />
             </div>
             <p className="text-center text-sm text-muted-foreground">
               Buzz is already installed on this device!
