@@ -1,5 +1,6 @@
 import { MessageCircle, CircleDot, Phone, Settings, User, Compass } from "lucide-react";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
+import InstallAppDialog from "./InstallAppDialog";
 
 export type NavSection = "streams" | "moments" | "connect" | "discover" | "settings" | "profile";
 
@@ -56,7 +57,9 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-0.5">
+      <div className="flex flex-col items-center gap-1">
+        <InstallAppDialog />
+        <div className="h-px w-6 bg-border my-1" />
         {bottomItems.map((item) => {
           const isActive = active === item.id;
           const Icon = item.icon;
