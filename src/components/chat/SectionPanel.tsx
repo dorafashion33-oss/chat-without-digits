@@ -42,6 +42,25 @@ const SectionPanel = ({ section, onBack, username, currentUserId, onStartChat, m
 };
 
 /* ─── Moments ─── */
+const STICKERS = ["😍", "🔥", "💯", "🎉", "❤️", "🥳", "✨", "💪", "😂", "🙌", "💜", "⚡"];
+const BG_COLORS = [
+  "bg-gradient-to-br from-purple-600 via-blue-500 to-cyan-400",
+  "bg-gradient-to-br from-pink-500 via-red-500 to-orange-400",
+  "bg-gradient-to-br from-green-500 via-teal-500 to-blue-500",
+  "bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-500",
+  "bg-gradient-to-br from-amber-400 via-orange-500 to-red-500",
+  "bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600",
+  "bg-gradient-to-br from-emerald-400 via-cyan-500 to-blue-600",
+  "bg-gradient-to-br from-rose-400 via-pink-500 to-purple-600",
+];
+const TEXT_STYLES: { label: string; className: string }[] = [
+  { label: "Normal", className: "text-base font-normal" },
+  { label: "Bold", className: "text-lg font-bold" },
+  { label: "Italic", className: "text-base italic" },
+  { label: "Heading", className: "text-2xl font-extrabold" },
+  { label: "Script", className: "text-xl font-serif italic" },
+];
+
 const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDeleteMoment, username }: {
   onBack?: () => void; currentUserId?: string; moments?: Moment[];
   onPostMoment?: (text: string, imageFile?: File) => void; onDeleteMoment?: (id: string) => void;
@@ -52,6 +71,9 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
   const [momentImage, setMomentImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [viewingMoment, setViewingMoment] = useState<Moment | null>(null);
+  const [selectedBg, setSelectedBg] = useState(0);
+  const [selectedTextStyle, setSelectedTextStyle] = useState(0);
+  const [showStickers, setShowStickers] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const myMoments = moments.filter((m) => m.user_id === currentUserId);
@@ -80,6 +102,8 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
     setMomentImage(null);
     setImagePreview(null);
     setShowCompose(false);
+    setSelectedBg(0);
+    setSelectedTextStyle(0);
   };
 
   const timeAgo = (iso: string) => {
@@ -105,7 +129,6 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
             </button>
           )}
         </div>
-        {/* Progress bar */}
         <div className="px-4 py-1">
           <div className="h-0.5 rounded-full bg-white/20">
             <div className="h-full w-full rounded-full bg-white/80 animate-[progress_5s_linear]" />
@@ -127,15 +150,16 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
     );
   }
 
-  // Compose
+  // Compose with stickers, text styles, backgrounds
   if (showCompose) {
     return (
       <div className="flex h-full flex-col bg-chat-sidebar animate-fade-in">
         <div className="flex items-center gap-2 border-b px-5 py-3.5">
-          <button onClick={() => { setShowCompose(false); setMomentImage(null); setImagePreview(null); setMomentText(""); }} className="rounded-lg p-1 hover:bg-accent transition-colors"><ArrowLeft className="h-5 w-5" /></button>
+          <button onClick={() => { setShowCompose(false); setMomentImage(null); setImagePreview(null); setMomentText(""); setShowStickers(false); }} className="rounded-lg p-1 hover:bg-accent transition-colors"><ArrowLeft className="h-5 w-5" /></button>
           <h1 className="text-lg font-bold text-foreground">New Moment</h1>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Preview area */}
           {imagePreview ? (
             <div className="relative">
               <img src={imagePreview} alt="Preview" className="w-full rounded-2xl object-cover max-h-64" />
@@ -143,19 +167,75 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
                 <X className="h-4 w-4 text-white" />
               </button>
             </div>
+          ) : momentText.trim() ? (
+            <div className={`w-full rounded-2xl p-8 min-h-[180px] flex items-center justify-center ${BG_COLORS[selectedBg]}`}>
+              <p className={`text-white text-center ${TEXT_STYLES[selectedTextStyle].className}`}>{momentText}</p>
+            </div>
           ) : (
             <button onClick={() => fileRef.current?.click()} className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border p-10 text-muted-foreground hover:border-primary hover:text-primary transition-all">
               <Image className="h-6 w-6" />
-              <span className="text-sm font-medium">Add Photo</span>
+              <span className="text-sm font-medium">Add Photo / Video</span>
             </button>
           )}
           <input ref={fileRef} type="file" className="hidden" accept="image/*,video/*" onChange={handleImageSelect} />
+
+          {/* Text input */}
           <textarea
             value={momentText}
             onChange={(e) => setMomentText(e.target.value)}
             placeholder="What's on your mind? ✨"
-            className="w-full rounded-2xl bg-secondary p-4 text-sm outline-none placeholder:text-muted-foreground resize-none min-h-[120px] focus:ring-2 focus:ring-primary/20 transition-shadow"
+            className="w-full rounded-2xl bg-secondary p-4 text-sm outline-none placeholder:text-muted-foreground resize-none min-h-[80px] focus:ring-2 focus:ring-primary/20 transition-shadow"
           />
+
+          {/* Background colors (only for text-only moments) */}
+          {!imagePreview && (
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Background</p>
+              <div className="flex gap-2 flex-wrap">
+                {BG_COLORS.map((bg, i) => (
+                  <button key={i} onClick={() => setSelectedBg(i)} className={`h-8 w-8 rounded-full ${bg} transition-all ${selectedBg === i ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110" : "hover:scale-105"}`} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Text styles */}
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-2">Text Style</p>
+            <div className="flex gap-2 flex-wrap">
+              {TEXT_STYLES.map((style, i) => (
+                <button key={i} onClick={() => setSelectedTextStyle(i)} className={`px-3 py-1.5 rounded-xl text-xs transition-all ${selectedTextStyle === i ? "gradient-brand text-white shadow-sm" : "bg-secondary text-foreground hover:bg-accent"}`}>
+                  {style.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Stickers */}
+          <div>
+            <button onClick={() => setShowStickers(!showStickers)} className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1 hover:text-foreground transition-colors">
+              😊 Stickers {showStickers ? "▲" : "▼"}
+            </button>
+            {showStickers && (
+              <div className="grid grid-cols-6 gap-2 bg-secondary rounded-2xl p-3">
+                {STICKERS.map((s, i) => (
+                  <button key={i} onClick={() => setMomentText((prev) => prev + s)} className="text-2xl h-10 w-10 flex items-center justify-center rounded-xl hover:bg-accent transition-colors hover:scale-110">
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Action buttons row */}
+          <div className="flex gap-2">
+            <button onClick={() => fileRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-secondary py-2.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
+              <Image className="h-4 w-4" /> Photo
+            </button>
+            <button onClick={() => fileRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-secondary py-2.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
+              <Camera className="h-4 w-4" /> Camera
+            </button>
+          </div>
         </div>
         <div className="border-t px-4 py-3">
           <button
