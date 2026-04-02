@@ -9,6 +9,7 @@ import MobileBottomNav from "@/components/chat/MobileBottomNav";
 import GroupSidebar from "@/components/chat/GroupSidebar";
 import GroupChatWindow from "@/components/chat/GroupChatWindow";
 import CallScreen from "@/components/chat/CallScreen";
+import InstallPrompt from "@/components/chat/InstallPrompt";
 import AuthPage from "@/pages/AuthPage";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { useMoments } from "@/hooks/useMoments";
