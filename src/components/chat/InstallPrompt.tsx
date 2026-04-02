@@ -113,7 +113,7 @@ const InstallPrompt = () => {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-green-500 border-2 border-white flex items-center justify-center"
+                  className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-online border-2 border-background flex items-center justify-center"
                 >
                   <Sparkles className="h-3.5 w-3.5 text-white" />
                 </motion.div>
