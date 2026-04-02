@@ -56,6 +56,9 @@ const InstallAppDialog = () => {
 
   const appUrl = typeof window !== "undefined" ? window.location.origin : "";
 
+  // Hide install button entirely when already installed
+  if (isInstalled) return null;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
