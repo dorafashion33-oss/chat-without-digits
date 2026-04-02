@@ -132,6 +132,7 @@ const Index = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
+      <InstallPrompt />
       {/* Call screen overlay */}
       {callState !== "idle" && (
         <CallScreen
