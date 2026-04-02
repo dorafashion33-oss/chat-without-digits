@@ -15,8 +15,13 @@ const InstallPrompt = () => {
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
-    // Don't show if already installed or dismissed recently
-    if (window.matchMedia("(display-mode: standalone)").matches) return;
+    // Don't show if already installed as PWA/standalone
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true ||
+      document.referrer.includes("android-app://");
+    if (isStandalone) return;
+
     const dismissed = localStorage.getItem("buzz_install_dismissed");
     if (dismissed && Date.now() - Number(dismissed) < 24 * 60 * 60 * 1000) return;
 
@@ -26,7 +31,6 @@ const InstallPrompt = () => {
     };
     window.addEventListener("beforeinstallprompt", handler);
 
-    // Show popup after a brief delay for smooth entry
     const timer = setTimeout(() => setShow(true), 800);
 
     return () => {
