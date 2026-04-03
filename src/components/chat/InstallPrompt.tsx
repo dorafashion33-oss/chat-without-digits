@@ -31,7 +31,7 @@ const InstallPrompt = () => {
     };
     window.addEventListener("beforeinstallprompt", handler);
 
-    const timer = setTimeout(() => setShow(true), 800);
+    const timer = setTimeout(() => setShow(true), 100);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
