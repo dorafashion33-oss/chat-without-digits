@@ -1,5 +1,7 @@
-import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, X, FileText, Info, Trash2, Pencil } from "lucide-react";
+import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, X, FileText, Info, Trash2, Pencil, Image, Smile } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { ChatThread } from "@/hooks/useRealtimeMessages";
 import type { Tables } from "@/integrations/supabase/types";
 import TypingIndicator from "./TypingIndicator";
