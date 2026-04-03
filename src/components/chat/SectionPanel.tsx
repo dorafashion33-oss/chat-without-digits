@@ -88,10 +88,18 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("File too large. Max 50MB allowed.");
+      return;
+    }
     setMomentImage(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
+    if (file.type.startsWith("video/")) {
+      setImagePreview("video:" + URL.createObjectURL(file));
+    } else {
+      const reader = new FileReader();
+      reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    }
     e.target.value = "";
   };
 
