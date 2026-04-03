@@ -39,15 +39,36 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [thread.messages, isOtherTyping]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = input.trim();
     if (!text && !attachedFile) return;
-    const msgText = attachedFile
-      ? imagePreview
-        ? `📷 ${attachedFile.name}${text ? `\n${text}` : ""}`
-        : `📎 ${attachedFile.name} (${(attachedFile.size / 1024).toFixed(1)} KB)${text ? `\n${text}` : ""}`
-      : text;
-    onSendMessage(thread.id, msgText);
+
+    let msgText = text;
+
+    // If there's an attached file, upload to storage
+    if (attachedFile) {
+      const ext = attachedFile.name.split(".").pop() || "bin";
+      const path = `${currentUserId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("chat-media")
+        .upload(path, attachedFile, { cacheControl: "3600", upsert: false });
+      if (uploadError) {
+        toast.error("Upload failed: " + uploadError.message);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+      const mediaUrl = urlData.publicUrl;
+
+      if (attachedFile.type.startsWith("image/")) {
+        msgText = `[img]${mediaUrl}[/img]${text ? `\n${text}` : ""}`;
+      } else if (attachedFile.type.startsWith("video/")) {
+        msgText = `[video]${mediaUrl}[/video]${text ? `\n${text}` : ""}`;
+      } else {
+        msgText = `[file:${attachedFile.name}]${mediaUrl}[/file]${text ? `\n${text}` : ""}`;
+      }
+    }
+
+    if (msgText) onSendMessage(thread.id, msgText);
     setInput("");
     setImagePreview(null);
     setAttachedFile(null);
