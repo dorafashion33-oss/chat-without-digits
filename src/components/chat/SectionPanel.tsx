@@ -144,7 +144,11 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
         </div>
         <div className="flex flex-1 items-center justify-center p-4 relative">
           {viewingMoment.image_url && (
-            <img src={viewingMoment.image_url} alt="" className="max-h-[65vh] rounded-2xl object-contain" />
+            viewingMoment.image_url.match(/\.(mp4|webm|mov|avi)(\?|$)/i) ? (
+              <video src={viewingMoment.image_url} controls autoPlay className="max-h-[65vh] rounded-2xl" />
+            ) : (
+              <img src={viewingMoment.image_url} alt="" className="max-h-[65vh] rounded-2xl object-contain" />
+            )
           )}
           {viewingMoment.text && (
             <div className={viewingMoment.image_url ? "absolute bottom-8 left-0 right-0 px-6" : ""}>
