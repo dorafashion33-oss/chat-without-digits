@@ -223,7 +223,11 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
         <div className="border-t bg-chat-header px-4 py-2">
           <div className="mx-auto max-w-3xl flex items-center gap-3">
             {imagePreview ? (
-              <img src={imagePreview} alt="Preview" className="h-14 w-14 rounded-xl object-cover" />
+              imagePreview.startsWith("video:") ? (
+                <video src={imagePreview.replace("video:", "")} className="h-14 w-14 rounded-xl object-cover" muted />
+              ) : (
+                <img src={imagePreview} alt="Preview" className="h-14 w-14 rounded-xl object-cover" />
+              )
             ) : (
               <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-accent">
                 <FileText className="h-5 w-5 text-muted-foreground" />
