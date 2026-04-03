@@ -1,4 +1,4 @@
-import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, ArrowLeft, LogOut, Search, Users, Plus, Image, X, Phone, Video } from "lucide-react";
+import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, ArrowLeft, LogOut, Search, Users, Plus, Image, X, Phone, Video, Send } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
