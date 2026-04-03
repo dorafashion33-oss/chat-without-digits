@@ -174,7 +174,11 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
           {/* Preview area */}
           {imagePreview ? (
             <div className="relative">
-              <img src={imagePreview} alt="Preview" className="w-full rounded-2xl object-cover max-h-64" />
+              {imagePreview.startsWith("video:") ? (
+                <video src={imagePreview.replace("video:", "")} controls className="w-full rounded-2xl max-h-64" />
+              ) : (
+                <img src={imagePreview} alt="Preview" className="w-full rounded-2xl object-cover max-h-64" />
+              )}
               <button onClick={() => { setMomentImage(null); setImagePreview(null); }} className="absolute top-2 right-2 rounded-full bg-black/60 p-1.5 hover:bg-black/80 transition-colors">
                 <X className="h-4 w-4 text-white" />
               </button>
