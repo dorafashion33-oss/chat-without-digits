@@ -353,6 +353,47 @@ const MessageBubble = ({
   );
 };
 
+/** Renders inline images, videos, or plain text */
+const MessageContent = ({ text }: { text: string }) => {
+  // Check for [img]...[/img]
+  const imgMatch = text.match(/^\[img\](.*?)\[\/img\]([\s\S]*)$/);
+  if (imgMatch) {
+    return (
+      <div>
+        <img src={imgMatch[1]} alt="" className="max-w-full rounded-xl max-h-60 object-cover cursor-pointer" onClick={() => window.open(imgMatch[1], "_blank")} />
+        {imgMatch[2]?.trim() && <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words mt-1">{imgMatch[2].trim()}</p>}
+      </div>
+    );
+  }
+
+  // Check for [video]...[/video]
+  const videoMatch = text.match(/^\[video\](.*?)\[\/video\]([\s\S]*)$/);
+  if (videoMatch) {
+    return (
+      <div>
+        <video src={videoMatch[1]} controls className="max-w-full rounded-xl max-h-60" />
+        {videoMatch[2]?.trim() && <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words mt-1">{videoMatch[2].trim()}</p>}
+      </div>
+    );
+  }
+
+  // Check for [file:name]...[/file]
+  const fileMatch = text.match(/^\[file:(.*?)\](.*?)\[\/file\]([\s\S]*)$/);
+  if (fileMatch) {
+    return (
+      <div>
+        <a href={fileMatch[2]} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 rounded-xl bg-accent/50 hover:bg-accent transition-colors">
+          <FileText className="h-5 w-5 text-primary" />
+          <span className="text-sm font-medium text-foreground underline">{fileMatch[1]}</span>
+        </a>
+        {fileMatch[3]?.trim() && <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words mt-1">{fileMatch[3].trim()}</p>}
+      </div>
+    );
+  }
+
+  return <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">{text}</p>;
+};
+
 function formatLastSeen(iso: string): string {
   const date = new Date(iso);
   const now = new Date();
