@@ -1,4 +1,4 @@
-import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, ArrowLeft, LogOut, Search, Users, Plus, Image, X, Phone, Video } from "lucide-react";
+import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, ArrowLeft, LogOut, Search, Users, Plus, Image, X, Phone, Video, Send } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,10 +88,18 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("File too large. Max 50MB allowed.");
+      return;
+    }
     setMomentImage(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
+    if (file.type.startsWith("video/")) {
+      setImagePreview("video:" + URL.createObjectURL(file));
+    } else {
+      const reader = new FileReader();
+      reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    }
     e.target.value = "";
   };
 
@@ -136,7 +144,11 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
         </div>
         <div className="flex flex-1 items-center justify-center p-4 relative">
           {viewingMoment.image_url && (
-            <img src={viewingMoment.image_url} alt="" className="max-h-[65vh] rounded-2xl object-contain" />
+            viewingMoment.image_url.match(/\.(mp4|webm|mov|avi)(\?|$)/i) ? (
+              <video src={viewingMoment.image_url} controls autoPlay className="max-h-[65vh] rounded-2xl" />
+            ) : (
+              <img src={viewingMoment.image_url} alt="" className="max-h-[65vh] rounded-2xl object-contain" />
+            )
           )}
           {viewingMoment.text && (
             <div className={viewingMoment.image_url ? "absolute bottom-8 left-0 right-0 px-6" : ""}>
@@ -162,7 +174,11 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
           {/* Preview area */}
           {imagePreview ? (
             <div className="relative">
-              <img src={imagePreview} alt="Preview" className="w-full rounded-2xl object-cover max-h-64" />
+              {imagePreview.startsWith("video:") ? (
+                <video src={imagePreview.replace("video:", "")} controls className="w-full rounded-2xl max-h-64" />
+              ) : (
+                <img src={imagePreview} alt="Preview" className="w-full rounded-2xl object-cover max-h-64" />
+              )}
               <button onClick={() => { setMomentImage(null); setImagePreview(null); }} className="absolute top-2 right-2 rounded-full bg-black/60 p-1.5 hover:bg-black/80 transition-colors">
                 <X className="h-4 w-4 text-white" />
               </button>
@@ -229,21 +245,26 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
 
           {/* Action buttons row */}
           <div className="flex gap-2">
-            <button onClick={() => fileRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-secondary py-2.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
+            <button onClick={() => { if (fileRef.current) { fileRef.current.accept = "image/*"; fileRef.current.click(); } }} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-secondary py-2.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
               <Image className="h-4 w-4" /> Photo
             </button>
-            <button onClick={() => fileRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-secondary py-2.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
+            <button onClick={() => { if (fileRef.current) { fileRef.current.accept = "video/*"; fileRef.current.click(); } }} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-secondary py-2.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
+              <Video className="h-4 w-4" /> Video
+            </button>
+            <button onClick={() => { if (fileRef.current) { fileRef.current.accept = "image/*"; fileRef.current.capture = "environment"; fileRef.current.click(); } }} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-secondary py-2.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
               <Camera className="h-4 w-4" /> Camera
             </button>
           </div>
         </div>
+        {/* Fixed Send/Post button at bottom */}
         <div className="border-t px-4 py-3">
           <button
             onClick={handlePost}
             disabled={!momentText.trim() && !momentImage}
-            className="w-full rounded-2xl gradient-brand py-3.5 text-sm font-semibold text-white disabled:opacity-40 hover:opacity-90 transition-opacity shadow-sm"
+            className="w-full rounded-2xl gradient-brand py-3.5 text-sm font-semibold text-white disabled:opacity-40 hover:opacity-90 transition-opacity shadow-sm flex items-center justify-center gap-2"
           >
-            Post Moment ✨
+            <Send className="h-4 w-4" />
+            Send Moment ✨
           </button>
         </div>
       </div>

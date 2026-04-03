@@ -1,5 +1,7 @@
-import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, X, FileText, Info, Trash2, Pencil } from "lucide-react";
+import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, X, FileText, Info, Trash2, Pencil, Image, Smile } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { ChatThread } from "@/hooks/useRealtimeMessages";
 import type { Tables } from "@/integrations/supabase/types";
 import TypingIndicator from "./TypingIndicator";
@@ -37,15 +39,36 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [thread.messages, isOtherTyping]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = input.trim();
     if (!text && !attachedFile) return;
-    const msgText = attachedFile
-      ? imagePreview
-        ? `📷 ${attachedFile.name}${text ? `\n${text}` : ""}`
-        : `📎 ${attachedFile.name} (${(attachedFile.size / 1024).toFixed(1)} KB)${text ? `\n${text}` : ""}`
-      : text;
-    onSendMessage(thread.id, msgText);
+
+    let msgText = text;
+
+    // If there's an attached file, upload to storage
+    if (attachedFile) {
+      const ext = attachedFile.name.split(".").pop() || "bin";
+      const path = `${currentUserId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("chat-media")
+        .upload(path, attachedFile, { cacheControl: "3600", upsert: false });
+      if (uploadError) {
+        toast.error("Upload failed: " + uploadError.message);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+      const mediaUrl = urlData.publicUrl;
+
+      if (attachedFile.type.startsWith("image/")) {
+        msgText = `[img]${mediaUrl}[/img]${text ? `\n${text}` : ""}`;
+      } else if (attachedFile.type.startsWith("video/")) {
+        msgText = `[video]${mediaUrl}[/video]${text ? `\n${text}` : ""}`;
+      } else {
+        msgText = `[file:${attachedFile.name}]${mediaUrl}[/file]${text ? `\n${text}` : ""}`;
+      }
+    }
+
+    if (msgText) onSendMessage(thread.id, msgText);
     setInput("");
     setImagePreview(null);
     setAttachedFile(null);
@@ -76,11 +99,17 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("File too large. Max 50MB.");
+      return;
+    }
     setAttachedFile(file);
     if (file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onload = (ev) => setImagePreview(ev.target?.result as string);
       reader.readAsDataURL(file);
+    } else if (file.type.startsWith("video/")) {
+      setImagePreview("video:" + URL.createObjectURL(file));
     } else {
       setImagePreview(null);
     }
@@ -194,7 +223,11 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
         <div className="border-t bg-chat-header px-4 py-2">
           <div className="mx-auto max-w-3xl flex items-center gap-3">
             {imagePreview ? (
-              <img src={imagePreview} alt="Preview" className="h-14 w-14 rounded-xl object-cover" />
+              imagePreview.startsWith("video:") ? (
+                <video src={imagePreview.replace("video:", "")} className="h-14 w-14 rounded-xl object-cover" muted />
+              ) : (
+                <img src={imagePreview} alt="Preview" className="h-14 w-14 rounded-xl object-cover" />
+              )
             ) : (
               <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-accent">
                 <FileText className="h-5 w-5 text-muted-foreground" />
@@ -218,7 +251,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
           <button onClick={() => fileInputRef.current?.click()} className="rounded-full p-2 transition-colors hover:bg-accent" title="Attach file">
             <Paperclip className="h-5 w-5 text-muted-foreground" />
           </button>
-          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*,.pdf,.doc,.docx,.txt,.zip" />
+          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*,video/*,.gif,.pdf,.doc,.docx,.txt,.zip" />
           <div className="flex flex-1 items-center rounded-2xl bg-chat-input-bg px-4 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-primary/20">
             <input
               ref={inputRef}
@@ -284,7 +317,7 @@ const MessageBubble = ({
               </div>
             </div>
           ) : (
-            <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">{message.text}</p>
+            <MessageContent text={message.text} />
           )}
           <div className="mt-0.5 flex items-center justify-end gap-1">
             <span className="text-[10px] opacity-50">{time}</span>
@@ -318,6 +351,47 @@ const MessageBubble = ({
       </div>
     </div>
   );
+};
+
+/** Renders inline images, videos, or plain text */
+const MessageContent = ({ text }: { text: string }) => {
+  // Check for [img]...[/img]
+  const imgMatch = text.match(/^\[img\](.*?)\[\/img\]([\s\S]*)$/);
+  if (imgMatch) {
+    return (
+      <div>
+        <img src={imgMatch[1]} alt="" className="max-w-full rounded-xl max-h-60 object-cover cursor-pointer" onClick={() => window.open(imgMatch[1], "_blank")} />
+        {imgMatch[2]?.trim() && <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words mt-1">{imgMatch[2].trim()}</p>}
+      </div>
+    );
+  }
+
+  // Check for [video]...[/video]
+  const videoMatch = text.match(/^\[video\](.*?)\[\/video\]([\s\S]*)$/);
+  if (videoMatch) {
+    return (
+      <div>
+        <video src={videoMatch[1]} controls className="max-w-full rounded-xl max-h-60" />
+        {videoMatch[2]?.trim() && <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words mt-1">{videoMatch[2].trim()}</p>}
+      </div>
+    );
+  }
+
+  // Check for [file:name]...[/file]
+  const fileMatch = text.match(/^\[file:(.*?)\](.*?)\[\/file\]([\s\S]*)$/);
+  if (fileMatch) {
+    return (
+      <div>
+        <a href={fileMatch[2]} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 rounded-xl bg-accent/50 hover:bg-accent transition-colors">
+          <FileText className="h-5 w-5 text-primary" />
+          <span className="text-sm font-medium text-foreground underline">{fileMatch[1]}</span>
+        </a>
+        {fileMatch[3]?.trim() && <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words mt-1">{fileMatch[3].trim()}</p>}
+      </div>
+    );
+  }
+
+  return <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">{text}</p>;
 };
 
 function formatLastSeen(iso: string): string {

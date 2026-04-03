@@ -15,21 +15,23 @@ const InstallPrompt = () => {
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
+    // Check if already installed as standalone
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as any).standalone === true ||
       document.referrer.includes("android-app://");
+
+    // If installed, never show
     if (isStandalone) return;
 
-    const dismissed = localStorage.getItem("buzz_install_dismissed");
-    if (dismissed && Date.now() - Number(dismissed) < 24 * 60 * 60 * 1000) return;
-
+    // Always show - no dismiss check, mandatory until installed
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
     window.addEventListener("beforeinstallprompt", handler);
 
+    // Show immediately
     const timer = setTimeout(() => setShow(true), 100);
 
     return () => {
@@ -53,10 +55,20 @@ const InstallPrompt = () => {
     }
   };
 
-  const handleDismiss = () => {
+  const handleContinue = () => {
+    // Only allow continue to website, but show again next visit
     setShow(false);
-    localStorage.setItem("buzz_install_dismissed", String(Date.now()));
+    // Do NOT save to localStorage - will show again on next visit
   };
+
+  // If standalone mode, never render
+  const isStandalone =
+    typeof window !== "undefined" &&
+    (window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true ||
+      document.referrer.includes("android-app://"));
+
+  if (isStandalone) return null;
 
   return (
     <AnimatePresence>
@@ -123,7 +135,7 @@ const InstallPrompt = () => {
               Install Buzz for the best experience
             </motion.p>
 
-            {/* Install Button — gradient like the official site */}
+            {/* Install Button */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -143,7 +155,7 @@ const InstallPrompt = () => {
                 </Button>
               ) : (
                 <Button
-                  onClick={handleDismiss}
+                  onClick={handleContinue}
                   className="w-full h-12 rounded-xl text-white text-base font-semibold shadow-lg border-0"
                   style={{ background: "linear-gradient(135deg, #7c3aed, #a855f7, #c084fc)" }}
                 >
@@ -160,16 +172,24 @@ const InstallPrompt = () => {
               )}
             </motion.div>
 
-            {/* Skip */}
+            {/* Continue to website - NOT skip, will show again */}
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}
-              onClick={handleDismiss}
+              onClick={handleContinue}
               className="mt-6 text-sm text-gray-400 hover:text-gray-600 transition-colors"
             >
-              Skip for now
+              Continue to website
             </motion.button>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="mt-1 text-[10px] text-gray-300"
+            >
+              You'll see this again until you install Buzz
+            </motion.p>
           </motion.div>
         </motion.div>
       )}
