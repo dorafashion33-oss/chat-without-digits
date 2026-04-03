@@ -99,11 +99,17 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("File too large. Max 50MB.");
+      return;
+    }
     setAttachedFile(file);
     if (file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onload = (ev) => setImagePreview(ev.target?.result as string);
       reader.readAsDataURL(file);
+    } else if (file.type.startsWith("video/")) {
+      setImagePreview("video:" + URL.createObjectURL(file));
     } else {
       setImagePreview(null);
     }
