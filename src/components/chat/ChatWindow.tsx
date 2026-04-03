@@ -317,7 +317,7 @@ const MessageBubble = ({
               </div>
             </div>
           ) : (
-            <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">{message.text}</p>
+            <MessageContent text={message.text} />
           )}
           <div className="mt-0.5 flex items-center justify-end gap-1">
             <span className="text-[10px] opacity-50">{time}</span>
