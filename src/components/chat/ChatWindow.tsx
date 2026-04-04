@@ -46,20 +46,20 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
     const text = input.trim();
     if (!text && !attachedFile) return;
 
-    // Build message text with reply prefix
     let msgText = text;
     if (replyTo) {
-      const replyPreview = replyTo.text.slice(0, 50) + (replyTo.text.length > 50 ? "..." : "");
+      const replyPreview = replyTo.text.replace(/\[.*?\]/g, "").slice(0, 50) + (replyTo.text.length > 50 ? "..." : "");
       msgText = `[reply:${replyPreview}]${msgText}`;
     }
 
-    // Clear input immediately for fast UX
-    const currentInput = msgText;
-    const currentFile = attachedFile;
+    // Clear input immediately for instant UX
     setInput("");
     setReplyTo(null);
 
-    if (currentFile) {
+    if (attachedFile) {
+      const currentFile = attachedFile;
+      setAttachedFile(null);
+      setImagePreview(null);
       const ext = currentFile.name.split(".").pop() || "bin";
       const path = `${currentUserId}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
@@ -67,12 +67,10 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
         .upload(path, currentFile, { cacheControl: "3600", upsert: false });
       if (uploadError) {
         toast.error("Upload failed: " + uploadError.message);
-        setInput(text);
         return;
       }
       const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
       const mediaUrl = urlData.publicUrl;
-
       if (currentFile.type.startsWith("image/")) {
         msgText = `[img]${mediaUrl}[/img]${text ? `\n${text}` : ""}`;
       } else if (currentFile.type.startsWith("video/")) {
@@ -80,14 +78,9 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
       } else {
         msgText = `[file:${currentFile.name}]${mediaUrl}[/file]${text ? `\n${text}` : ""}`;
       }
-      setImagePreview(null);
-      setAttachedFile(null);
-    } else {
-      setImagePreview(null);
-      setAttachedFile(null);
     }
 
-    if (msgText || currentInput) onSendMessage(thread.id, msgText || currentInput);
+    if (msgText) onSendMessage(thread.id, msgText);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,6 +96,10 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
     setInput((prev) => prev + emoji);
     inputRef.current?.focus();
   }, []);
+
+  const handleGifSelect = useCallback((gifUrl: string) => {
+    onSendMessage(thread.id, `[gif]${gifUrl}[/gif]`);
+  }, [thread.id, onSendMessage]);
 
   const handleReact = useCallback((messageId: string, emoji: string) => {
     setReactions((prev) => {
@@ -151,6 +148,12 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
     setActiveMenuId(null);
     inputRef.current?.focus();
   };
+
+  const handleSwipeReply = useCallback((msg: DbMessage) => {
+    setReplyTo(msg);
+    setActiveMenuId(null);
+    inputRef.current?.focus();
+  }, []);
 
   const handleLongPress = (msgId: string) => {
     longPressRef.current = setTimeout(() => {
@@ -226,26 +229,31 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
             const isOwn = msg.sender_id === currentUserId;
             const isEditing = editingId === msg.id;
             return (
-              <MessageBubble
+              <SwipeableMessage
                 key={msg.id}
-                message={msg}
                 isOwn={isOwn}
-                showTail={i === 0 || thread.messages[i - 1].sender_id !== msg.sender_id}
-                reactions={reactions[msg.id] || {}}
-                onReact={(emoji) => handleReact(msg.id, emoji)}
-                onDelete={isOwn && onDeleteMessage ? () => { onDeleteMessage(msg.id); setActiveMenuId(null); } : undefined}
-                onEdit={isOwn && onEditMessage ? () => handleStartEdit(msg) : undefined}
-                onReply={() => handleReply(msg)}
-                isEditing={isEditing}
-                editText={editText}
-                onEditTextChange={setEditText}
-                onSaveEdit={handleSaveEdit}
-                onCancelEdit={() => { setEditingId(null); setEditText(""); }}
-                showMenu={activeMenuId === msg.id}
-                onLongPress={() => handleLongPress(msg.id)}
-                onTouchEnd={handleTouchEnd}
-                onToggleMenu={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === msg.id ? null : msg.id); }}
-              />
+                onSwipeReply={() => handleSwipeReply(msg)}
+              >
+                <MessageBubble
+                  message={msg}
+                  isOwn={isOwn}
+                  showTail={i === 0 || thread.messages[i - 1].sender_id !== msg.sender_id}
+                  reactions={reactions[msg.id] || {}}
+                  onReact={(emoji) => handleReact(msg.id, emoji)}
+                  onDelete={isOwn && onDeleteMessage ? () => { onDeleteMessage(msg.id); setActiveMenuId(null); } : undefined}
+                  onEdit={isOwn && onEditMessage ? () => handleStartEdit(msg) : undefined}
+                  onReply={() => handleReply(msg)}
+                  isEditing={isEditing}
+                  editText={editText}
+                  onEditTextChange={setEditText}
+                  onSaveEdit={handleSaveEdit}
+                  onCancelEdit={() => { setEditingId(null); setEditText(""); }}
+                  showMenu={activeMenuId === msg.id}
+                  onLongPress={() => handleLongPress(msg.id)}
+                  onTouchEnd={handleTouchEnd}
+                  onToggleMenu={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === msg.id ? null : msg.id); }}
+                />
+              </SwipeableMessage>
             );
           })}
           {isOtherTyping && <TypingIndicator />}
@@ -255,7 +263,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
 
       {/* Reply preview */}
       {replyTo && (
-        <div className="border-t bg-chat-header px-4 py-2">
+        <div className="border-t bg-chat-header px-4 py-2 animate-fade-in">
           <div className="mx-auto max-w-3xl flex items-center gap-3">
             <CornerDownRight className="h-4 w-4 text-primary flex-shrink-0" />
             <div className="flex-1 min-w-0 border-l-2 border-primary pl-2">
@@ -300,7 +308,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
       {/* Input */}
       <div className="border-t bg-chat-header px-3 py-2.5">
         <div className="mx-auto flex max-w-3xl items-center gap-1.5">
-          <EmojiPicker onSelect={handleEmojiSelect} />
+          <EmojiPicker onSelect={handleEmojiSelect} onGifSelect={handleGifSelect} />
           <button onClick={() => fileInputRef.current?.click()} className="rounded-full p-2 transition-colors hover:bg-accent" title="Attach file">
             <Paperclip className="h-5 w-5 text-muted-foreground" />
           </button>
@@ -332,6 +340,67 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
   );
 };
 
+/* ─── Swipe-to-Reply wrapper ─── */
+const SwipeableMessage = ({ children, isOwn, onSwipeReply }: { children: React.ReactNode; isOwn: boolean; onSwipeReply: () => void }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const startX = useRef(0);
+  const currentX = useRef(0);
+  const swiping = useRef(false);
+  const triggered = useRef(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    currentX.current = 0;
+    swiping.current = true;
+    triggered.current = false;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!swiping.current || !ref.current) return;
+    const diff = e.touches[0].clientX - startX.current;
+    // Only allow right swipe (for reply)
+    const swipeAmount = Math.max(0, Math.min(diff, 80));
+    currentX.current = swipeAmount;
+    ref.current.style.transform = `translateX(${swipeAmount}px)`;
+    ref.current.style.transition = "none";
+
+    if (swipeAmount > 60 && !triggered.current) {
+      triggered.current = true;
+      // Haptic feedback if available
+      if (navigator.vibrate) navigator.vibrate(30);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!ref.current) return;
+    ref.current.style.transition = "transform 0.2s ease-out";
+    ref.current.style.transform = "translateX(0)";
+    swiping.current = false;
+
+    if (triggered.current) {
+      onSwipeReply();
+    }
+  };
+
+  return (
+    <div className="relative overflow-hidden">
+      {/* Reply icon behind */}
+      <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-40">
+        <Reply className="h-5 w-5 text-primary" />
+      </div>
+      <div
+        ref={ref}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ willChange: "transform" }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
 const MessageBubble = ({
   message, isOwn, showTail, reactions, onReact, onDelete, onEdit, onReply,
   isEditing, editText, onEditTextChange, onSaveEdit, onCancelEdit,
@@ -347,7 +416,6 @@ const MessageBubble = ({
 }) => {
   const time = new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  // Parse reply from message text
   const replyMatch = message.text.match(/^\[reply:(.*?)\](.*)$/s);
   const replyPreview = replyMatch ? replyMatch[1] : null;
   const actualText = replyMatch ? replyMatch[2] : message.text;
@@ -367,7 +435,6 @@ const MessageBubble = ({
               : `bg-chat-bubble-other text-chat-bubble-other-foreground ${showTail ? "rounded-bl-md" : ""}`
           }`}
         >
-          {/* Reply preview inside bubble */}
           {replyPreview && (
             <div className={`mb-1.5 rounded-lg px-2.5 py-1.5 border-l-2 border-primary ${isOwn ? "bg-white/10" : "bg-black/5"}`}>
               <p className="text-[10px] text-primary font-semibold">Reply</p>
@@ -404,8 +471,8 @@ const MessageBubble = ({
           </div>
         </div>
 
-        {/* Context menu - shows on hover (desktop) or long press (mobile) */}
-        {!isEditing && (showMenu) && (
+        {/* Context menu */}
+        {!isEditing && showMenu && (
           <div
             className={`absolute ${isOwn ? "right-0" : "left-0"} -top-9 z-20 flex items-center gap-0.5 rounded-xl border bg-popover px-1.5 py-1 shadow-lg animate-scale-in`}
             onClick={(e) => e.stopPropagation()}
@@ -426,7 +493,7 @@ const MessageBubble = ({
           </div>
         )}
 
-        {/* Desktop hover trigger */}
+        {/* Desktop hover menu */}
         {!isEditing && !showMenu && (
           <div className={`absolute ${isOwn ? "right-0" : "left-0"} -top-7 z-10 hidden group-hover:flex items-center gap-0.5 rounded-lg border bg-popover px-1 py-0.5 shadow-md animate-scale-in`}>
             <button onClick={onReply} className="rounded p-1 hover:bg-accent transition-colors" title="Reply">
@@ -451,8 +518,14 @@ const MessageBubble = ({
   );
 };
 
-/** Renders inline images, videos, or plain text */
+/** Renders inline images, videos, GIFs, or plain text */
 const MessageContent = ({ text }: { text: string }) => {
+  // GIF
+  const gifMatch = text.match(/^\[gif\](.*?)\[\/gif\]$/);
+  if (gifMatch) {
+    return <img src={gifMatch[1]} alt="GIF" className="max-w-full rounded-xl max-h-52 object-cover" />;
+  }
+
   const imgMatch = text.match(/^\[img\](.*?)\[\/img\]([\s\S]*)$/);
   if (imgMatch) {
     return (
