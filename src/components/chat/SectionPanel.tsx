@@ -255,9 +255,20 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
               <Camera className="h-4 w-4" /> Camera
             </button>
           </div>
+
+          {/* Inline send button when media is attached */}
+          {(momentImage || momentText.trim()) && (
+            <button
+              onClick={handlePost}
+              className="w-full rounded-2xl gradient-brand py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md flex items-center justify-center gap-2 animate-fade-in"
+            >
+              <Send className="h-4 w-4" />
+              Send Moment ✨
+            </button>
+          )}
         </div>
-        {/* Fixed Send/Post button at bottom */}
-        <div className="border-t px-4 py-3">
+        {/* Fixed Send/Post button at bottom - always visible */}
+        <div className="border-t px-4 py-3 bg-chat-sidebar">
           <button
             onClick={handlePost}
             disabled={!momentText.trim() && !momentImage}
