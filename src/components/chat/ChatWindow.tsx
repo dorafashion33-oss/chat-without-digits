@@ -1,4 +1,4 @@
-import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, X, FileText, Info, Trash2, Pencil, Image, Smile } from "lucide-react";
+import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, X, FileText, Info, Trash2, Pencil, Image, Smile, Reply, CornerDownRight } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -30,10 +30,13 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [replyTo, setReplyTo] = useState<DbMessage | null>(null);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const longPressRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -43,35 +46,48 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
     const text = input.trim();
     if (!text && !attachedFile) return;
 
+    // Build message text with reply prefix
     let msgText = text;
+    if (replyTo) {
+      const replyPreview = replyTo.text.slice(0, 50) + (replyTo.text.length > 50 ? "..." : "");
+      msgText = `[reply:${replyPreview}]${msgText}`;
+    }
 
-    // If there's an attached file, upload to storage
-    if (attachedFile) {
-      const ext = attachedFile.name.split(".").pop() || "bin";
+    // Clear input immediately for fast UX
+    const currentInput = msgText;
+    const currentFile = attachedFile;
+    setInput("");
+    setReplyTo(null);
+
+    if (currentFile) {
+      const ext = currentFile.name.split(".").pop() || "bin";
       const path = `${currentUserId}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("chat-media")
-        .upload(path, attachedFile, { cacheControl: "3600", upsert: false });
+        .upload(path, currentFile, { cacheControl: "3600", upsert: false });
       if (uploadError) {
         toast.error("Upload failed: " + uploadError.message);
+        setInput(text);
         return;
       }
       const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
       const mediaUrl = urlData.publicUrl;
 
-      if (attachedFile.type.startsWith("image/")) {
+      if (currentFile.type.startsWith("image/")) {
         msgText = `[img]${mediaUrl}[/img]${text ? `\n${text}` : ""}`;
-      } else if (attachedFile.type.startsWith("video/")) {
+      } else if (currentFile.type.startsWith("video/")) {
         msgText = `[video]${mediaUrl}[/video]${text ? `\n${text}` : ""}`;
       } else {
-        msgText = `[file:${attachedFile.name}]${mediaUrl}[/file]${text ? `\n${text}` : ""}`;
+        msgText = `[file:${currentFile.name}]${mediaUrl}[/file]${text ? `\n${text}` : ""}`;
       }
+      setImagePreview(null);
+      setAttachedFile(null);
+    } else {
+      setImagePreview(null);
+      setAttachedFile(null);
     }
 
-    if (msgText) onSendMessage(thread.id, msgText);
-    setInput("");
-    setImagePreview(null);
-    setAttachedFile(null);
+    if (msgText || currentInput) onSendMessage(thread.id, msgText || currentInput);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,6 +135,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
   const handleStartEdit = (msg: DbMessage) => {
     setEditingId(msg.id);
     setEditText(msg.text);
+    setActiveMenuId(null);
   };
 
   const handleSaveEdit = () => {
@@ -129,13 +146,29 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
     setEditText("");
   };
 
+  const handleReply = (msg: DbMessage) => {
+    setReplyTo(msg);
+    setActiveMenuId(null);
+    inputRef.current?.focus();
+  };
+
+  const handleLongPress = (msgId: string) => {
+    longPressRef.current = setTimeout(() => {
+      setActiveMenuId(msgId);
+    }, 500);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressRef.current) clearTimeout(longPressRef.current);
+  };
+
   const displayName = thread.profile.display_name || thread.profile.username;
   const initials = displayName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
   const colors = ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500", "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600"];
   const colorIndex = thread.profile.username.charCodeAt(0) % colors.length;
 
   return (
-    <div className="flex h-full flex-col bg-background">
+    <div className="flex h-full flex-col bg-background" onClick={() => setActiveMenuId(null)}>
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-chat-header px-3 py-2.5 shadow-sm">
         {onBack && (
@@ -174,9 +207,6 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
           <button onClick={() => onStartCall?.(thread.id, "video")} className="rounded-full p-2 transition-colors hover:bg-accent" title="Video call">
             <Video className="h-[18px] w-[18px] text-muted-foreground" />
           </button>
-          <button className="rounded-full p-2 transition-colors hover:bg-accent" title="Info">
-            <Info className="h-[18px] w-[18px] text-muted-foreground" />
-          </button>
         </div>
       </div>
 
@@ -203,13 +233,18 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
                 showTail={i === 0 || thread.messages[i - 1].sender_id !== msg.sender_id}
                 reactions={reactions[msg.id] || {}}
                 onReact={(emoji) => handleReact(msg.id, emoji)}
-                onDelete={isOwn && onDeleteMessage ? () => onDeleteMessage(msg.id) : undefined}
+                onDelete={isOwn && onDeleteMessage ? () => { onDeleteMessage(msg.id); setActiveMenuId(null); } : undefined}
                 onEdit={isOwn && onEditMessage ? () => handleStartEdit(msg) : undefined}
+                onReply={() => handleReply(msg)}
                 isEditing={isEditing}
                 editText={editText}
                 onEditTextChange={setEditText}
                 onSaveEdit={handleSaveEdit}
                 onCancelEdit={() => { setEditingId(null); setEditText(""); }}
+                showMenu={activeMenuId === msg.id}
+                onLongPress={() => handleLongPress(msg.id)}
+                onTouchEnd={handleTouchEnd}
+                onToggleMenu={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === msg.id ? null : msg.id); }}
               />
             );
           })}
@@ -217,6 +252,24 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
           <div ref={messagesEndRef} />
         </div>
       </div>
+
+      {/* Reply preview */}
+      {replyTo && (
+        <div className="border-t bg-chat-header px-4 py-2">
+          <div className="mx-auto max-w-3xl flex items-center gap-3">
+            <CornerDownRight className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="flex-1 min-w-0 border-l-2 border-primary pl-2">
+              <p className="text-[11px] font-semibold text-primary">
+                {replyTo.sender_id === currentUserId ? "You" : displayName}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">{replyTo.text.replace(/\[.*?\]/g, "").slice(0, 60)}</p>
+            </div>
+            <button onClick={() => setReplyTo(null)} className="rounded-full p-1 hover:bg-accent transition-colors">
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Attachment preview */}
       {attachedFile && (
@@ -280,20 +333,33 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
 };
 
 const MessageBubble = ({
-  message, isOwn, showTail, reactions, onReact, onDelete, onEdit,
+  message, isOwn, showTail, reactions, onReact, onDelete, onEdit, onReply,
   isEditing, editText, onEditTextChange, onSaveEdit, onCancelEdit,
+  showMenu, onLongPress, onTouchEnd, onToggleMenu,
 }: {
   message: DbMessage; isOwn: boolean; showTail: boolean;
   reactions: Record<string, number>; onReact: (emoji: string) => void;
-  onDelete?: () => void; onEdit?: () => void;
+  onDelete?: () => void; onEdit?: () => void; onReply: () => void;
   isEditing?: boolean; editText?: string;
   onEditTextChange?: (text: string) => void; onSaveEdit?: () => void; onCancelEdit?: () => void;
+  showMenu?: boolean; onLongPress: () => void; onTouchEnd: () => void;
+  onToggleMenu: (e: React.MouseEvent) => void;
 }) => {
   const time = new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+  // Parse reply from message text
+  const replyMatch = message.text.match(/^\[reply:(.*?)\](.*)$/s);
+  const replyPreview = replyMatch ? replyMatch[1] : null;
+  const actualText = replyMatch ? replyMatch[2] : message.text;
+
   return (
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"} ${showTail ? "mt-2.5" : "mt-0.5"} animate-fade-in`}>
-      <div className="relative group max-w-[78%] sm:max-w-[70%]">
+      <div
+        className="relative group max-w-[78%] sm:max-w-[70%]"
+        onTouchStart={onLongPress}
+        onTouchEnd={onTouchEnd}
+        onContextMenu={(e) => { e.preventDefault(); onToggleMenu(e); }}
+      >
         <div
           className={`relative rounded-2xl px-3 py-2 shadow-sm ${
             isOwn
@@ -301,6 +367,13 @@ const MessageBubble = ({
               : `bg-chat-bubble-other text-chat-bubble-other-foreground ${showTail ? "rounded-bl-md" : ""}`
           }`}
         >
+          {/* Reply preview inside bubble */}
+          {replyPreview && (
+            <div className={`mb-1.5 rounded-lg px-2.5 py-1.5 border-l-2 border-primary ${isOwn ? "bg-white/10" : "bg-black/5"}`}>
+              <p className="text-[10px] text-primary font-semibold">Reply</p>
+              <p className="text-[11px] opacity-70 truncate">{replyPreview}</p>
+            </div>
+          )}
           {isEditing ? (
             <div className="flex flex-col gap-2">
               <input
@@ -317,7 +390,7 @@ const MessageBubble = ({
               </div>
             </div>
           ) : (
-            <MessageContent text={message.text} />
+            <MessageContent text={actualText} />
           )}
           <div className="mt-0.5 flex items-center justify-end gap-1">
             <span className="text-[10px] opacity-50">{time}</span>
@@ -331,16 +404,41 @@ const MessageBubble = ({
           </div>
         </div>
 
-        {/* Edit/Delete actions */}
-        {isOwn && !isEditing && (
-          <div className="absolute -top-7 right-0 z-10 hidden group-hover:flex items-center gap-0.5 rounded-lg border bg-popover px-1 py-0.5 shadow-md animate-scale-in">
-            {onEdit && (
-              <button onClick={onEdit} className="rounded p-1 hover:bg-accent transition-colors" title="Edit">
+        {/* Context menu - shows on hover (desktop) or long press (mobile) */}
+        {!isEditing && (showMenu) && (
+          <div
+            className={`absolute ${isOwn ? "right-0" : "left-0"} -top-9 z-20 flex items-center gap-0.5 rounded-xl border bg-popover px-1.5 py-1 shadow-lg animate-scale-in`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button onClick={onReply} className="rounded-lg p-1.5 hover:bg-accent transition-colors" title="Reply">
+              <Reply className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+            {isOwn && onEdit && (
+              <button onClick={onEdit} className="rounded-lg p-1.5 hover:bg-accent transition-colors" title="Edit">
+                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            )}
+            {isOwn && onDelete && (
+              <button onClick={onDelete} className="rounded-lg p-1.5 hover:bg-destructive/10 transition-colors" title="Delete">
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Desktop hover trigger */}
+        {!isEditing && !showMenu && (
+          <div className={`absolute ${isOwn ? "right-0" : "left-0"} -top-7 z-10 hidden group-hover:flex items-center gap-0.5 rounded-lg border bg-popover px-1 py-0.5 shadow-md animate-scale-in`}>
+            <button onClick={onReply} className="rounded p-1 hover:bg-accent transition-colors" title="Reply">
+              <Reply className="h-3 w-3 text-muted-foreground" />
+            </button>
+            {isOwn && onEdit && (
+              <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="rounded p-1 hover:bg-accent transition-colors" title="Edit">
                 <Pencil className="h-3 w-3 text-muted-foreground" />
               </button>
             )}
-            {onDelete && (
-              <button onClick={onDelete} className="rounded p-1 hover:bg-destructive/10 transition-colors" title="Delete">
+            {isOwn && onDelete && (
+              <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="rounded p-1 hover:bg-destructive/10 transition-colors" title="Delete">
                 <Trash2 className="h-3 w-3 text-destructive" />
               </button>
             )}
@@ -355,7 +453,6 @@ const MessageBubble = ({
 
 /** Renders inline images, videos, or plain text */
 const MessageContent = ({ text }: { text: string }) => {
-  // Check for [img]...[/img]
   const imgMatch = text.match(/^\[img\](.*?)\[\/img\]([\s\S]*)$/);
   if (imgMatch) {
     return (
@@ -366,7 +463,6 @@ const MessageContent = ({ text }: { text: string }) => {
     );
   }
 
-  // Check for [video]...[/video]
   const videoMatch = text.match(/^\[video\](.*?)\[\/video\]([\s\S]*)$/);
   if (videoMatch) {
     return (
@@ -377,7 +473,6 @@ const MessageContent = ({ text }: { text: string }) => {
     );
   }
 
-  // Check for [file:name]...[/file]
   const fileMatch = text.match(/^\[file:(.*?)\](.*?)\[\/file\]([\s\S]*)$/);
   if (fileMatch) {
     return (
