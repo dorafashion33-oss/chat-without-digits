@@ -76,6 +76,7 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
   const [selectedBg, setSelectedBg] = useState(0);
   const [selectedTextStyle, setSelectedTextStyle] = useState(0);
   const [showStickers, setShowStickers] = useState(false);
+  const [showViewers, setShowViewers] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const myMoments = moments.filter((m) => m.user_id === currentUserId);
