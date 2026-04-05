@@ -1,4 +1,4 @@
-import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, ArrowLeft, LogOut, Search, Users, Plus, Image, X, Phone, Video, Send } from "lucide-react";
+import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, ArrowLeft, LogOut, Search, Users, Plus, Image, X, Phone, Video, Send, Eye } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,16 +18,17 @@ interface SectionPanelProps {
   moments?: Moment[];
   onPostMoment?: (text: string, imageFile?: File) => void;
   onDeleteMoment?: (id: string) => void;
+  onRecordView?: (momentId: string) => void;
   groups?: Group[];
   onCreateGroup?: (name: string, description: string, memberIds: string[]) => void;
   onSelectGroup?: (groupId: string) => void;
   onStartCall?: (userId: string, type: "voice" | "video") => void;
 }
 
-const SectionPanel = ({ section, onBack, username, currentUserId, onStartChat, moments, onPostMoment, onDeleteMoment, groups, onCreateGroup, onSelectGroup, onStartCall }: SectionPanelProps) => {
+const SectionPanel = ({ section, onBack, username, currentUserId, onStartChat, moments, onPostMoment, onDeleteMoment, onRecordView, groups, onCreateGroup, onSelectGroup, onStartCall }: SectionPanelProps) => {
   switch (section) {
     case "moments":
-      return <MomentsPanel onBack={onBack} currentUserId={currentUserId} moments={moments} onPostMoment={onPostMoment} onDeleteMoment={onDeleteMoment} username={username} />;
+      return <MomentsPanel onBack={onBack} currentUserId={currentUserId} moments={moments} onPostMoment={onPostMoment} onDeleteMoment={onDeleteMoment} onRecordView={onRecordView} username={username} />;
     case "connect":
       return <ConnectPanel onBack={onBack} onStartChat={onStartChat} onStartCall={onStartCall} />;
     case "discover":
@@ -61,9 +62,10 @@ const TEXT_STYLES: { label: string; className: string }[] = [
   { label: "Script", className: "text-xl font-serif italic" },
 ];
 
-const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDeleteMoment, username }: {
+const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDeleteMoment, onRecordView, username }: {
   onBack?: () => void; currentUserId?: string; moments?: Moment[];
   onPostMoment?: (text: string, imageFile?: File) => void; onDeleteMoment?: (id: string) => void;
+  onRecordView?: (momentId: string) => void;
   username?: string;
 }) => {
   const [showCompose, setShowCompose] = useState(false);
@@ -74,6 +76,7 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
   const [selectedBg, setSelectedBg] = useState(0);
   const [selectedTextStyle, setSelectedTextStyle] = useState(0);
   const [showStickers, setShowStickers] = useState(false);
+  const [showViewers, setShowViewers] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const myMoments = moments.filter((m) => m.user_id === currentUserId);
@@ -122,16 +125,28 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
   };
 
   // Viewing a moment fullscreen
+  // Record view when viewing someone else's moment
+  useEffect(() => {
+    if (viewingMoment && viewingMoment.user_id !== currentUserId) {
+      onRecordView?.(viewingMoment.id);
+    }
+  }, [viewingMoment?.id]);
+
   if (viewingMoment) {
+
+    const isOwn = viewingMoment.user_id === currentUserId;
+    const viewers = viewingMoment.views || [];
+    const viewCount = viewingMoment.view_count || 0;
+
     return (
       <div className="flex h-full flex-col bg-black animate-fade-in">
         <div className="flex items-center gap-3 px-4 py-3 bg-black/80 backdrop-blur-sm">
-          <button onClick={() => setViewingMoment(null)} className="rounded-full p-1.5 hover:bg-white/10 transition-colors"><ArrowLeft className="h-5 w-5 text-white" /></button>
+          <button onClick={() => { setViewingMoment(null); setShowViewers(false); }} className="rounded-full p-1.5 hover:bg-white/10 transition-colors"><ArrowLeft className="h-5 w-5 text-white" /></button>
           <div className="flex-1">
             <p className="text-sm font-semibold text-white">{viewingMoment.profile?.display_name || viewingMoment.profile?.username || username}</p>
             <p className="text-xs text-white/60">{timeAgo(viewingMoment.created_at)}</p>
           </div>
-          {viewingMoment.user_id === currentUserId && onDeleteMoment && (
+          {isOwn && onDeleteMoment && (
             <button onClick={() => { onDeleteMoment(viewingMoment.id); setViewingMoment(null); }} className="rounded-full p-2 hover:bg-white/10 transition-colors">
               <X className="h-4 w-4 text-white/70" />
             </button>
@@ -142,22 +157,65 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
             <div className="h-full w-full rounded-full bg-white/80 animate-[progress_5s_linear]" />
           </div>
         </div>
-        <div className="flex flex-1 items-center justify-center p-4 relative">
-          {viewingMoment.image_url && (
-            viewingMoment.image_url.match(/\.(mp4|webm|mov|avi)(\?|$)/i) ? (
-              <video src={viewingMoment.image_url} controls autoPlay className="max-h-[65vh] rounded-2xl" />
-            ) : (
-              <img src={viewingMoment.image_url} alt="" className="max-h-[65vh] rounded-2xl object-contain" />
-            )
-          )}
-          {viewingMoment.text && (
-            <div className={viewingMoment.image_url ? "absolute bottom-8 left-0 right-0 px-6" : ""}>
-              <p className={`text-center ${viewingMoment.image_url ? "text-white text-lg font-medium drop-shadow-lg bg-black/50 rounded-xl p-4 backdrop-blur-sm" : "text-white text-2xl font-bold"}`}>
-                {viewingMoment.text}
-              </p>
+
+        {/* Viewers panel (slide up) */}
+        {showViewers && isOwn ? (
+          <div className="flex-1 overflow-y-auto bg-gray-900/95 backdrop-blur-sm animate-fade-in">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <Eye className="h-4 w-4 text-white/70" />
+                <span className="text-sm font-medium text-white">{viewCount} views</span>
+              </div>
+              <button onClick={() => setShowViewers(false)} className="text-xs text-primary">Close</button>
             </div>
-          )}
-        </div>
+            {viewers.length === 0 ? (
+              <p className="text-center py-8 text-sm text-white/50">No views yet</p>
+            ) : (
+              <div className="px-2 py-2">
+                {viewers.map((v) => (
+                  <div key={v.viewer_id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl">
+                    {v.profile?.avatar_url ? (
+                      <img src={v.profile.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/30 text-white text-sm font-semibold">
+                        {(v.profile?.username || "U")[0]?.toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-white">{v.profile?.display_name || v.profile?.username || "Unknown"}</p>
+                      <p className="text-xs text-white/50">@{v.profile?.username || "unknown"}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-1 items-center justify-center p-4 relative">
+            {viewingMoment.image_url && (
+              viewingMoment.image_url.match(/\.(mp4|webm|mov|avi)(\?|$)/i) ? (
+                <video src={viewingMoment.image_url} controls autoPlay className="max-h-[65vh] rounded-2xl" />
+              ) : (
+                <img src={viewingMoment.image_url} alt="" className="max-h-[65vh] rounded-2xl object-contain" />
+              )
+            )}
+            {viewingMoment.text && (
+              <div className={viewingMoment.image_url ? "absolute bottom-8 left-0 right-0 px-6" : ""}>
+                <p className={`text-center ${viewingMoment.image_url ? "text-white text-lg font-medium drop-shadow-lg bg-black/50 rounded-xl p-4 backdrop-blur-sm" : "text-white text-2xl font-bold"}`}>
+                  {viewingMoment.text}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Bottom: view count for own moments */}
+        {isOwn && !showViewers && (
+          <button onClick={() => setShowViewers(true)} className="flex items-center justify-center gap-2 py-4 border-t border-white/10 hover:bg-white/5 transition-colors">
+            <Eye className="h-4 w-4 text-white/70" />
+            <span className="text-sm text-white/80 font-medium">{viewCount} {viewCount === 1 ? "view" : "views"}</span>
+          </button>
+        )}
       </div>
     );
   }
