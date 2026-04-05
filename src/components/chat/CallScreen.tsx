@@ -1,4 +1,4 @@
-import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, X } from "lucide-react";
+import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff } from "lucide-react";
 import { useState } from "react";
 import type { CallState, CallType } from "@/hooks/useWebRTC";
 import { formatDuration } from "@/hooks/useWebRTC";
@@ -10,6 +10,7 @@ interface CallScreenProps {
   callDuration: number;
   localVideoRef: React.RefObject<HTMLVideoElement>;
   remoteVideoRef: React.RefObject<HTMLVideoElement>;
+  isRemoteOnline?: boolean | null;
   onEndCall: () => void;
   onAccept?: () => void;
   onReject?: () => void;
@@ -19,7 +20,7 @@ interface CallScreenProps {
 
 const CallScreen = ({
   callState, callType, remoteProfile, callDuration,
-  localVideoRef, remoteVideoRef,
+  localVideoRef, remoteVideoRef, isRemoteOnline,
   onEndCall, onAccept, onReject, onToggleMute, onToggleVideo,
 }: CallScreenProps) => {
   const [isMuted, setIsMuted] = useState(false);
@@ -30,6 +31,16 @@ const CallScreen = ({
 
   const handleMute = () => { setIsMuted(!isMuted); onToggleMute(); };
   const handleVideo = () => { setIsVideoOff(!isVideoOff); onToggleVideo(); };
+
+  const getCallingStatus = () => {
+    if (callState === "calling") {
+      if (isRemoteOnline) return "Ringing...";
+      return "Calling...";
+    }
+    if (callState === "ringing") return "Incoming call...";
+    if (callState === "connected") return formatDuration(callDuration);
+    return "";
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-between bg-gradient-to-b from-gray-900 to-black p-6">
@@ -55,16 +66,22 @@ const CallScreen = ({
               </div>
             )}
             <h2 className="mt-6 text-2xl font-bold text-white">{displayName}</h2>
-            <p className="mt-2 text-sm text-white/70">
-              {callState === "calling" && "Calling..."}
-              {callState === "ringing" && "Incoming call..."}
-              {callState === "connected" && formatDuration(callDuration)}
-            </p>
+            <p className="mt-2 text-sm text-white/70">{getCallingStatus()}</p>
+            
+            {/* Calling animation dots */}
             {callState === "calling" && (
               <div className="mt-4 flex gap-1">
                 {[0, 1, 2].map((i) => (
                   <div key={i} className="h-2 w-2 rounded-full bg-white/60 animate-pulse" style={{ animationDelay: `${i * 0.3}s` }} />
                 ))}
+              </div>
+            )}
+
+            {/* Ringing animation for incoming */}
+            {callState === "ringing" && (
+              <div className="mt-4 flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-green-400 animate-ping" />
+                <span className="text-xs text-green-400 animate-pulse">Incoming {callType} call</span>
               </div>
             )}
           </>
