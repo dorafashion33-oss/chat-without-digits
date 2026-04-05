@@ -142,6 +142,7 @@ const Index = () => {
           callDuration={callDuration}
           localVideoRef={localVideoRef as React.RefObject<HTMLVideoElement>}
           remoteVideoRef={remoteVideoRef as React.RefObject<HTMLVideoElement>}
+          isRemoteOnline={isRemoteOnline}
           onEndCall={endCall}
           onAccept={acceptCall}
           onReject={rejectCall}
