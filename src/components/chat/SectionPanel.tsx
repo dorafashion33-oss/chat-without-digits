@@ -18,13 +18,14 @@ interface SectionPanelProps {
   moments?: Moment[];
   onPostMoment?: (text: string, imageFile?: File) => void;
   onDeleteMoment?: (id: string) => void;
+  onRecordView?: (momentId: string) => void;
   groups?: Group[];
   onCreateGroup?: (name: string, description: string, memberIds: string[]) => void;
   onSelectGroup?: (groupId: string) => void;
   onStartCall?: (userId: string, type: "voice" | "video") => void;
 }
 
-const SectionPanel = ({ section, onBack, username, currentUserId, onStartChat, moments, onPostMoment, onDeleteMoment, groups, onCreateGroup, onSelectGroup, onStartCall }: SectionPanelProps) => {
+const SectionPanel = ({ section, onBack, username, currentUserId, onStartChat, moments, onPostMoment, onDeleteMoment, onRecordView, groups, onCreateGroup, onSelectGroup, onStartCall }: SectionPanelProps) => {
   switch (section) {
     case "moments":
       return <MomentsPanel onBack={onBack} currentUserId={currentUserId} moments={moments} onPostMoment={onPostMoment} onDeleteMoment={onDeleteMoment} username={username} />;
