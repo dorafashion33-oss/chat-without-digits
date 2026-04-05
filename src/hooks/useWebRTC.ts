@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useCallSounds } from "./useCallSounds";
 
 export type CallState = "idle" | "calling" | "ringing" | "connected" | "ended";
 export type CallType = "voice" | "video";
@@ -16,6 +17,7 @@ export function useWebRTC(currentUserId: string | undefined) {
   const [remoteUserId, setRemoteUserId] = useState<string | null>(null);
   const [remoteProfile, setRemoteProfile] = useState<any>(null);
   const [callDuration, setCallDuration] = useState(0);
+  const [isRemoteOnline, setIsRemoteOnline] = useState<boolean | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -24,19 +26,42 @@ export function useWebRTC(currentUserId: string | undefined) {
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const durationIntervalRef = useRef<ReturnType<typeof setInterval>>();
   const currentCallIdRef = useRef<string | null>(null);
+  const callingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const { playRingtone, playDialTone, stopSound } = useCallSounds();
 
   const cleanup = useCallback(() => {
+    stopSound();
     pcRef.current?.close();
     pcRef.current = null;
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
     localStreamRef.current = null;
     remoteStreamRef.current = null;
     clearInterval(durationIntervalRef.current);
+    clearTimeout(callingTimeoutRef.current);
     setCallDuration(0);
     setCallState("idle");
     setRemoteUserId(null);
     setRemoteProfile(null);
+    setIsRemoteOnline(null);
     currentCallIdRef.current = null;
+  }, [stopSound]);
+
+  const requestPermission = useCallback(async (type: CallType): Promise<boolean> => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: type === "video",
+      });
+      // Permission granted, stop tracks immediately (we'll re-acquire later)
+      stream.getTracks().forEach((t) => t.stop());
+      return true;
+    } catch {
+      toast.error(type === "video" 
+        ? "Camera aur microphone ki permission deni hogi call ke liye" 
+        : "Microphone ki permission deni hogi call ke liye");
+      return false;
+    }
   }, []);
 
   const getMedia = useCallback(async (type: CallType) => {
@@ -75,6 +100,7 @@ export function useWebRTC(currentUserId: string | undefined) {
 
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === "connected") {
+        stopSound();
         setCallState("connected");
         durationIntervalRef.current = setInterval(() => setCallDuration((d) => d + 1), 1000);
       } else if (pc.connectionState === "disconnected" || pc.connectionState === "failed") {
@@ -83,17 +109,31 @@ export function useWebRTC(currentUserId: string | undefined) {
     };
 
     return pc;
-  }, [currentUserId, cleanup]);
+  }, [currentUserId, cleanup, stopSound]);
 
   const startCall = useCallback(async (targetUserId: string, type: CallType) => {
     if (!currentUserId) return;
+
+    // Ask permission first
+    const hasPermission = await requestPermission(type);
+    if (!hasPermission) return;
+
     setCallType(type);
     setRemoteUserId(targetUserId);
     setCallState("calling");
 
-    // Fetch remote profile
+    // Check if remote user is online
     const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", targetUserId).single();
-    if (profile) setRemoteProfile(profile);
+    if (profile) {
+      setRemoteProfile(profile);
+      setIsRemoteOnline(profile.is_online ?? false);
+      
+      if (profile.is_online) {
+        // User online → play dial tone (ring-back)
+        playDialTone();
+      }
+      // If offline, no sound — just show "Calling..."
+    }
 
     const stream = await getMedia(type);
     if (!stream) { cleanup(); return; }
@@ -104,16 +144,24 @@ export function useWebRTC(currentUserId: string | undefined) {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    // Signal via broadcast
     await supabase.channel("call-signaling").send({
       type: "broadcast",
       event: "call-offer",
       payload: { from: currentUserId, to: targetUserId, offer, callType: type },
     });
-  }, [currentUserId, getMedia, createPC, cleanup]);
+
+    // Auto-end call after 45 seconds if no answer
+    callingTimeoutRef.current = setTimeout(() => {
+      if (pcRef.current?.connectionState !== "connected") {
+        toast.info("No answer");
+        cleanup();
+      }
+    }, 45000);
+  }, [currentUserId, getMedia, createPC, cleanup, requestPermission, playDialTone]);
 
   const answerCall = useCallback(async (fromUserId: string, offer: RTCSessionDescriptionInit, type: CallType) => {
     if (!currentUserId) return;
+    stopSound();
     setCallType(type);
     setRemoteUserId(fromUserId);
     setCallState("connected");
@@ -133,7 +181,7 @@ export function useWebRTC(currentUserId: string | undefined) {
       event: "call-answer",
       payload: { from: currentUserId, to: fromUserId, answer },
     });
-  }, [currentUserId, getMedia, createPC, cleanup]);
+  }, [currentUserId, getMedia, createPC, cleanup, stopSound]);
 
   const endCall = useCallback(() => {
     if (remoteUserId && currentUserId) {
@@ -170,13 +218,14 @@ export function useWebRTC(currentUserId: string | undefined) {
           setRemoteUserId(data.from);
           setCallType(data.callType || "voice");
           setCallState("ringing");
-          // Store offer for when user accepts
+          playRingtone(); // Play ringtone for incoming call
           (window as any).__pendingOffer = { from: data.from, offer: data.offer, type: data.callType };
         }
       })
       .on("broadcast", { event: "call-answer" }, async (payload) => {
         const data = payload.payload;
         if (data?.to === currentUserId && pcRef.current) {
+          stopSound(); // Stop dial tone when answered
           await pcRef.current.setRemoteDescription(data.answer);
         }
       })
@@ -198,17 +247,19 @@ export function useWebRTC(currentUserId: string | undefined) {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [currentUserId, callState, cleanup]);
+  }, [currentUserId, callState, cleanup, playRingtone, stopSound]);
 
   const acceptCall = useCallback(async () => {
+    stopSound();
     const pending = (window as any).__pendingOffer;
     if (pending) {
       await answerCall(pending.from, pending.offer, pending.type);
       delete (window as any).__pendingOffer;
     }
-  }, [answerCall]);
+  }, [answerCall, stopSound]);
 
   const rejectCall = useCallback(() => {
+    stopSound();
     if (remoteUserId && currentUserId) {
       supabase.channel("call-signaling").send({
         type: "broadcast",
@@ -217,11 +268,11 @@ export function useWebRTC(currentUserId: string | undefined) {
       });
     }
     cleanup();
-  }, [remoteUserId, currentUserId, cleanup]);
+  }, [remoteUserId, currentUserId, cleanup, stopSound]);
 
   return {
     callState, callType, remoteUserId, remoteProfile, callDuration,
-    localVideoRef, remoteVideoRef,
+    localVideoRef, remoteVideoRef, isRemoteOnline,
     startCall, endCall, acceptCall, rejectCall,
     toggleMute, toggleVideo,
   };
