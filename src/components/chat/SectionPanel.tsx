@@ -62,9 +62,10 @@ const TEXT_STYLES: { label: string; className: string }[] = [
   { label: "Script", className: "text-xl font-serif italic" },
 ];
 
-const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDeleteMoment, username }: {
+const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDeleteMoment, onRecordView, username }: {
   onBack?: () => void; currentUserId?: string; moments?: Moment[];
   onPostMoment?: (text: string, imageFile?: File) => void; onDeleteMoment?: (id: string) => void;
+  onRecordView?: (momentId: string) => void;
   username?: string;
 }) => {
   const [showCompose, setShowCompose] = useState(false);
