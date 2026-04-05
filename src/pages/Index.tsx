@@ -189,6 +189,7 @@ const Index = () => {
             moments={moments}
             onPostMoment={postMoment}
             onDeleteMoment={deleteMoment}
+            onRecordView={recordView}
             groups={groups}
             onCreateGroup={handleCreateGroup}
             onSelectGroup={handleSelectGroup}
