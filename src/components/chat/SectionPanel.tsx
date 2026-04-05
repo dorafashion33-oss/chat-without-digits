@@ -125,13 +125,14 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
   };
 
   // Viewing a moment fullscreen
+  // Record view when viewing someone else's moment
+  useEffect(() => {
+    if (viewingMoment && viewingMoment.user_id !== currentUserId) {
+      onRecordView?.(viewingMoment.id);
+    }
+  }, [viewingMoment?.id]);
+
   if (viewingMoment) {
-    // Record view for other users' moments
-    useEffect(() => {
-      if (viewingMoment && viewingMoment.user_id !== currentUserId) {
-        onRecordView?.(viewingMoment.id);
-      }
-    }, [viewingMoment?.id]);
 
     const isOwn = viewingMoment.user_id === currentUserId;
     const viewers = viewingMoment.views || [];
