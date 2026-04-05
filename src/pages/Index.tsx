@@ -29,7 +29,7 @@ const Index = () => {
 
   const currentUserId = session?.user?.id;
   const { threads, profiles, sendMessage, deleteMessage, editMessage, markAsRead, sendTyping, typingUsers } = useRealtimeMessages(currentUserId);
-  const { moments, postMoment, deleteMoment } = useMoments(currentUserId);
+  const { moments, postMoment, deleteMoment, recordView } = useMoments(currentUserId);
   const { groups, createGroup, fetchGroupMessages, sendGroupMessage, fetchGroupMembers, addMember, removeMember, deleteGroup, refetch: refetchGroups } = useGroups(currentUserId);
   const { callState, callType, remoteProfile, callDuration, localVideoRef, remoteVideoRef, isRemoteOnline, startCall, endCall, acceptCall, rejectCall, toggleMute, toggleVideo } = useWebRTC(currentUserId);
 
