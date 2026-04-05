@@ -28,7 +28,7 @@ interface SectionPanelProps {
 const SectionPanel = ({ section, onBack, username, currentUserId, onStartChat, moments, onPostMoment, onDeleteMoment, onRecordView, groups, onCreateGroup, onSelectGroup, onStartCall }: SectionPanelProps) => {
   switch (section) {
     case "moments":
-      return <MomentsPanel onBack={onBack} currentUserId={currentUserId} moments={moments} onPostMoment={onPostMoment} onDeleteMoment={onDeleteMoment} username={username} />;
+      return <MomentsPanel onBack={onBack} currentUserId={currentUserId} moments={moments} onPostMoment={onPostMoment} onDeleteMoment={onDeleteMoment} onRecordView={onRecordView} username={username} />;
     case "connect":
       return <ConnectPanel onBack={onBack} onStartChat={onStartChat} onStartCall={onStartCall} />;
     case "discover":
