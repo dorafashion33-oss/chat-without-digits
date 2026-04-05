@@ -168,6 +168,27 @@ export type Database = {
         }
         Relationships: []
       }
+      moment_views: {
+        Row: {
+          id: string
+          moment_id: string
+          viewed_at: string
+          viewer_id: string
+        }
+        Insert: {
+          id?: string
+          moment_id: string
+          viewed_at?: string
+          viewer_id: string
+        }
+        Update: {
+          id?: string
+          moment_id?: string
+          viewed_at?: string
+          viewer_id?: string
+        }
+        Relationships: []
+      }
       moments: {
         Row: {
           created_at: string
