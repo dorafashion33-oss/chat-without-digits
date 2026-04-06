@@ -419,11 +419,25 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
   );
 };
 
-/* ─── Connect (Calls) ─── */
+/* ─── Connect (Calls + History) ─── */
+interface CallHistoryItem {
+  id: string;
+  caller_id: string;
+  callee_id: string;
+  call_type: string;
+  status: string;
+  duration: number;
+  started_at: string;
+  ended_at: string | null;
+  profile?: DbProfile;
+}
+
 const ConnectPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => void; onStartChat?: (userId: string) => void; onStartCall?: (userId: string, type: "voice" | "video") => void }) => {
   const [allUsers, setAllUsers] = useState<DbProfile[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [tab, setTab] = useState<"contacts" | "history">("contacts");
+  const [callHistory, setCallHistory] = useState<CallHistoryItem[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -434,11 +448,45 @@ const ConnectPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => voi
     })();
   }, []);
 
+  useEffect(() => {
+    if (!currentUserId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("call_history")
+        .select("*")
+        .or(`caller_id.eq.${currentUserId},callee_id.eq.${currentUserId}`)
+        .order("started_at", { ascending: false })
+        .limit(50);
+      if (data) {
+        const enriched = data.map((c: any) => {
+          const otherId = c.caller_id === currentUserId ? c.callee_id : c.caller_id;
+          const profile = allUsers.find((u) => u.user_id === otherId);
+          return { ...c, profile };
+        });
+        setCallHistory(enriched);
+      }
+    })();
+  }, [currentUserId, allUsers]);
+
   const filtered = allUsers
     .filter((p) => p.user_id !== currentUserId)
     .filter((p) => !searchQuery || p.username.toLowerCase().includes(searchQuery.toLowerCase()) || (p.display_name || "").toLowerCase().includes(searchQuery.toLowerCase()));
 
   const colors = ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500", "bg-indigo-500", "bg-fuchsia-500"];
+
+  const formatCallDuration = (s: number) => {
+    if (s === 0) return "";
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+  };
+
+  const getStatusIcon = (item: CallHistoryItem) => {
+    const isCaller = item.caller_id === currentUserId;
+    if (item.status === "missed") return { icon: "↗", color: "text-red-500", label: isCaller ? "Not answered" : "Missed" };
+    if (item.status === "rejected") return { icon: "↗", color: "text-red-500", label: "Declined" };
+    return { icon: isCaller ? "↗" : "↙", color: "text-online", label: formatCallDuration(item.duration) || "Answered" };
+  };
 
   return (
     <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
@@ -448,46 +496,108 @@ const ConnectPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => voi
           <h1 className="text-lg font-bold text-white">Connect</h1>
         </div>
       </div>
+      {/* Tabs */}
+      <div className="flex border-b border-border">
+        <button onClick={() => setTab("contacts")} className={`flex-1 py-2.5 text-sm font-medium transition-colors ${tab === "contacts" ? "text-primary border-b-2 border-primary" : "text-muted-foreground"}`}>Contacts</button>
+        <button onClick={() => setTab("history")} className={`flex-1 py-2.5 text-sm font-medium transition-colors ${tab === "history" ? "text-primary border-b-2 border-primary" : "text-muted-foreground"}`}>Call History</button>
+      </div>
       <div className="px-4 py-3">
         <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5">
           <Search className="h-4 w-4 text-muted-foreground" />
-          <input type="text" placeholder="Search contacts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
+          <input type="text" placeholder={tab === "contacts" ? "Search contacts..." : "Search call history..."} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
         </div>
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin px-2">
-        {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-            <Phone className="h-10 w-10 mb-2 opacity-20" />
-            <p className="text-sm">No contacts found</p>
-          </div>
-        ) : (
-          filtered.map((user) => {
-            const ci = user.username.charCodeAt(0) % colors.length;
-            const name = user.display_name || user.username;
-            return (
-              <div key={user.user_id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-accent/60 transition-colors">
-                {user.avatar_url ? (
-                  <img src={user.avatar_url} alt={name} className="h-11 w-11 rounded-full object-cover flex-shrink-0" />
-                ) : (
-                  <div className={`flex h-11 w-11 items-center justify-center rounded-full ${colors[ci]} text-xs font-semibold text-white flex-shrink-0`}>
-                    {name[0]?.toUpperCase()}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{name}</p>
-                  <p className="text-xs text-muted-foreground">@{user.username}</p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => onStartCall?.(user.user_id, "voice")} className="rounded-full p-2 hover:bg-accent transition-colors" title="Voice call">
-                    <Phone className="h-4 w-4 text-online" />
-                  </button>
-                  <button onClick={() => onStartCall?.(user.user_id, "video")} className="rounded-full p-2 hover:bg-accent transition-colors" title="Video call">
-                    <Video className="h-4 w-4 text-primary" />
-                  </button>
-                </div>
+        {tab === "contacts" ? (
+          <>
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                <Phone className="h-10 w-10 mb-2 opacity-20" />
+                <p className="text-sm">No contacts found</p>
               </div>
-            );
-          })
+            ) : (
+              filtered.map((user) => {
+                const ci = user.username.charCodeAt(0) % colors.length;
+                const name = user.display_name || user.username;
+                return (
+                  <div key={user.user_id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-accent/60 transition-colors">
+                    {user.avatar_url ? (
+                      <img src={user.avatar_url} alt={name} className="h-11 w-11 rounded-full object-cover flex-shrink-0" />
+                    ) : (
+                      <div className={`flex h-11 w-11 items-center justify-center rounded-full ${colors[ci]} text-xs font-semibold text-white flex-shrink-0`}>
+                        {name[0]?.toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{name}</p>
+                      <p className="text-xs text-muted-foreground">@{user.username}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => onStartCall?.(user.user_id, "voice")} className="rounded-full p-2 hover:bg-accent transition-colors" title="Voice call">
+                        <Phone className="h-4 w-4 text-online" />
+                      </button>
+                      <button onClick={() => onStartCall?.(user.user_id, "video")} className="rounded-full p-2 hover:bg-accent transition-colors" title="Video call">
+                        <Video className="h-4 w-4 text-primary" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </>
+        ) : (
+          <>
+            {callHistory.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                <Phone className="h-10 w-10 mb-2 opacity-20" />
+                <p className="text-sm">No call history yet</p>
+              </div>
+            ) : (
+              callHistory
+                .filter((c) => {
+                  if (!searchQuery) return true;
+                  const name = c.profile?.display_name || c.profile?.username || "";
+                  return name.toLowerCase().includes(searchQuery.toLowerCase());
+                })
+                .map((item) => {
+                  const name = item.profile?.display_name || item.profile?.username || "Unknown";
+                  const statusInfo = getStatusIcon(item);
+                  const ci = (name.charCodeAt(0) || 0) % colors.length;
+                  const otherId = item.caller_id === currentUserId ? item.callee_id : item.caller_id;
+                  const callDate = new Date(item.started_at);
+                  const now = new Date();
+                  const isToday = callDate.toDateString() === now.toDateString();
+                  const timeStr = isToday
+                    ? callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                    : callDate.toLocaleDateString([], { day: "numeric", month: "short" });
+                  return (
+                    <div key={item.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-accent/60 transition-colors">
+                      {item.profile?.avatar_url ? (
+                        <img src={item.profile.avatar_url} alt={name} className="h-11 w-11 rounded-full object-cover flex-shrink-0" />
+                      ) : (
+                        <div className={`flex h-11 w-11 items-center justify-center rounded-full ${colors[ci]} text-xs font-semibold text-white flex-shrink-0`}>
+                          {name[0]?.toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium truncate ${item.status === "missed" && item.callee_id === currentUserId ? "text-red-500" : "text-foreground"}`}>{name}</p>
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className={statusInfo.color}>{statusInfo.icon}</span>
+                          <span className="text-muted-foreground">{item.call_type === "video" ? "Video" : "Voice"}</span>
+                          {statusInfo.label && <span className="text-muted-foreground">· {statusInfo.label}</span>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground mr-1">{timeStr}</span>
+                        <button onClick={() => onStartCall?.(otherId, item.call_type as "voice" | "video")} className="rounded-full p-2 hover:bg-accent transition-colors">
+                          {item.call_type === "video" ? <Video className="h-4 w-4 text-primary" /> : <Phone className="h-4 w-4 text-online" />}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+            )}
+          </>
         )}
       </div>
     </div>
