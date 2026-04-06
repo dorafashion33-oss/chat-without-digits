@@ -78,9 +78,17 @@ const GroupChatWindow = ({
           <h2 className="text-sm font-semibold text-foreground truncate">{group.name}</h2>
           <p className="text-xs text-muted-foreground">{members.length} members</p>
         </div>
-        <button onClick={() => setShowInfo(!showInfo)} className="rounded-full p-2 hover:bg-accent">
-          <Settings className="h-4 w-4 text-muted-foreground" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button onClick={() => toast.info("Group call feature — select members to call")} className="rounded-full p-2 hover:bg-accent" title="Group voice call">
+            <Phone className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <button onClick={() => toast.info("Group video call feature — select members to call")} className="rounded-full p-2 hover:bg-accent" title="Group video call">
+            <Video className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <button onClick={() => setShowInfo(!showInfo)} className="rounded-full p-2 hover:bg-accent">
+            <Settings className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </div>
       </div>
 
       {showInfo ? (
