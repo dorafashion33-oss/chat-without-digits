@@ -30,8 +30,26 @@ export function useWebRTC(currentUserId: string | undefined) {
 
   const { playRingtone, playDialTone, stopSound } = useCallSounds();
 
-  const cleanup = useCallback(() => {
+  const saveCallHistory = useCallback(async (calleeId: string, type: CallType, status: string, duration: number) => {
+    if (!currentUserId) return;
+    try {
+      await supabase.from("call_history").insert({
+        caller_id: currentUserId,
+        callee_id: calleeId,
+        call_type: type,
+        status,
+        duration,
+        ended_at: new Date().toISOString(),
+      });
+    } catch {}
+  }, [currentUserId]);
+
+  const cleanup = useCallback((saveHistory = true, status?: string) => {
     stopSound();
+    const rId = remoteUserId || (window as any).__pendingOffer?.from;
+    const cType = callType;
+    const dur = callDuration;
+    
     pcRef.current?.close();
     pcRef.current = null;
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
@@ -39,13 +57,20 @@ export function useWebRTC(currentUserId: string | undefined) {
     remoteStreamRef.current = null;
     clearInterval(durationIntervalRef.current);
     clearTimeout(callingTimeoutRef.current);
+
+    // Save call history
+    if (saveHistory && rId && currentUserId) {
+      const finalStatus = status || (dur > 0 ? "answered" : "missed");
+      saveCallHistory(rId, cType, finalStatus, dur);
+    }
+
     setCallDuration(0);
     setCallState("idle");
     setRemoteUserId(null);
     setRemoteProfile(null);
     setIsRemoteOnline(null);
     currentCallIdRef.current = null;
-  }, [stopSound]);
+  }, [stopSound, remoteUserId, callType, callDuration, currentUserId, saveCallHistory]);
 
   const requestPermission = useCallback(async (type: CallType): Promise<boolean> => {
     try {
@@ -191,8 +216,8 @@ export function useWebRTC(currentUserId: string | undefined) {
         payload: { from: currentUserId, to: remoteUserId },
       });
     }
-    cleanup();
-  }, [remoteUserId, currentUserId, cleanup]);
+    cleanup(true, callDuration > 0 ? "answered" : "missed");
+  }, [remoteUserId, currentUserId, cleanup, callDuration]);
 
   const toggleMute = useCallback(() => {
     const audioTrack = localStreamRef.current?.getAudioTracks()[0];
@@ -267,7 +292,7 @@ export function useWebRTC(currentUserId: string | undefined) {
         payload: { from: currentUserId, to: remoteUserId },
       });
     }
-    cleanup();
+    cleanup(true, "rejected");
   }, [remoteUserId, currentUserId, cleanup, stopSound]);
 
   return {
