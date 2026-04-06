@@ -1,7 +1,8 @@
-import { Send, ArrowLeft, Users, UserPlus, Trash2, Settings } from "lucide-react";
+import { Send, ArrowLeft, Users, UserPlus, Trash2, Settings, Phone, Video } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Group, GroupMessage, GroupMember } from "@/hooks/useGroups";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface GroupChatWindowProps {
   group: Group;
@@ -12,12 +13,13 @@ interface GroupChatWindowProps {
   onAddMember?: (groupId: string, userId: string) => void;
   onRemoveMember?: (groupId: string, userId: string) => void;
   onDeleteGroup?: (groupId: string) => void;
+  onStartCall?: (userId: string, type: "voice" | "video") => void;
   onBack?: () => void;
 }
 
 const GroupChatWindow = ({
   group, currentUserId, onSendMessage, fetchMessages, fetchMembers,
-  onAddMember, onRemoveMember, onDeleteGroup, onBack,
+  onAddMember, onRemoveMember, onDeleteGroup, onStartCall, onBack,
 }: GroupChatWindowProps) => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<GroupMessage[]>([]);
@@ -76,9 +78,17 @@ const GroupChatWindow = ({
           <h2 className="text-sm font-semibold text-foreground truncate">{group.name}</h2>
           <p className="text-xs text-muted-foreground">{members.length} members</p>
         </div>
-        <button onClick={() => setShowInfo(!showInfo)} className="rounded-full p-2 hover:bg-accent">
-          <Settings className="h-4 w-4 text-muted-foreground" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button onClick={() => toast.info("Group call feature — select members to call")} className="rounded-full p-2 hover:bg-accent" title="Group voice call">
+            <Phone className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <button onClick={() => toast.info("Group video call feature — select members to call")} className="rounded-full p-2 hover:bg-accent" title="Group video call">
+            <Video className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <button onClick={() => setShowInfo(!showInfo)} className="rounded-full p-2 hover:bg-accent">
+            <Settings className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </div>
       </div>
 
       {showInfo ? (

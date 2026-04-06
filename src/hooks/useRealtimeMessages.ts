@@ -113,11 +113,32 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
   const sendMessage = useCallback(
     async (receiverId: string, text: string) => {
       if (!currentUserId || !text.trim()) return;
-      await supabase.from("messages").insert({
+      const optimisticMsg: DbMessage = {
+        id: crypto.randomUUID(),
         sender_id: currentUserId,
         receiver_id: receiverId,
         text: text.trim(),
+        created_at: new Date().toISOString(),
+        read_at: null,
+      };
+      // Optimistic update for instant UX
+      setThreads((prev) => {
+        const existing = prev.find((t) => t.id === receiverId);
+        if (existing) {
+          return prev.map((t) =>
+            t.id === receiverId
+              ? { ...t, messages: [...t.messages, optimisticMsg], lastMessage: optimisticMsg.text, lastMessageTime: "Now" }
+              : t
+          );
+        }
+        return prev;
       });
+      // Fire-and-forget insert
+      supabase.from("messages").insert({
+        sender_id: currentUserId,
+        receiver_id: receiverId,
+        text: text.trim(),
+      }).then(() => {});
     },
     [currentUserId]
   );
