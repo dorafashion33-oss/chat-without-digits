@@ -1,7 +1,8 @@
-import { Send, ArrowLeft, Users, UserPlus, Trash2, Settings } from "lucide-react";
+import { Send, ArrowLeft, Users, UserPlus, Trash2, Settings, Phone, Video } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Group, GroupMessage, GroupMember } from "@/hooks/useGroups";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface GroupChatWindowProps {
   group: Group;
@@ -12,6 +13,7 @@ interface GroupChatWindowProps {
   onAddMember?: (groupId: string, userId: string) => void;
   onRemoveMember?: (groupId: string, userId: string) => void;
   onDeleteGroup?: (groupId: string) => void;
+  onStartCall?: (userId: string, type: "voice" | "video") => void;
   onBack?: () => void;
 }
 
