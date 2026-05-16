@@ -20,7 +20,7 @@ interface GroupChatWindowProps {
 
 const GroupChatWindow = ({
   group, currentUserId, onSendMessage, fetchMessages, fetchMembers,
-  onAddMember, onRemoveMember, onDeleteGroup, onStartCall, onBack,
+  onAddMember, onRemoveMember, onDeleteGroup, onStartCall, onStartGroupCall, onBack,
 }: GroupChatWindowProps) => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<GroupMessage[]>([]);
