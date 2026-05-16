@@ -160,6 +160,35 @@ const Index = () => {
         />
       )}
 
+      {/* Group call overlay */}
+      {groupCall.state === "connected" && (
+        <GroupCallScreen
+          groupName={groupCall.groupName}
+          callType={groupCall.callType}
+          duration={groupCall.duration}
+          participants={groupCall.participants}
+          localVideoRef={groupCall.localVideoRef as React.RefObject<HTMLVideoElement>}
+          onEnd={groupCall.endGroupCall}
+          onToggleMute={groupCall.toggleMute}
+          onToggleVideo={groupCall.toggleVideo}
+        />
+      )}
+
+      {/* Incoming group call invite */}
+      {groupCall.incomingInvite && groupCall.state === "idle" && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-card rounded-3xl p-8 max-w-sm w-full mx-4 text-center shadow-2xl">
+            <div className="flex h-20 w-20 mx-auto items-center justify-center rounded-full gradient-brand text-white text-3xl mb-4 animate-pulse">📞</div>
+            <h3 className="text-xl font-bold text-foreground mb-1">Group {groupCall.incomingInvite.type} call</h3>
+            <p className="text-sm text-muted-foreground mb-6">{groupCall.incomingInvite.groupName}</p>
+            <div className="flex gap-4 justify-center">
+              <button onClick={groupCall.rejectInvite} className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">✕</button>
+              <button onClick={groupCall.acceptInvite} className="flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-lg animate-pulse">✓</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Desktop sidebar nav */}
       <div className="hidden lg:flex">
         <NavIconBar active={activeSection} onNavigate={handleNavigate} />
