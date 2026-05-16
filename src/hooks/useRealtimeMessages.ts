@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
-export type DbMessage = Tables<"messages">;
+export type DbMessage = Tables<"messages"> & { _pending?: boolean };
 export type DbProfile = Tables<"profiles">;
 
 export interface ChatThread {
@@ -120,6 +120,7 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
         text: text.trim(),
         created_at: new Date().toISOString(),
         read_at: null,
+        _pending: true,
       };
       // Optimistic update for instant UX
       setThreads((prev) => {

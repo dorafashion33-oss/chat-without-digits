@@ -437,6 +437,7 @@ const ConnectPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => voi
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [tab, setTab] = useState<"contacts" | "history">("contacts");
+  const [historyFilter, setHistoryFilter] = useState<"all" | "missed" | "incoming" | "outgoing">("all");
   const [callHistory, setCallHistory] = useState<CallHistoryItem[]>([]);
 
   useEffect(() => {
@@ -547,6 +548,13 @@ const ConnectPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => voi
           </>
         ) : (
           <>
+            <div className="flex gap-1.5 px-2 pb-2 overflow-x-auto scrollbar-thin">
+              {(["all", "missed", "incoming", "outgoing"] as const).map((f) => (
+                <button key={f} onClick={() => setHistoryFilter(f)} className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${historyFilter === f ? "gradient-brand text-white" : "bg-secondary text-muted-foreground hover:bg-accent"}`}>
+                  {f}
+                </button>
+              ))}
+            </div>
             {callHistory.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                 <Phone className="h-10 w-10 mb-2 opacity-20" />
@@ -555,6 +563,9 @@ const ConnectPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => voi
             ) : (
               callHistory
                 .filter((c) => {
+                  if (historyFilter === "missed" && c.status !== "missed") return false;
+                  if (historyFilter === "incoming" && c.callee_id !== currentUserId) return false;
+                  if (historyFilter === "outgoing" && c.caller_id !== currentUserId) return false;
                   if (!searchQuery) return true;
                   const name = c.profile?.display_name || c.profile?.username || "";
                   return name.toLowerCase().includes(searchQuery.toLowerCase());
