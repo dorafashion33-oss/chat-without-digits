@@ -2,14 +2,11 @@ import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, Clock, X, 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { ChatThread } from "@/hooks/useRealtimeMessages";
-import type { Tables } from "@/integrations/supabase/types";
+import type { ChatThread, DbMessage } from "@/hooks/useRealtimeMessages";
 import TypingIndicator from "./TypingIndicator";
 import EmojiPicker from "./EmojiPicker";
 import MessageReactions from "./MessageReactions";
 import VoiceMessageButton from "./VoiceMessageButton";
-
-type DbMessage = Tables<"messages">;
 
 interface ChatWindowProps {
   thread: ChatThread;
