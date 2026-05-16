@@ -323,8 +323,12 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
           </div>
           {input.trim() || attachedFile ? (
             <button
-              onClick={handleSend}
-              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full gradient-brand text-white transition-all hover:opacity-90 shadow-sm"
+              onClick={(e) => {
+                const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                triggerBuzzBurst(r.left + r.width / 2, r.top + r.height / 2);
+                handleSend();
+              }}
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full gradient-brand text-white transition-all hover:opacity-90 hover:scale-110 active:scale-95 shadow-sm"
             >
               <Send className="h-4 w-4" />
             </button>
