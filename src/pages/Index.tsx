@@ -249,6 +249,7 @@ const Index = () => {
             onRemoveMember={removeMember}
             onDeleteGroup={handleDeleteGroup}
             onStartCall={handleStartCall}
+            onStartGroupCall={(type) => handleStartGroupCall(activeGroup.id, activeGroup.name, type)}
             onBack={() => setActiveGroupId(null)}
           />
         ) : isStreamsSection && activeThread ? (
