@@ -1,4 +1,4 @@
-import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, X, FileText, Info, Trash2, Pencil, Image, Smile, Reply, CornerDownRight } from "lucide-react";
+import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, Clock, X, FileText, Info, Trash2, Pencil, Image, Smile, Reply, CornerDownRight } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -462,10 +462,12 @@ const MessageBubble = ({
           <div className="mt-0.5 flex items-center justify-end gap-1">
             <span className="text-[10px] opacity-50">{time}</span>
             {isOwn && (
-              message.read_at ? (
+              message._pending ? (
+                <Clock className="h-3 w-3 opacity-40" />
+              ) : message.read_at ? (
                 <CheckCheck className="h-3.5 w-3.5 text-primary" />
               ) : (
-                <Check className="h-3.5 w-3.5 opacity-40" />
+                <CheckCheck className="h-3.5 w-3.5 opacity-50" />
               )
             )}
           </div>
