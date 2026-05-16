@@ -9,12 +9,14 @@ import MobileBottomNav from "@/components/chat/MobileBottomNav";
 import GroupSidebar from "@/components/chat/GroupSidebar";
 import GroupChatWindow from "@/components/chat/GroupChatWindow";
 import CallScreen from "@/components/chat/CallScreen";
+import GroupCallScreen from "@/components/chat/GroupCallScreen";
 import InstallPrompt from "@/components/chat/InstallPrompt";
 import AuthPage from "@/pages/AuthPage";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { useMoments } from "@/hooks/useMoments";
 import { useGroups } from "@/hooks/useGroups";
 import { useWebRTC } from "@/hooks/useWebRTC";
+import { useGroupCall } from "@/hooks/useGroupCall";
 import type { Session } from "@supabase/supabase-js";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
 
@@ -32,6 +34,13 @@ const Index = () => {
   const { moments, postMoment, deleteMoment, recordView } = useMoments(currentUserId);
   const { groups, createGroup, fetchGroupMessages, sendGroupMessage, fetchGroupMembers, addMember, removeMember, deleteGroup, refetch: refetchGroups } = useGroups(currentUserId);
   const { callState, callType, remoteProfile, callDuration, localVideoRef, remoteVideoRef, isRemoteOnline, startCall, endCall, acceptCall, rejectCall, toggleMute, toggleVideo } = useWebRTC(currentUserId);
+  const groupCall = useGroupCall(currentUserId);
+
+  const handleStartGroupCall = useCallback(async (groupId: string, gName: string, type: "voice" | "video") => {
+    const members = await fetchGroupMembers(groupId);
+    const memberIds = members.map((m) => m.user_id).filter((id) => id !== currentUserId);
+    groupCall.startGroupCall(groupId, gName, memberIds, type);
+  }, [groupCall, fetchGroupMembers, currentUserId]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
