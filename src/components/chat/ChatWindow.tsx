@@ -7,6 +7,7 @@ import TypingIndicator from "./TypingIndicator";
 import EmojiPicker from "./EmojiPicker";
 import MessageReactions from "./MessageReactions";
 import VoiceMessageButton from "./VoiceMessageButton";
+import { triggerBuzzBurst } from "./BuzzBurst";
 
 interface ChatWindowProps {
   thread: ChatThread;
