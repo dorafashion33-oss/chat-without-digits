@@ -11,6 +11,7 @@ import GroupChatWindow from "@/components/chat/GroupChatWindow";
 import CallScreen from "@/components/chat/CallScreen";
 import GroupCallScreen from "@/components/chat/GroupCallScreen";
 import InstallPrompt from "@/components/chat/InstallPrompt";
+import IntroExperience, { hasSeenIntro } from "@/components/chat/IntroExperience";
 import AuthPage from "@/pages/AuthPage";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { useMoments } from "@/hooks/useMoments";
@@ -28,6 +29,8 @@ const Index = () => {
   const [activeSection, setActiveSection] = useState<NavSection>("streams");
   const [showGroups, setShowGroups] = useState(false);
   const [username, setUsername] = useState<string>("");
+  const [showIntro, setShowIntro] = useState(false);
+  const [introSource, setIntroSource] = useState<"first-visit" | "replay">("first-visit");
 
   const currentUserId = session?.user?.id;
   const { threads, profiles, sendMessage, deleteMessage, editMessage, markAsRead, sendTyping, typingUsers } = useRealtimeMessages(currentUserId);
@@ -62,6 +65,21 @@ const Index = () => {
     });
 
     return () => subscription.unsubscribe();
+  }, []);
+
+  // First-visit intro trigger (only after auth completes)
+  useEffect(() => {
+    if (!loading && session && !hasSeenIntro()) {
+      setIntroSource("first-visit");
+      setShowIntro(true);
+    }
+  }, [loading, session]);
+
+  // Allow replay from anywhere via a custom event
+  useEffect(() => {
+    const handler = () => { setIntroSource("replay"); setShowIntro(true); };
+    window.addEventListener("buzz-replay-intro", handler);
+    return () => window.removeEventListener("buzz-replay-intro", handler);
   }, []);
 
   useEffect(() => {
@@ -142,6 +160,9 @@ const Index = () => {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       <InstallPrompt />
+      {showIntro && (
+        <IntroExperience source={introSource} onClose={() => setShowIntro(false)} />
+      )}
       {/* Call screen overlay */}
       {callState !== "idle" && (
         <CallScreen
