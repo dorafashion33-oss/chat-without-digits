@@ -537,12 +537,21 @@ const IntroExperience = ({ source, onClose }: IntroExperienceProps) => {
             <Sparkles className="mr-1 inline h-3 w-3" /> Intro
           </span>
         </div>
-        <button
-          onClick={handleSkip}
-          className="flex items-center gap-1 rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur transition-all hover:bg-white/25 active:scale-95"
-        >
-          Skip <X className="h-3.5 w-3.5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setMuted((m) => !m)}
+            aria-label={muted ? "Unmute" : "Mute"}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition-all hover:bg-white/25 active:scale-95"
+          >
+            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={handleSkip}
+            className="flex items-center gap-1 rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur transition-all hover:bg-white/25 active:scale-95"
+          >
+            Skip <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Scene */}
