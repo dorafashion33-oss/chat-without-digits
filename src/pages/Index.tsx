@@ -156,12 +156,13 @@ const Index = () => {
 
   const isMobileChatOpen = (!!activeChatId || !!activeGroupId) && isStreamsSection;
 
+  if (showIntro) {
+    return <IntroExperience source={introSource} onClose={() => setShowIntro(false)} />;
+  }
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      <InstallPrompt />
-      {showIntro && (
-        <IntroExperience source={introSource} onClose={() => setShowIntro(false)} />
-      )}
+
       {/* Call screen overlay */}
       {callState !== "idle" && (
         <CallScreen
