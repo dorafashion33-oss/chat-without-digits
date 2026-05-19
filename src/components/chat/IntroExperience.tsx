@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { MessageCircle, CircleDot, Phone, Compass, Users, Sparkles, ChevronRight, X, Play } from "lucide-react";
+import { MessageCircle, CircleDot, Phone, Compass, Users, Sparkles, ChevronRight, X, Play, Volume2, VolumeX, UserPlus, Smile, Mic, Download, Shield } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
 
