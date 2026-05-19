@@ -273,12 +273,36 @@ const SCENES: IntroScene[] = [
     Visual: HeroVisual,
   },
   {
+    id: "username",
+    title: "Just a Username",
+    subtitle: "No phone, no email — pick an @handle and you're in.",
+    accent: "UserPlus",
+    gradient: "from-indigo-600 via-purple-600 to-pink-600",
+    Visual: UsernameVisual,
+  },
+  {
     id: "streams",
     title: "Lightning Streams",
-    subtitle: "Send messages with optimistic delivery, blue ticks & typing dots.",
+    subtitle: "Optimistic delivery, blue ticks & live typing dots.",
     accent: "MessageCircle",
     gradient: "from-teal-500 via-cyan-500 to-blue-600",
     Visual: StreamsVisual,
+  },
+  {
+    id: "reactions",
+    title: "Express Yourself",
+    subtitle: "Emoji reactions, edits, deletes & burst effects on every send.",
+    accent: "Smile",
+    gradient: "from-pink-500 via-rose-500 to-red-500",
+    Visual: ReactionsVisual,
+  },
+  {
+    id: "voice",
+    title: "Voice Notes",
+    subtitle: "Hold to record, release to send — buttery smooth waveforms.",
+    accent: "Mic",
+    gradient: "from-rose-600 via-fuchsia-600 to-purple-700",
+    Visual: VoiceVisual,
   },
   {
     id: "moments",
@@ -291,7 +315,7 @@ const SCENES: IntroScene[] = [
   {
     id: "connect",
     title: "Crystal Calls",
-    subtitle: "Voice & video with WhatsApp-style ringtones — uniquely Buzz.",
+    subtitle: "Voice & video with a uniquely Buzz ringtone — plus call history.",
     accent: "Phone",
     gradient: "from-emerald-500 via-green-500 to-teal-600",
     Visual: ConnectVisual,
@@ -311,6 +335,14 @@ const SCENES: IntroScene[] = [
     accent: "Compass",
     gradient: "from-amber-500 via-orange-600 to-red-600",
     Visual: DiscoverVisual,
+  },
+  {
+    id: "install",
+    title: "Install Buzz",
+    subtitle: "Add to home screen — fullscreen, fast & offline-ready.",
+    accent: "Download",
+    gradient: "from-slate-800 via-purple-800 to-fuchsia-700",
+    Visual: InstallVisual,
   },
 ];
 
