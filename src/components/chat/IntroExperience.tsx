@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { MessageCircle, CircleDot, Phone, Compass, Users, Sparkles, ChevronRight, X, Play } from "lucide-react";
+import { MessageCircle, CircleDot, Phone, Compass, Users, Sparkles, ChevronRight, X, Play, Volume2, VolumeX, UserPlus, Smile, Mic, Download, Shield } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
 
@@ -162,6 +162,107 @@ const DiscoverVisual: React.FC = () => (
   </div>
 );
 
+const UsernameVisual: React.FC = () => (
+  <div className="flex h-full w-full items-center justify-center">
+    <motion.div
+      initial={{ scale: 0.85, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 180 }}
+      className="w-72 rounded-3xl bg-white/15 backdrop-blur-xl p-6 ring-2 ring-white/30 shadow-2xl"
+    >
+      <div className="flex items-center gap-2 text-white/80 text-xs mb-2"><Shield className="h-3.5 w-3.5" /> No phone. No email.</div>
+      <div className="rounded-2xl bg-white/20 px-4 py-3 flex items-center gap-2 mb-3">
+        <span className="text-white font-bold text-lg">@</span>
+        <motion.span
+          className="text-white font-bold text-lg"
+          initial={{ width: 0 }}
+          animate={{ width: "auto" }}
+        >
+          {"yourname".split("").map((c, i) => (
+            <motion.span key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 + i * 0.08 }}>{c}</motion.span>
+          ))}
+        </motion.span>
+        <motion.span className="ml-auto text-emerald-300" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1.1, type: "spring" }}>✓</motion.span>
+      </div>
+      <div className="rounded-xl bg-gradient-to-r from-fuchsia-400 to-purple-500 py-2.5 text-center text-sm font-bold text-white shadow-lg">
+        Claim username
+      </div>
+    </motion.div>
+  </div>
+);
+
+const ReactionsVisual: React.FC = () => (
+  <div className="relative flex h-full w-full items-center justify-center">
+    <motion.div
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className="rounded-2xl bg-white px-5 py-3 text-purple-700 font-medium shadow-2xl max-w-[240px]"
+    >
+      You're going to love Buzz 💜
+    </motion.div>
+    {["❤️", "🔥", "😂", "👏", "✨"].map((e, i) => (
+      <motion.div
+        key={i}
+        className="absolute text-3xl"
+        initial={{ y: 40, opacity: 0, scale: 0.5 }}
+        animate={{
+          y: [-20 - i * 30, -120 - i * 30],
+          opacity: [0, 1, 0],
+          scale: [0.5, 1.2, 0.8],
+          x: (i - 2) * 40,
+        }}
+        transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.25 }}
+      >
+        {e}
+      </motion.div>
+    ))}
+  </div>
+);
+
+const VoiceVisual: React.FC = () => (
+  <div className="flex h-full w-full items-center justify-center">
+    <div className="flex items-center gap-3 rounded-full bg-white/15 backdrop-blur-xl px-5 py-3 ring-2 ring-white/20 shadow-2xl">
+      <motion.div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-rose-500 shadow-lg" animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }}>
+        <Mic className="h-6 w-6" />
+      </motion.div>
+      <div className="flex items-end gap-1 h-10">
+        {[...Array(18)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="w-1 rounded-full bg-white"
+            animate={{ height: [6, 24 + Math.random() * 14, 6] }}
+            transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.05 }}
+          />
+        ))}
+      </div>
+      <span className="text-white font-mono text-sm">0:12</span>
+    </div>
+  </div>
+);
+
+const InstallVisual: React.FC = () => (
+  <div className="flex h-full w-full items-center justify-center">
+    <motion.div
+      initial={{ y: 30, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      className="relative w-56 h-80 rounded-[2.5rem] bg-gradient-to-br from-white/30 to-white/10 backdrop-blur-xl p-3 ring-4 ring-white/30 shadow-2xl"
+    >
+      <div className="h-full w-full rounded-[2rem] bg-white/90 flex flex-col items-center justify-center gap-3 p-4">
+        <img src={buzzLogo} alt="" className="h-16 w-16 rounded-2xl shadow-lg" />
+        <div className="text-purple-700 font-bold text-lg">Buzz</div>
+        <motion.div
+          className="rounded-full bg-gradient-to-r from-purple-600 to-fuchsia-500 px-4 py-2 text-xs font-bold text-white flex items-center gap-1.5 shadow-lg"
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          <Download className="h-3.5 w-3.5" /> Install App
+        </motion.div>
+        <div className="text-[10px] text-purple-400 text-center">Works offline · Home screen</div>
+      </div>
+    </motion.div>
+  </div>
+);
+
 const SCENES: IntroScene[] = [
   {
     id: "hero",
@@ -172,12 +273,36 @@ const SCENES: IntroScene[] = [
     Visual: HeroVisual,
   },
   {
+    id: "username",
+    title: "Just a Username",
+    subtitle: "No phone, no email — pick an @handle and you're in.",
+    accent: "UserPlus",
+    gradient: "from-indigo-600 via-purple-600 to-pink-600",
+    Visual: UsernameVisual,
+  },
+  {
     id: "streams",
     title: "Lightning Streams",
-    subtitle: "Send messages with optimistic delivery, blue ticks & typing dots.",
+    subtitle: "Optimistic delivery, blue ticks & live typing dots.",
     accent: "MessageCircle",
     gradient: "from-teal-500 via-cyan-500 to-blue-600",
     Visual: StreamsVisual,
+  },
+  {
+    id: "reactions",
+    title: "Express Yourself",
+    subtitle: "Emoji reactions, edits, deletes & burst effects on every send.",
+    accent: "Smile",
+    gradient: "from-pink-500 via-rose-500 to-red-500",
+    Visual: ReactionsVisual,
+  },
+  {
+    id: "voice",
+    title: "Voice Notes",
+    subtitle: "Hold to record, release to send — buttery smooth waveforms.",
+    accent: "Mic",
+    gradient: "from-rose-600 via-fuchsia-600 to-purple-700",
+    Visual: VoiceVisual,
   },
   {
     id: "moments",
@@ -190,7 +315,7 @@ const SCENES: IntroScene[] = [
   {
     id: "connect",
     title: "Crystal Calls",
-    subtitle: "Voice & video with WhatsApp-style ringtones — uniquely Buzz.",
+    subtitle: "Voice & video with a uniquely Buzz ringtone — plus call history.",
     accent: "Phone",
     gradient: "from-emerald-500 via-green-500 to-teal-600",
     Visual: ConnectVisual,
@@ -211,6 +336,14 @@ const SCENES: IntroScene[] = [
     gradient: "from-amber-500 via-orange-600 to-red-600",
     Visual: DiscoverVisual,
   },
+  {
+    id: "install",
+    title: "Install Buzz",
+    subtitle: "Add to home screen — fullscreen, fast & offline-ready.",
+    accent: "Download",
+    gradient: "from-slate-800 via-purple-800 to-fuchsia-700",
+    Visual: InstallVisual,
+  },
 ];
 
 interface IntroExperienceProps {
@@ -220,9 +353,104 @@ interface IntroExperienceProps {
 
 const IntroExperience = ({ source, onClose }: IntroExperienceProps) => {
   const [index, setIndex] = useState(0);
+  const [muted, setMuted] = useState(false);
   const startedAt = useRef(Date.now());
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
+  const oscNodesRef = useRef<{ stop: () => void }[]>([]);
   const scene = SCENES[index];
   const isLast = index === SCENES.length - 1;
+
+  // Start ambient pad + arpeggio music (procedural, no API key)
+  useEffect(() => {
+    const startMusic = () => {
+      if (audioCtxRef.current) return;
+      try {
+        const AC = window.AudioContext || (window as any).webkitAudioContext;
+        const ctx: AudioContext = new AC();
+        audioCtxRef.current = ctx;
+        const master = ctx.createGain();
+        master.gain.value = muted ? 0 : 0.18;
+        master.connect(ctx.destination);
+        masterGainRef.current = master;
+
+        // Reverb-ish via delay
+        const delay = ctx.createDelay();
+        delay.delayTime.value = 0.35;
+        const fb = ctx.createGain();
+        fb.gain.value = 0.32;
+        const wet = ctx.createGain();
+        wet.gain.value = 0.4;
+        delay.connect(fb).connect(delay);
+        delay.connect(wet).connect(master);
+
+        // Pad chord (Cmaj9-ish across scenes)
+        const padFreqs = [196, 261.63, 329.63, 392, 493.88]; // G3 C4 E4 G4 B4
+        padFreqs.forEach((f) => {
+          const o = ctx.createOscillator();
+          o.type = "sine";
+          o.frequency.value = f;
+          const g = ctx.createGain();
+          g.gain.value = 0;
+          g.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 2);
+          o.connect(g).connect(master);
+          o.connect(g).connect(delay);
+          o.start();
+          oscNodesRef.current.push({ stop: () => { try { o.stop(); } catch {} } });
+        });
+
+        // Arpeggio melody loop
+        const notes = [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25, 587.33, 783.99];
+        let step = 0;
+        const interval = window.setInterval(() => {
+          if (!audioCtxRef.current) return;
+          const t = ctx.currentTime;
+          const o = ctx.createOscillator();
+          o.type = "triangle";
+          o.frequency.value = notes[step % notes.length];
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(0.09, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+          o.connect(g).connect(master);
+          g.connect(delay);
+          o.start(t);
+          o.stop(t + 0.55);
+          step++;
+        }, 280);
+        oscNodesRef.current.push({ stop: () => clearInterval(interval) });
+      } catch {
+        // ignore
+      }
+    };
+
+    startMusic();
+    // Resume on first user interaction (autoplay policy)
+    const resume = () => audioCtxRef.current?.resume();
+    window.addEventListener("pointerdown", resume, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", resume);
+      oscNodesRef.current.forEach((n) => n.stop());
+      oscNodesRef.current = [];
+      const ctx = audioCtxRef.current;
+      if (ctx) {
+        masterGainRef.current?.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+        setTimeout(() => { try { ctx.close(); } catch {} }, 400);
+      }
+      audioCtxRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Apply mute changes
+  useEffect(() => {
+    const ctx = audioCtxRef.current;
+    if (!ctx || !masterGainRef.current) return;
+    masterGainRef.current.gain.linearRampToValueAtTime(muted ? 0 : 0.18, ctx.currentTime + 0.2);
+  }, [muted]);
+
+
 
   useEffect(() => {
     trackEvent(`${EVENT_PREFIX}.viewed`, { source, totalScenes: SCENES.length });
@@ -309,12 +537,21 @@ const IntroExperience = ({ source, onClose }: IntroExperienceProps) => {
             <Sparkles className="mr-1 inline h-3 w-3" /> Intro
           </span>
         </div>
-        <button
-          onClick={handleSkip}
-          className="flex items-center gap-1 rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur transition-all hover:bg-white/25 active:scale-95"
-        >
-          Skip <X className="h-3.5 w-3.5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setMuted((m) => !m)}
+            aria-label={muted ? "Unmute" : "Mute"}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur transition-all hover:bg-white/25 active:scale-95"
+          >
+            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={handleSkip}
+            className="flex items-center gap-1 rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur transition-all hover:bg-white/25 active:scale-95"
+          >
+            Skip <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Scene */}
