@@ -263,6 +263,7 @@ const InstallVisual: React.FC = () => (
   </div>
 );
 
+const SCENES: IntroScene[] = [
   {
     id: "hero",
     title: "Welcome to Buzz",
