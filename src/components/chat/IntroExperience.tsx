@@ -353,9 +353,104 @@ interface IntroExperienceProps {
 
 const IntroExperience = ({ source, onClose }: IntroExperienceProps) => {
   const [index, setIndex] = useState(0);
+  const [muted, setMuted] = useState(false);
   const startedAt = useRef(Date.now());
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
+  const oscNodesRef = useRef<{ stop: () => void }[]>([]);
   const scene = SCENES[index];
   const isLast = index === SCENES.length - 1;
+
+  // Start ambient pad + arpeggio music (procedural, no API key)
+  useEffect(() => {
+    const startMusic = () => {
+      if (audioCtxRef.current) return;
+      try {
+        const AC = window.AudioContext || (window as any).webkitAudioContext;
+        const ctx: AudioContext = new AC();
+        audioCtxRef.current = ctx;
+        const master = ctx.createGain();
+        master.gain.value = muted ? 0 : 0.18;
+        master.connect(ctx.destination);
+        masterGainRef.current = master;
+
+        // Reverb-ish via delay
+        const delay = ctx.createDelay();
+        delay.delayTime.value = 0.35;
+        const fb = ctx.createGain();
+        fb.gain.value = 0.32;
+        const wet = ctx.createGain();
+        wet.gain.value = 0.4;
+        delay.connect(fb).connect(delay);
+        delay.connect(wet).connect(master);
+
+        // Pad chord (Cmaj9-ish across scenes)
+        const padFreqs = [196, 261.63, 329.63, 392, 493.88]; // G3 C4 E4 G4 B4
+        padFreqs.forEach((f) => {
+          const o = ctx.createOscillator();
+          o.type = "sine";
+          o.frequency.value = f;
+          const g = ctx.createGain();
+          g.gain.value = 0;
+          g.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 2);
+          o.connect(g).connect(master);
+          o.connect(g).connect(delay);
+          o.start();
+          oscNodesRef.current.push({ stop: () => { try { o.stop(); } catch {} } });
+        });
+
+        // Arpeggio melody loop
+        const notes = [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25, 587.33, 783.99];
+        let step = 0;
+        const interval = window.setInterval(() => {
+          if (!audioCtxRef.current) return;
+          const t = ctx.currentTime;
+          const o = ctx.createOscillator();
+          o.type = "triangle";
+          o.frequency.value = notes[step % notes.length];
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(0.09, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+          o.connect(g).connect(master);
+          g.connect(delay);
+          o.start(t);
+          o.stop(t + 0.55);
+          step++;
+        }, 280);
+        oscNodesRef.current.push({ stop: () => clearInterval(interval) });
+      } catch {
+        // ignore
+      }
+    };
+
+    startMusic();
+    // Resume on first user interaction (autoplay policy)
+    const resume = () => audioCtxRef.current?.resume();
+    window.addEventListener("pointerdown", resume, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", resume);
+      oscNodesRef.current.forEach((n) => n.stop());
+      oscNodesRef.current = [];
+      const ctx = audioCtxRef.current;
+      if (ctx) {
+        masterGainRef.current?.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+        setTimeout(() => { try { ctx.close(); } catch {} }, 400);
+      }
+      audioCtxRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Apply mute changes
+  useEffect(() => {
+    const ctx = audioCtxRef.current;
+    if (!ctx || !masterGainRef.current) return;
+    masterGainRef.current.gain.linearRampToValueAtTime(muted ? 0 : 0.18, ctx.currentTime + 0.2);
+  }, [muted]);
+
+
 
   useEffect(() => {
     trackEvent(`${EVENT_PREFIX}.viewed`, { source, totalScenes: SCENES.length });
