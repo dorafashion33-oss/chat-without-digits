@@ -162,7 +162,107 @@ const DiscoverVisual: React.FC = () => (
   </div>
 );
 
-const SCENES: IntroScene[] = [
+const UsernameVisual: React.FC = () => (
+  <div className="flex h-full w-full items-center justify-center">
+    <motion.div
+      initial={{ scale: 0.85, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 180 }}
+      className="w-72 rounded-3xl bg-white/15 backdrop-blur-xl p-6 ring-2 ring-white/30 shadow-2xl"
+    >
+      <div className="flex items-center gap-2 text-white/80 text-xs mb-2"><Shield className="h-3.5 w-3.5" /> No phone. No email.</div>
+      <div className="rounded-2xl bg-white/20 px-4 py-3 flex items-center gap-2 mb-3">
+        <span className="text-white font-bold text-lg">@</span>
+        <motion.span
+          className="text-white font-bold text-lg"
+          initial={{ width: 0 }}
+          animate={{ width: "auto" }}
+        >
+          {"yourname".split("").map((c, i) => (
+            <motion.span key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 + i * 0.08 }}>{c}</motion.span>
+          ))}
+        </motion.span>
+        <motion.span className="ml-auto text-emerald-300" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1.1, type: "spring" }}>✓</motion.span>
+      </div>
+      <div className="rounded-xl bg-gradient-to-r from-fuchsia-400 to-purple-500 py-2.5 text-center text-sm font-bold text-white shadow-lg">
+        Claim username
+      </div>
+    </motion.div>
+  </div>
+);
+
+const ReactionsVisual: React.FC = () => (
+  <div className="relative flex h-full w-full items-center justify-center">
+    <motion.div
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className="rounded-2xl bg-white px-5 py-3 text-purple-700 font-medium shadow-2xl max-w-[240px]"
+    >
+      You're going to love Buzz 💜
+    </motion.div>
+    {["❤️", "🔥", "😂", "👏", "✨"].map((e, i) => (
+      <motion.div
+        key={i}
+        className="absolute text-3xl"
+        initial={{ y: 40, opacity: 0, scale: 0.5 }}
+        animate={{
+          y: [-20 - i * 30, -120 - i * 30],
+          opacity: [0, 1, 0],
+          scale: [0.5, 1.2, 0.8],
+          x: (i - 2) * 40,
+        }}
+        transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.25 }}
+      >
+        {e}
+      </motion.div>
+    ))}
+  </div>
+);
+
+const VoiceVisual: React.FC = () => (
+  <div className="flex h-full w-full items-center justify-center">
+    <div className="flex items-center gap-3 rounded-full bg-white/15 backdrop-blur-xl px-5 py-3 ring-2 ring-white/20 shadow-2xl">
+      <motion.div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-rose-500 shadow-lg" animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1, repeat: Infinity }}>
+        <Mic className="h-6 w-6" />
+      </motion.div>
+      <div className="flex items-end gap-1 h-10">
+        {[...Array(18)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="w-1 rounded-full bg-white"
+            animate={{ height: [6, 24 + Math.random() * 14, 6] }}
+            transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.05 }}
+          />
+        ))}
+      </div>
+      <span className="text-white font-mono text-sm">0:12</span>
+    </div>
+  </div>
+);
+
+const InstallVisual: React.FC = () => (
+  <div className="flex h-full w-full items-center justify-center">
+    <motion.div
+      initial={{ y: 30, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      className="relative w-56 h-80 rounded-[2.5rem] bg-gradient-to-br from-white/30 to-white/10 backdrop-blur-xl p-3 ring-4 ring-white/30 shadow-2xl"
+    >
+      <div className="h-full w-full rounded-[2rem] bg-white/90 flex flex-col items-center justify-center gap-3 p-4">
+        <img src={buzzLogo} alt="" className="h-16 w-16 rounded-2xl shadow-lg" />
+        <div className="text-purple-700 font-bold text-lg">Buzz</div>
+        <motion.div
+          className="rounded-full bg-gradient-to-r from-purple-600 to-fuchsia-500 px-4 py-2 text-xs font-bold text-white flex items-center gap-1.5 shadow-lg"
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        >
+          <Download className="h-3.5 w-3.5" /> Install App
+        </motion.div>
+        <div className="text-[10px] text-purple-400 text-center">Works offline · Home screen</div>
+      </div>
+    </motion.div>
+  </div>
+);
+
   {
     id: "hero",
     title: "Welcome to Buzz",
