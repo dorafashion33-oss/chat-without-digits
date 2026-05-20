@@ -121,21 +121,129 @@ const ConnectVisual: React.FC = () => (
   </div>
 );
 
-const GroupsVisual: React.FC = () => (
-  <div className="grid grid-cols-2 grid-rows-2 gap-3 p-6">
-    {["AR", "PR", "SK", "NV"].map((n, i) => (
-      <motion.div
-        key={n}
-        initial={{ scale: 0, rotate: 180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ delay: i * 0.12, type: "spring", stiffness: 200 }}
-        className="flex h-28 w-28 items-center justify-center rounded-2xl bg-gradient-to-br from-white/25 to-white/5 text-2xl font-bold text-white backdrop-blur ring-2 ring-white/20"
+const GroupsVisual: React.FC = () => {
+  const members = [
+    { n: "AR", c: "from-fuchsia-500 to-pink-500" },
+    { n: "PR", c: "from-amber-400 to-orange-500" },
+    { n: "SK", c: "from-emerald-400 to-teal-500" },
+    { n: "NV", c: "from-sky-400 to-blue-600" },
+    { n: "JY", c: "from-violet-500 to-purple-700" },
+    { n: "RA", c: "from-rose-400 to-red-500" },
+  ];
+  const radius = 110;
+  return (
+    <div className="relative flex h-full w-full items-center justify-center">
+      {/* Pulsing rings */}
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={`ring-${i}`}
+          className="absolute rounded-full border-2 border-white/40"
+          style={{ height: 180, width: 180 }}
+          animate={{ scale: [1, 2.2], opacity: [0.6, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.8, ease: "easeOut" }}
+        />
+      ))}
+
+      {/* Orbiting connection lines */}
+      <motion.svg
+        className="absolute h-72 w-72"
+        viewBox="-150 -150 300 300"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
       >
-        {n}
+        {members.map((_, i) => {
+          const a = (i / members.length) * Math.PI * 2;
+          return (
+            <motion.line
+              key={i}
+              x1={0} y1={0}
+              x2={Math.cos(a) * radius}
+              y2={Math.sin(a) * radius}
+              stroke="white"
+              strokeOpacity={0.35}
+              strokeWidth={1.2}
+              strokeDasharray="4 4"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 1, delay: i * 0.12 }}
+            />
+          );
+        })}
+      </motion.svg>
+
+      {/* Orbiting avatars */}
+      <motion.div
+        className="absolute h-72 w-72"
+        animate={{ rotate: -360 }}
+        transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+      >
+        {members.map((m, i) => {
+          const a = (i / members.length) * Math.PI * 2;
+          return (
+            <motion.div
+              key={m.n}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2 + i * 0.1, type: "spring", stiffness: 220 }}
+              className="absolute left-1/2 top-1/2"
+              style={{
+                transform: `translate(-50%, -50%) translate(${Math.cos(a) * radius}px, ${Math.sin(a) * radius}px)`,
+              }}
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+                className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${m.c} text-sm font-bold text-white shadow-2xl ring-2 ring-white/40`}
+              >
+                {m.n}
+                <motion.span
+                  className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-white"
+                  animate={{ scale: [1, 1.4, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                />
+              </motion.div>
+            </motion.div>
+          );
+        })}
       </motion.div>
-    ))}
-  </div>
-);
+
+      {/* Center group hub */}
+      <motion.div
+        initial={{ scale: 0, rotate: -180 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: "spring", stiffness: 180, damping: 12 }}
+        className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-white text-purple-600 shadow-2xl"
+      >
+        <Users className="h-10 w-10" />
+        <motion.div
+          className="absolute inset-0 rounded-3xl"
+          style={{ boxShadow: "0 0 40px 8px rgba(255,255,255,0.6)" }}
+          animate={{ opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 1.6, repeat: Infinity }}
+        />
+      </motion.div>
+
+      {/* Floating chat bubbles */}
+      {["Hey crew 👋", "Movie tonight?", "I'm in! 🎬", "Count me 🔥"].map((t, i) => (
+        <motion.div
+          key={t}
+          className="absolute rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-purple-700 shadow-lg"
+          initial={{ opacity: 0, y: 20, scale: 0.6 }}
+          animate={{
+            opacity: [0, 1, 1, 0],
+            y: [20, -10 - i * 8, -40 - i * 12, -70 - i * 16],
+            scale: [0.6, 1, 1, 0.8],
+            x: (i - 1.5) * 70,
+          }}
+          transition={{ duration: 3, repeat: Infinity, delay: i * 0.5 }}
+        >
+          {t}
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
 
 const DiscoverVisual: React.FC = () => (
   <div className="relative flex h-full w-full items-center justify-center">
@@ -574,6 +682,16 @@ const IntroExperience = ({ source, onClose }: IntroExperienceProps) => {
     if (isLast) handleComplete();
     else setIndex((i) => i + 1);
   };
+
+  // Auto-advance every 3 seconds
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      if (isLast) handleComplete();
+      else setIndex((i) => i + 1);
+    }, 3000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index]);
 
   const dotProgress = useMemo(() => (index + 1) / SCENES.length, [index]);
 
