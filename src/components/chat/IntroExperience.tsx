@@ -683,6 +683,16 @@ const IntroExperience = ({ source, onClose }: IntroExperienceProps) => {
     else setIndex((i) => i + 1);
   };
 
+  // Auto-advance every 3 seconds
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      if (isLast) handleComplete();
+      else setIndex((i) => i + 1);
+    }, 3000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index]);
+
   const dotProgress = useMemo(() => (index + 1) / SCENES.length, [index]);
 
   return (
