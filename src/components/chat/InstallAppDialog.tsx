@@ -61,7 +61,7 @@ const InstallAppDialog = () => {
     }
   };
 
-  const appUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const appUrl = typeof window !== "undefined" ? `${window.location.origin}/?install=1` : "";
 
   const renderQRToCanvas = async (size = 1024): Promise<HTMLCanvasElement | null> => {
     const svg = qrWrapRef.current?.querySelector("svg");
