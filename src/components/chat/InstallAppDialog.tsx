@@ -17,6 +17,18 @@ const InstallAppDialog = () => {
   const [open, setOpen] = useState(false);
   const qrWrapRef = useRef<HTMLDivElement>(null);
 
+  // Auto-open when scanned via QR (?install=1)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("install") === "1") {
+      setOpen(true);
+      params.delete("install");
+      const qs = params.toString();
+      window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash);
+    }
+  }, []);
+
   useEffect(() => {
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
@@ -49,7 +61,7 @@ const InstallAppDialog = () => {
     }
   };
 
-  const appUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const appUrl = typeof window !== "undefined" ? `${window.location.origin}/?install=1` : "";
 
   const renderQRToCanvas = async (size = 1024): Promise<HTMLCanvasElement | null> => {
     const svg = qrWrapRef.current?.querySelector("svg");
