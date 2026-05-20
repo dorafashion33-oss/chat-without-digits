@@ -361,7 +361,7 @@ const IntroExperience = ({ source, onClose }: IntroExperienceProps) => {
   const scene = SCENES[index];
   const isLast = index === SCENES.length - 1;
 
-  // Start ambient pad + arpeggio music (procedural, no API key)
+  // Start upbeat electronic music (procedural, no API key)
   useEffect(() => {
     const startMusic = () => {
       if (audioCtxRef.current) return;
@@ -370,62 +370,151 @@ const IntroExperience = ({ source, onClose }: IntroExperienceProps) => {
         const ctx: AudioContext = new AC();
         audioCtxRef.current = ctx;
         const master = ctx.createGain();
-        master.gain.value = muted ? 0 : 0.18;
+        master.gain.value = muted ? 0 : 0.28;
         master.connect(ctx.destination);
         masterGainRef.current = master;
 
-        // Reverb-ish via delay
+        // Stereo delay for space
         const delay = ctx.createDelay();
-        delay.delayTime.value = 0.35;
+        delay.delayTime.value = 0.23;
         const fb = ctx.createGain();
-        fb.gain.value = 0.32;
+        fb.gain.value = 0.38;
         const wet = ctx.createGain();
-        wet.gain.value = 0.4;
+        wet.gain.value = 0.35;
         delay.connect(fb).connect(delay);
         delay.connect(wet).connect(master);
 
-        // Pad chord (Cmaj9-ish across scenes)
-        const padFreqs = [196, 261.63, 329.63, 392, 493.88]; // G3 C4 E4 G4 B4
+        // Lowpass filter for warmth on pad
+        const padFilter = ctx.createBiquadFilter();
+        padFilter.type = "lowpass";
+        padFilter.frequency.value = 1800;
+        padFilter.connect(master);
+
+        // Lush pad chord (Am9 → vibey)
+        const padFreqs = [220, 261.63, 329.63, 440, 523.25];
         padFreqs.forEach((f) => {
           const o = ctx.createOscillator();
-          o.type = "sine";
+          o.type = "sawtooth";
           o.frequency.value = f;
+          const o2 = ctx.createOscillator();
+          o2.type = "sine";
+          o2.frequency.value = f * 2;
           const g = ctx.createGain();
           g.gain.value = 0;
-          g.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 2);
-          o.connect(g).connect(master);
-          o.connect(g).connect(delay);
-          o.start();
-          oscNodesRef.current.push({ stop: () => { try { o.stop(); } catch {} } });
+          g.gain.linearRampToValueAtTime(0.035, ctx.currentTime + 2.5);
+          o.connect(g).connect(padFilter);
+          o2.connect(g);
+          o.start(); o2.start();
+          oscNodesRef.current.push({ stop: () => { try { o.stop(); o2.stop(); } catch {} } });
         });
 
-        // Arpeggio melody loop
-        const notes = [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25, 587.33, 783.99];
-        let step = 0;
-        const interval = window.setInterval(() => {
-          if (!audioCtxRef.current) return;
-          const t = ctx.currentTime;
+        // Kick drum helper
+        const kick = (t: number) => {
           const o = ctx.createOscillator();
-          o.type = "triangle";
-          o.frequency.value = notes[step % notes.length];
+          const g = ctx.createGain();
+          o.frequency.setValueAtTime(140, t);
+          o.frequency.exponentialRampToValueAtTime(40, t + 0.15);
+          g.gain.setValueAtTime(0.7, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+          o.connect(g).connect(master);
+          o.start(t); o.stop(t + 0.22);
+        };
+
+        // Hi-hat (noise burst)
+        const hat = (t: number, vol = 0.12) => {
+          const buf = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          const hp = ctx.createBiquadFilter();
+          hp.type = "highpass"; hp.frequency.value = 7000;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(vol, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+          src.connect(hp).connect(g).connect(master);
+          src.start(t);
+        };
+
+        // Snap/clap
+        const snap = (t: number) => {
+          const buf = ctx.createBuffer(1, ctx.sampleRate * 0.1, ctx.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          const bp = ctx.createBiquadFilter();
+          bp.type = "bandpass"; bp.frequency.value = 1800;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.35, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+          src.connect(bp).connect(g).connect(master);
+          src.start(t);
+        };
+
+        // Bass note
+        const bass = (t: number, freq: number) => {
+          const o = ctx.createOscillator();
+          o.type = "sawtooth";
+          o.frequency.value = freq;
+          const f = ctx.createBiquadFilter();
+          f.type = "lowpass";
+          f.frequency.value = 600;
           const g = ctx.createGain();
           g.gain.setValueAtTime(0, t);
-          g.gain.linearRampToValueAtTime(0.09, t + 0.02);
-          g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+          g.gain.linearRampToValueAtTime(0.18, t + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+          o.connect(f).connect(g).connect(master);
+          o.start(t); o.stop(t + 0.3);
+        };
+
+        // Lead arpeggio (A minor pentatonic, energetic)
+        const lead = (t: number, freq: number) => {
+          const o = ctx.createOscillator();
+          o.type = "square";
+          o.frequency.value = freq;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(0.07, t + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
           o.connect(g).connect(master);
           g.connect(delay);
-          o.start(t);
-          o.stop(t + 0.55);
-          step++;
-        }, 280);
-        oscNodesRef.current.push({ stop: () => clearInterval(interval) });
+          o.start(t); o.stop(t + 0.25);
+        };
+
+        // 16-step sequencer at ~128 BPM (step = 0.117s)
+        const STEP = 0.1172;
+        const arpNotes = [523.25, 659.25, 783.99, 1046.5, 880, 783.99, 659.25, 587.33,
+                          523.25, 659.25, 880, 1046.5, 1318.5, 1046.5, 880, 659.25];
+        const bassNotes = [110, 110, 110, 164.81, 146.83, 146.83, 130.81, 130.81];
+        let step = 0;
+        let nextTime = ctx.currentTime + 0.1;
+
+        const scheduler = window.setInterval(() => {
+          if (!audioCtxRef.current) return;
+          while (nextTime < ctx.currentTime + 0.3) {
+            const s = step % 16;
+            // Kick on 1, 5, 9, 13
+            if (s % 4 === 0) kick(nextTime);
+            // Snap on 5 and 13
+            if (s === 4 || s === 12) snap(nextTime);
+            // Hat every step, accent off-beats
+            hat(nextTime, s % 2 === 1 ? 0.14 : 0.07);
+            // Bass every other step
+            if (s % 2 === 0) bass(nextTime, bassNotes[(step / 2) % bassNotes.length | 0]);
+            // Lead arpeggio
+            lead(nextTime, arpNotes[s]);
+            nextTime += STEP;
+            step++;
+          }
+        }, 60);
+        oscNodesRef.current.push({ stop: () => clearInterval(scheduler) });
       } catch {
         // ignore
       }
     };
 
     startMusic();
-    // Resume on first user interaction (autoplay policy)
     const resume = () => audioCtxRef.current?.resume();
     window.addEventListener("pointerdown", resume, { once: true });
 
@@ -447,7 +536,7 @@ const IntroExperience = ({ source, onClose }: IntroExperienceProps) => {
   useEffect(() => {
     const ctx = audioCtxRef.current;
     if (!ctx || !masterGainRef.current) return;
-    masterGainRef.current.gain.linearRampToValueAtTime(muted ? 0 : 0.18, ctx.currentTime + 0.2);
+    masterGainRef.current.gain.linearRampToValueAtTime(muted ? 0 : 0.28, ctx.currentTime + 0.2);
   }, [muted]);
 
 
