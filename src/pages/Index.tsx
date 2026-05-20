@@ -66,10 +66,10 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // First-visit intro trigger (only after auth completes)
+  // Show intro every time the app/website opens (after auth completes)
   useEffect(() => {
-    if (!loading && session && !hasSeenIntro()) {
-      setIntroSource("first-visit");
+    if (!loading && session) {
+      setIntroSource(hasSeenIntro() ? "replay" : "first-visit");
       setShowIntro(true);
     }
   }, [loading, session]);
