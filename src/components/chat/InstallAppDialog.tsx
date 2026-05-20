@@ -17,6 +17,18 @@ const InstallAppDialog = () => {
   const [open, setOpen] = useState(false);
   const qrWrapRef = useRef<HTMLDivElement>(null);
 
+  // Auto-open when scanned via QR (?install=1)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("install") === "1") {
+      setOpen(true);
+      params.delete("install");
+      const qs = params.toString();
+      window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash);
+    }
+  }, []);
+
   useEffect(() => {
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
