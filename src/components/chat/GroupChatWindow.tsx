@@ -213,21 +213,48 @@ const GroupChatWindow = ({
             </div>
           </div>
 
+          {/* Attachment preview */}
+          {attachedFile && (
+            <div className="border-t bg-chat-header px-4 py-2">
+              <div className="mx-auto max-w-3xl flex items-center gap-3">
+                {filePreview ? (
+                  <img src={filePreview} alt="preview" className="h-14 w-14 rounded-xl object-cover" />
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-accent">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{attachedFile.name}</p>
+                  <p className="text-xs text-muted-foreground">{(attachedFile.size / 1024).toFixed(1)} KB</p>
+                </div>
+                <button onClick={() => { setAttachedFile(null); setFilePreview(null); }} className="rounded-full p-1.5 hover:bg-accent transition-colors">
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Input */}
           <div className="border-t bg-chat-header px-4 py-3">
             <div className="mx-auto flex max-w-3xl items-center gap-2">
+              <button onClick={() => fileInputRef.current?.click()} className="rounded-full p-2 hover:bg-accent transition-colors" title="Attach file" disabled={uploading}>
+                <Paperclip className="h-5 w-5 text-muted-foreground" />
+              </button>
+              <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*,video/*,audio/*,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.7z,.json,.apk" />
               <div className="flex flex-1 items-center rounded-2xl bg-chat-input-bg px-4 py-2.5">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                  placeholder="Type a group message..."
+                  placeholder={uploading ? "Uploading..." : "Type a group message..."}
                   className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  disabled={uploading}
                 />
               </div>
-              {input.trim() && (
-                <button onClick={handleSend} className="flex h-10 w-10 items-center justify-center rounded-full gradient-brand text-white hover:opacity-90">
+              {(input.trim() || attachedFile) && (
+                <button onClick={handleSend} disabled={uploading} className="flex h-10 w-10 items-center justify-center rounded-full gradient-brand text-white hover:opacity-90 disabled:opacity-60">
                   <Send className="h-4 w-4" />
                 </button>
               )}
