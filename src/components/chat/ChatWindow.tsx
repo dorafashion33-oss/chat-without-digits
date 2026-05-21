@@ -59,11 +59,12 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
       const currentFile = attachedFile;
       setAttachedFile(null);
       setImagePreview(null);
-      const ext = currentFile.name.split(".").pop() || "bin";
-      const path = `${currentUserId}/${Date.now()}.${ext}`;
+      const safeName = currentFile.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
+      const ext = safeName.includes(".") ? safeName.split(".").pop() : "bin";
+      const path = `${currentUserId}/${Date.now()}_${safeName}`;
       const { error: uploadError } = await supabase.storage
         .from("chat-media")
-        .upload(path, currentFile, { cacheControl: "3600", upsert: false });
+        .upload(path, currentFile, { cacheControl: "3600", upsert: false, contentType: currentFile.type || undefined });
       if (uploadError) {
         toast.error("Upload failed: " + uploadError.message);
         return;
@@ -77,6 +78,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
       } else {
         msgText = `[file:${currentFile.name}]${mediaUrl}[/file]${text ? `\n${text}` : ""}`;
       }
+      void ext;
     }
 
     if (msgText) onSendMessage(thread.id, msgText);
