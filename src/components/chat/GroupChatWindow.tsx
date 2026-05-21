@@ -62,10 +62,51 @@ const GroupChatWindow = ({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    onSendMessage(group.id, input);
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text && !attachedFile) return;
+    let msgText = text;
+
+    if (attachedFile) {
+      setUploading(true);
+      const currentFile = attachedFile;
+      setAttachedFile(null);
+      setFilePreview(null);
+      const safeName = currentFile.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
+      const path = `${currentUserId}/groups/${group.id}/${Date.now()}_${safeName}`;
+      const { error: upErr } = await supabase.storage
+        .from("chat-media")
+        .upload(path, currentFile, { cacheControl: "3600", upsert: false, contentType: currentFile.type || undefined });
+      if (upErr) {
+        toast.error("Upload failed: " + upErr.message);
+        setUploading(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+      const url = urlData.publicUrl;
+      if (currentFile.type.startsWith("image/")) msgText = `[img]${url}[/img]${text ? `\n${text}` : ""}`;
+      else if (currentFile.type.startsWith("video/")) msgText = `[video]${url}[/video]${text ? `\n${text}` : ""}`;
+      else msgText = `[file:${currentFile.name}]${url}[/file]${text ? `\n${text}` : ""}`;
+      setUploading(false);
+    }
+
     setInput("");
+    if (msgText) onSendMessage(group.id, msgText);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { toast.error("File too large. Max 50MB."); return; }
+    setAttachedFile(file);
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setFilePreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setFilePreview(null);
+    }
+    e.target.value = "";
   };
 
   const colors = ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500", "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600"];
