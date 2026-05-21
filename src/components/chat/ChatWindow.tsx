@@ -8,6 +8,7 @@ import EmojiPicker from "./EmojiPicker";
 import MessageReactions from "./MessageReactions";
 import VoiceMessageButton from "./VoiceMessageButton";
 import { triggerBuzzBurst } from "./BuzzBurst";
+import MessageContent from "./MessageContent";
 
 interface ChatWindowProps {
   thread: ChatThread;
