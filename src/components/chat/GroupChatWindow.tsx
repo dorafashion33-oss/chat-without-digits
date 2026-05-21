@@ -203,7 +203,7 @@ const GroupChatWindow = ({
                   <div key={msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"} ${showSender ? "mt-3" : "mt-0.5"}`}>
                     <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 ${isOwn ? "bg-chat-bubble-own text-chat-bubble-own-foreground rounded-br-md" : "bg-chat-bubble-other text-chat-bubble-other-foreground rounded-bl-md"}`}>
                       {showSender && <p className="text-xs font-semibold text-primary mb-0.5">{senderName}</p>}
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                      <MessageContent text={msg.text} />
                       <p className="text-[10px] opacity-60 text-right mt-0.5">{time}</p>
                     </div>
                   </div>
