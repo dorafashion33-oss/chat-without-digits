@@ -8,6 +8,7 @@ import EmojiPicker from "./EmojiPicker";
 import MessageReactions from "./MessageReactions";
 import VoiceMessageButton from "./VoiceMessageButton";
 import { triggerBuzzBurst } from "./BuzzBurst";
+import MessageContent from "./MessageContent";
 
 interface ChatWindowProps {
   thread: ChatThread;
@@ -58,11 +59,12 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
       const currentFile = attachedFile;
       setAttachedFile(null);
       setImagePreview(null);
-      const ext = currentFile.name.split(".").pop() || "bin";
-      const path = `${currentUserId}/${Date.now()}.${ext}`;
+      const safeName = currentFile.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
+      const ext = safeName.includes(".") ? safeName.split(".").pop() : "bin";
+      const path = `${currentUserId}/${Date.now()}_${safeName}`;
       const { error: uploadError } = await supabase.storage
         .from("chat-media")
-        .upload(path, currentFile, { cacheControl: "3600", upsert: false });
+        .upload(path, currentFile, { cacheControl: "3600", upsert: false, contentType: currentFile.type || undefined });
       if (uploadError) {
         toast.error("Upload failed: " + uploadError.message);
         return;
@@ -76,6 +78,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
       } else {
         msgText = `[file:${currentFile.name}]${mediaUrl}[/file]${text ? `\n${text}` : ""}`;
       }
+      void ext;
     }
 
     if (msgText) onSendMessage(thread.id, msgText);
@@ -310,7 +313,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
           <button onClick={() => fileInputRef.current?.click()} className="rounded-full p-2 transition-colors hover:bg-accent" title="Attach file">
             <Paperclip className="h-5 w-5 text-muted-foreground" />
           </button>
-          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*,video/*,.gif,.pdf,.doc,.docx,.txt,.zip" />
+          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*,video/*,audio/*,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.7z,.json,.apk" />
           <div className="flex flex-1 items-center rounded-2xl bg-chat-input-bg px-4 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-primary/20">
             <input
               ref={inputRef}
@@ -522,49 +525,8 @@ const MessageBubble = ({
   );
 };
 
-/** Renders inline images, videos, GIFs, or plain text */
-const MessageContent = ({ text }: { text: string }) => {
-  // GIF
-  const gifMatch = text.match(/^\[gif\](.*?)\[\/gif\]$/);
-  if (gifMatch) {
-    return <img src={gifMatch[1]} alt="GIF" className="max-w-full rounded-xl max-h-52 object-cover" />;
-  }
 
-  const imgMatch = text.match(/^\[img\](.*?)\[\/img\]([\s\S]*)$/);
-  if (imgMatch) {
-    return (
-      <div>
-        <img src={imgMatch[1]} alt="" className="max-w-full rounded-xl max-h-60 object-cover cursor-pointer" onClick={() => window.open(imgMatch[1], "_blank")} />
-        {imgMatch[2]?.trim() && <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words mt-1">{imgMatch[2].trim()}</p>}
-      </div>
-    );
-  }
 
-  const videoMatch = text.match(/^\[video\](.*?)\[\/video\]([\s\S]*)$/);
-  if (videoMatch) {
-    return (
-      <div>
-        <video src={videoMatch[1]} controls className="max-w-full rounded-xl max-h-60" />
-        {videoMatch[2]?.trim() && <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words mt-1">{videoMatch[2].trim()}</p>}
-      </div>
-    );
-  }
-
-  const fileMatch = text.match(/^\[file:(.*?)\](.*?)\[\/file\]([\s\S]*)$/);
-  if (fileMatch) {
-    return (
-      <div>
-        <a href={fileMatch[2]} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 rounded-xl bg-accent/50 hover:bg-accent transition-colors">
-          <FileText className="h-5 w-5 text-primary" />
-          <span className="text-sm font-medium text-foreground underline">{fileMatch[1]}</span>
-        </a>
-        {fileMatch[3]?.trim() && <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words mt-1">{fileMatch[3].trim()}</p>}
-      </div>
-    );
-  }
-
-  return <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">{text}</p>;
-};
 
 function formatLastSeen(iso: string): string {
   const date = new Date(iso);

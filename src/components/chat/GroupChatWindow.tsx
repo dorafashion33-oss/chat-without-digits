@@ -1,8 +1,9 @@
-import { Send, ArrowLeft, Users, UserPlus, Trash2, Settings, Phone, Video } from "lucide-react";
+import { Send, ArrowLeft, Users, UserPlus, Trash2, Settings, Phone, Video, Paperclip, X, FileText } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Group, GroupMessage, GroupMember } from "@/hooks/useGroups";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import MessageContent from "./MessageContent";
 
 interface GroupChatWindowProps {
   group: Group;
@@ -26,6 +27,10 @@ const GroupChatWindow = ({
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [showInfo, setShowInfo] = useState(false);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isAdmin = group.created_by === currentUserId;
 
@@ -57,10 +62,51 @@ const GroupChatWindow = ({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    onSendMessage(group.id, input);
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text && !attachedFile) return;
+    let msgText = text;
+
+    if (attachedFile) {
+      setUploading(true);
+      const currentFile = attachedFile;
+      setAttachedFile(null);
+      setFilePreview(null);
+      const safeName = currentFile.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
+      const path = `${currentUserId}/groups/${group.id}/${Date.now()}_${safeName}`;
+      const { error: upErr } = await supabase.storage
+        .from("chat-media")
+        .upload(path, currentFile, { cacheControl: "3600", upsert: false, contentType: currentFile.type || undefined });
+      if (upErr) {
+        toast.error("Upload failed: " + upErr.message);
+        setUploading(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+      const url = urlData.publicUrl;
+      if (currentFile.type.startsWith("image/")) msgText = `[img]${url}[/img]${text ? `\n${text}` : ""}`;
+      else if (currentFile.type.startsWith("video/")) msgText = `[video]${url}[/video]${text ? `\n${text}` : ""}`;
+      else msgText = `[file:${currentFile.name}]${url}[/file]${text ? `\n${text}` : ""}`;
+      setUploading(false);
+    }
+
     setInput("");
+    if (msgText) onSendMessage(group.id, msgText);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { toast.error("File too large. Max 50MB."); return; }
+    setAttachedFile(file);
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setFilePreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setFilePreview(null);
+    }
+    e.target.value = "";
   };
 
   const colors = ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500", "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600"];
@@ -157,7 +203,7 @@ const GroupChatWindow = ({
                   <div key={msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"} ${showSender ? "mt-3" : "mt-0.5"}`}>
                     <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 ${isOwn ? "bg-chat-bubble-own text-chat-bubble-own-foreground rounded-br-md" : "bg-chat-bubble-other text-chat-bubble-other-foreground rounded-bl-md"}`}>
                       {showSender && <p className="text-xs font-semibold text-primary mb-0.5">{senderName}</p>}
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                      <MessageContent text={msg.text} />
                       <p className="text-[10px] opacity-60 text-right mt-0.5">{time}</p>
                     </div>
                   </div>
@@ -167,21 +213,48 @@ const GroupChatWindow = ({
             </div>
           </div>
 
+          {/* Attachment preview */}
+          {attachedFile && (
+            <div className="border-t bg-chat-header px-4 py-2">
+              <div className="mx-auto max-w-3xl flex items-center gap-3">
+                {filePreview ? (
+                  <img src={filePreview} alt="preview" className="h-14 w-14 rounded-xl object-cover" />
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-accent">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{attachedFile.name}</p>
+                  <p className="text-xs text-muted-foreground">{(attachedFile.size / 1024).toFixed(1)} KB</p>
+                </div>
+                <button onClick={() => { setAttachedFile(null); setFilePreview(null); }} className="rounded-full p-1.5 hover:bg-accent transition-colors">
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Input */}
           <div className="border-t bg-chat-header px-4 py-3">
             <div className="mx-auto flex max-w-3xl items-center gap-2">
+              <button onClick={() => fileInputRef.current?.click()} className="rounded-full p-2 hover:bg-accent transition-colors" title="Attach file" disabled={uploading}>
+                <Paperclip className="h-5 w-5 text-muted-foreground" />
+              </button>
+              <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*,video/*,audio/*,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.7z,.json,.apk" />
               <div className="flex flex-1 items-center rounded-2xl bg-chat-input-bg px-4 py-2.5">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                  placeholder="Type a group message..."
+                  placeholder={uploading ? "Uploading..." : "Type a group message..."}
                   className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  disabled={uploading}
                 />
               </div>
-              {input.trim() && (
-                <button onClick={handleSend} className="flex h-10 w-10 items-center justify-center rounded-full gradient-brand text-white hover:opacity-90">
+              {(input.trim() || attachedFile) && (
+                <button onClick={handleSend} disabled={uploading} className="flex h-10 w-10 items-center justify-center rounded-full gradient-brand text-white hover:opacity-90 disabled:opacity-60">
                   <Send className="h-4 w-4" />
                 </button>
               )}
