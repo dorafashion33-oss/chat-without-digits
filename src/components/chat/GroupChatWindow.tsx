@@ -1,8 +1,9 @@
-import { Send, ArrowLeft, Users, UserPlus, Trash2, Settings, Phone, Video } from "lucide-react";
+import { Send, ArrowLeft, Users, UserPlus, Trash2, Settings, Phone, Video, Paperclip, X, FileText } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Group, GroupMessage, GroupMember } from "@/hooks/useGroups";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import MessageContent from "./MessageContent";
 
 interface GroupChatWindowProps {
   group: Group;
