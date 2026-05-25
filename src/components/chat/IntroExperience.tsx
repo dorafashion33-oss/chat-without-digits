@@ -681,6 +681,9 @@ const IntroExperience = ({ source, onClose }: IntroExperienceProps) => {
         </motion.div>
       </AnimatePresence>
 
+      {/* Continuous always-on background animation layer (never remounts) */}
+      <PersistentBackground theme={scene.theme} />
+
       {/* Top bar */}
       <div className={`relative z-10 flex items-center justify-between px-5 pt-5 sm:px-8 sm:pt-7 ${textColor}`}>
         <div className="flex items-center gap-2">
