@@ -387,6 +387,79 @@ const SceneBackground: React.FC<{ theme: Theme }> = ({ theme }) => {
   );
 };
 
+/* ── Always-on persistent background animation (runs continuously across all scenes) ── */
+const PersistentBackground: React.FC<{ theme: Theme }> = ({ theme }) => {
+  const particles = useMemo(
+    () => Array.from({ length: 22 }).map((_, i) => ({
+      left: (i * 37) % 100,
+      top: (i * 53) % 100,
+      size: 4 + ((i * 7) % 10),
+      dur: 6 + ((i * 3) % 8),
+      delay: (i % 9) * 0.4,
+      hue: i % 3,
+    })),
+    []
+  );
+  const orbs = useMemo(
+    () => Array.from({ length: 5 }).map((_, i) => ({
+      left: (i * 23 + 10) % 90,
+      top: (i * 41 + 5) % 80,
+      size: 220 + ((i * 60) % 220),
+      dur: 14 + ((i * 5) % 10),
+      delay: i * 0.7,
+      hue: i % 3,
+    })),
+    []
+  );
+  const sparkles = useMemo(
+    () => Array.from({ length: 14 }).map((_, i) => ({
+      left: (i * 29 + 7) % 100,
+      top: (i * 47 + 13) % 100,
+      dur: 2.4 + ((i * 2) % 4),
+      delay: (i % 7) * 0.35,
+    })),
+    []
+  );
+  const orbColors = ["bg-fuchsia-500/30", "bg-purple-500/30", "bg-blue-500/30"];
+  const particleColors = theme === "dark"
+    ? ["bg-white/70", "bg-fuchsia-300/80", "bg-purple-300/80"]
+    : ["bg-fuchsia-500/60", "bg-purple-500/60", "bg-pink-500/60"];
+
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {orbs.map((o, i) => (
+        <motion.div
+          key={`orb-${i}`}
+          className={`absolute rounded-full blur-3xl ${orbColors[o.hue]}`}
+          style={{ left: `${o.left}%`, top: `${o.top}%`, width: o.size, height: o.size }}
+          animate={{ x: [0, 40, -30, 0], y: [0, -30, 25, 0], scale: [1, 1.15, 0.9, 1] }}
+          transition={{ duration: o.dur, repeat: Infinity, ease: "easeInOut", delay: o.delay }}
+        />
+      ))}
+      {particles.map((p, i) => (
+        <motion.div
+          key={`p-${i}`}
+          className={`absolute rounded-full ${particleColors[p.hue]}`}
+          style={{ left: `${p.left}%`, top: `${p.top}%`, width: p.size, height: p.size }}
+          animate={{ y: [0, -80, 0], opacity: [0, 0.9, 0], scale: [0.6, 1.2, 0.6] }}
+          transition={{ duration: p.dur, repeat: Infinity, ease: "easeInOut", delay: p.delay }}
+        />
+      ))}
+      {sparkles.map((s, i) => (
+        <motion.span
+          key={`s-${i}`}
+          className={`absolute text-base ${theme === "dark" ? "text-white" : "text-fuchsia-500"}`}
+          style={{ left: `${s.left}%`, top: `${s.top}%` }}
+          animate={{ opacity: [0, 1, 0], scale: [0.4, 1.2, 0.4], rotate: [0, 180, 360] }}
+          transition={{ duration: s.dur, repeat: Infinity, ease: "easeInOut", delay: s.delay }}
+        >
+          ✦
+        </motion.span>
+      ))}
+    </div>
+  );
+};
+
 interface IntroExperienceProps {
   source: "first-visit" | "replay";
   onClose: () => void;
