@@ -66,10 +66,10 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Show intro every time the app/website opens (after auth completes)
+  // Show intro only the first time the user opens Buzz
   useEffect(() => {
-    if (!loading && session) {
-      setIntroSource(hasSeenIntro() ? "replay" : "first-visit");
+    if (!loading && session && !hasSeenIntro()) {
+      setIntroSource("first-visit");
       setShowIntro(true);
     }
   }, [loading, session]);
