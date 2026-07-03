@@ -684,24 +684,271 @@ const DiscoverPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => vo
 };
 
 /* ─── Settings ─── */
+type SettingsView = "main" | "account" | "privacy" | "security" | "notifications" | "language" | "help";
+
+const useLocalToggle = (key: string, def = true) => {
+  const [v, setV] = useState<boolean>(() => {
+    const s = localStorage.getItem(key);
+    return s === null ? def : s === "1";
+  });
+  useEffect(() => { localStorage.setItem(key, v ? "1" : "0"); }, [key, v]);
+  return [v, setV] as const;
+};
+
+const useLocalString = (key: string, def: string) => {
+  const [v, setV] = useState<string>(() => localStorage.getItem(key) || def);
+  useEffect(() => { localStorage.setItem(key, v); }, [key, v]);
+  return [v, setV] as const;
+};
+
+const ToggleRow = ({ label, desc, checked, onChange }: { label: string; desc?: string; checked: boolean; onChange: (v: boolean) => void }) => (
+  <div className="flex items-center justify-between rounded-xl p-3 hover:bg-accent/60 transition-colors">
+    <div className="text-left flex-1 pr-3">
+      <p className="text-sm font-medium text-foreground">{label}</p>
+      {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
+    </div>
+    <button
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative h-6 w-11 rounded-full transition-colors ${checked ? "gradient-brand" : "bg-secondary border border-border"}`}
+    >
+      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-[22px]" : "translate-x-0.5"}`} />
+    </button>
+  </div>
+);
+
+const SubHeader = ({ title, onBack }: { title: string; onBack: () => void }) => (
+  <div className="border-b gradient-brand px-5 py-3.5 flex items-center gap-2">
+    <button onClick={onBack} className="rounded-lg p-1 hover:bg-white/20 transition-colors"><ArrowLeft className="h-5 w-5 text-white" /></button>
+    <h1 className="text-lg font-bold text-white">{title}</h1>
+  </div>
+);
+
+const AccountView = ({ onBack }: { onBack: () => void }) => {
+  const [profile, setProfile] = useState<{ username: string; display_name: string; about: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from("profiles").select("username, display_name, about").eq("user_id", user.id).single();
+      if (data) setProfile({ username: data.username || "", display_name: data.display_name || "", about: data.about || "" });
+    })();
+  }, []);
+
+  const save = async () => {
+    if (!profile) return;
+    setSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { error } = await supabase.from("profiles").update({ display_name: profile.display_name, about: profile.about }).eq("user_id", user.id);
+      if (error) toast.error(error.message); else toast.success("Account updated");
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
+      <SubHeader title="Account info" onBack={onBack} />
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {!profile ? <p className="text-sm text-muted-foreground">Loading...</p> : (
+          <>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Username</label>
+              <input value={profile.username} disabled className="mt-1 w-full rounded-xl bg-secondary/60 px-3 py-2.5 text-sm text-muted-foreground" />
+              <p className="text-[10px] text-muted-foreground mt-1">Username cannot be changed</p>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Display name</label>
+              <input value={profile.display_name} onChange={(e) => setProfile({ ...profile, display_name: e.target.value })} className="mt-1 w-full rounded-xl bg-secondary px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">About</label>
+              <textarea value={profile.about} onChange={(e) => setProfile({ ...profile, about: e.target.value })} rows={3} className="mt-1 w-full rounded-xl bg-secondary px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+            </div>
+            <button onClick={save} disabled={saving} className="w-full rounded-xl gradient-brand py-3 text-sm font-semibold text-white disabled:opacity-50">
+              {saving ? "Saving..." : "Save changes"}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const PrivacyView = ({ onBack }: { onBack: () => void }) => {
+  const [lastSeen, setLastSeen] = useLocalToggle("buzz-privacy-last-seen", true);
+  const [readReceipts, setReadReceipts] = useLocalToggle("buzz-privacy-read-receipts", true);
+  const [typing, setTyping] = useLocalToggle("buzz-privacy-typing", true);
+  const [profilePhoto, setProfilePhoto] = useLocalToggle("buzz-privacy-profile-photo", true);
+  return (
+    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
+      <SubHeader title="Privacy" onBack={onBack} />
+      <div className="flex-1 overflow-y-auto p-3 space-y-1">
+        <ToggleRow label="Show last seen" desc="Let others see when you were last active" checked={lastSeen} onChange={setLastSeen} />
+        <ToggleRow label="Read receipts" desc="Show blue checks when you read messages" checked={readReceipts} onChange={setReadReceipts} />
+        <ToggleRow label="Typing indicator" desc="Show when you're typing" checked={typing} onChange={setTyping} />
+        <ToggleRow label="Profile photo visible" desc="Everyone can see your profile photo" checked={profilePhoto} onChange={setProfilePhoto} />
+      </div>
+    </div>
+  );
+};
+
+const SecurityView = ({ onBack }: { onBack: () => void }) => {
+  const [pwd, setPwd] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [appLock, setAppLock] = useLocalToggle("buzz-app-lock", false);
+  const [twoStep, setTwoStep] = useLocalToggle("buzz-two-step", false);
+
+  const changePassword = async () => {
+    if (pwd.length < 6) { toast.error("Password must be at least 6 characters"); return; }
+    if (pwd !== confirm) { toast.error("Passwords don't match"); return; }
+    setSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: pwd });
+    if (error) toast.error(error.message); else { toast.success("Password updated"); setPwd(""); setConfirm(""); }
+    setSaving(false);
+  };
+
+  return (
+    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
+      <SubHeader title="Security" onBack={onBack} />
+      <div className="flex-1 overflow-y-auto p-3 space-y-4">
+        <div className="space-y-1">
+          <ToggleRow label="App lock" desc="Require PIN/biometric to open Buzz" checked={appLock} onChange={setAppLock} />
+          <ToggleRow label="Two-step verification" desc="Extra security on sign-in" checked={twoStep} onChange={setTwoStep} />
+        </div>
+        <div className="rounded-2xl bg-accent/40 p-4 space-y-3">
+          <p className="text-sm font-semibold text-foreground">Change password</p>
+          <input type="password" placeholder="New password" value={pwd} onChange={(e) => setPwd(e.target.value)} className="w-full rounded-xl bg-secondary px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+          <input type="password" placeholder="Confirm password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="w-full rounded-xl bg-secondary px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+          <button onClick={changePassword} disabled={saving} className="w-full rounded-xl gradient-brand py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+            {saving ? "Updating..." : "Update password"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const NotificationsView = ({ onBack }: { onBack: () => void }) => {
+  const [messages, setMessages] = useLocalToggle("buzz-notif-messages", true);
+  const [groups, setGroups] = useLocalToggle("buzz-notif-groups", true);
+  const [calls, setCalls] = useLocalToggle("buzz-notif-calls", true);
+  const [sound, setSound] = useLocalToggle("buzz-notif-sound", true);
+  const [vibrate, setVibrate] = useLocalToggle("buzz-notif-vibrate", true);
+  const [preview, setPreview] = useLocalToggle("buzz-notif-preview", true);
+
+  const requestBrowser = async () => {
+    if (!("Notification" in window)) { toast.error("Not supported on this device"); return; }
+    const perm = await Notification.requestPermission();
+    if (perm === "granted") { toast.success("Notifications enabled"); new Notification("Buzz", { body: "Notifications are working! 🔔" }); }
+    else toast.error("Permission denied");
+  };
+
+  return (
+    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
+      <SubHeader title="Notifications" onBack={onBack} />
+      <div className="flex-1 overflow-y-auto p-3 space-y-1">
+        <button onClick={requestBrowser} className="w-full rounded-xl gradient-brand py-2.5 text-sm font-semibold text-white mb-3">
+          Enable browser notifications
+        </button>
+        <ToggleRow label="Message notifications" checked={messages} onChange={setMessages} />
+        <ToggleRow label="Group notifications" checked={groups} onChange={setGroups} />
+        <ToggleRow label="Call notifications" checked={calls} onChange={setCalls} />
+        <ToggleRow label="Sound" checked={sound} onChange={setSound} />
+        <ToggleRow label="Vibrate" checked={vibrate} onChange={setVibrate} />
+        <ToggleRow label="Show message preview" checked={preview} onChange={setPreview} />
+      </div>
+    </div>
+  );
+};
+
+const LANGUAGES = [
+  { code: "en", label: "English" }, { code: "hi", label: "हिन्दी (Hindi)" },
+  { code: "es", label: "Español" }, { code: "fr", label: "Français" },
+  { code: "de", label: "Deutsch" }, { code: "ar", label: "العربية" },
+  { code: "pt", label: "Português" }, { code: "zh", label: "中文" }, { code: "ja", label: "日本語" },
+];
+
+const LanguageView = ({ onBack }: { onBack: () => void }) => {
+  const [lang, setLang] = useLocalString("buzz-language", "en");
+  return (
+    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
+      <SubHeader title="Language" onBack={onBack} />
+      <div className="flex-1 overflow-y-auto p-3">
+        {LANGUAGES.map((l) => (
+          <button key={l.code} onClick={() => { setLang(l.code); toast.success(`Language: ${l.label}`); }} className={`flex w-full items-center justify-between rounded-xl p-3 transition-colors ${lang === l.code ? "bg-primary/10" : "hover:bg-accent/60"}`}>
+            <span className="text-sm text-foreground">{l.label}</span>
+            {lang === l.code && <span className="text-primary text-lg">✓</span>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const HelpView = ({ onBack }: { onBack: () => void }) => {
+  const [open, setOpen] = useState<number | null>(null);
+  const faqs = [
+    { q: "How do I add a contact?", a: "Open the Discover tab and search by username. Tap any user to start chatting instantly." },
+    { q: "Are my messages encrypted?", a: "Yes. Buzz uses end-to-end encryption for all 1-on-1 chats. Only you and the recipient can read messages." },
+    { q: "How do Moments work?", a: "Moments are short posts that disappear after 24 hours. Only your contacts can see them." },
+    { q: "How do I make a group call?", a: "Open any group chat and tap the phone or video icon in the header. Buzz supports up to 50 people." },
+    { q: "How do I change my username?", a: "Usernames are permanent to protect your identity. You can change your display name in Account info." },
+    { q: "How do I delete my account?", a: "Contact support@buzz.app and we'll process your request within 24 hours." },
+  ];
+  return (
+    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
+      <SubHeader title="Help" onBack={onBack} />
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        {faqs.map((f, i) => (
+          <div key={i} className="rounded-xl bg-accent/40 overflow-hidden">
+            <button onClick={() => setOpen(open === i ? null : i)} className="flex w-full items-center justify-between p-3 text-left">
+              <span className="text-sm font-medium text-foreground">{f.q}</span>
+              <span className="text-muted-foreground">{open === i ? "−" : "+"}</span>
+            </button>
+            {open === i && <p className="px-3 pb-3 text-sm text-muted-foreground">{f.a}</p>}
+          </div>
+        ))}
+        <div className="rounded-xl gradient-brand p-4 text-white mt-4">
+          <p className="text-sm font-semibold mb-1">Need more help?</p>
+          <p className="text-xs opacity-90 mb-3">We reply within 24 hours</p>
+          <a href="mailto:support@buzz.app" className="inline-block rounded-lg bg-white/20 px-3 py-1.5 text-xs font-medium hover:bg-white/30 transition-colors">Contact support</a>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
   const { theme, setTheme } = useTheme();
+  const [view, setView] = useState<SettingsView>("main");
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     toast.success("Logged out successfully");
   };
 
-  const settingGroups = [
+  if (view === "account") return <AccountView onBack={() => setView("main")} />;
+  if (view === "privacy") return <PrivacyView onBack={() => setView("main")} />;
+  if (view === "security") return <SecurityView onBack={() => setView("main")} />;
+  if (view === "notifications") return <NotificationsView onBack={() => setView("main")} />;
+  if (view === "language") return <LanguageView onBack={() => setView("main")} />;
+  if (view === "help") return <HelpView onBack={() => setView("main")} />;
+
+  const settingGroups: { title: string; items: { icon: typeof User; label: string; desc: string; view: SettingsView }[] }[] = [
     { title: "Account", items: [
-      { icon: User, label: "Account info", desc: "Username, profile details" },
-      { icon: Lock, label: "Privacy", desc: "Last seen, profile photo" },
-      { icon: Shield, label: "Security", desc: "Password, two-step verification" },
+      { icon: User, label: "Account info", desc: "Username, display name, about", view: "account" },
+      { icon: Lock, label: "Privacy", desc: "Last seen, read receipts, typing", view: "privacy" },
+      { icon: Shield, label: "Security", desc: "Password, app lock, 2-step", view: "security" },
     ]},
     { title: "Preferences", items: [
-      { icon: Bell, label: "Notifications", desc: "Message, group, call tones" },
-      { icon: Globe, label: "Language", desc: "English" },
-      { icon: HelpCircle, label: "Help", desc: "FAQs, contact us" },
+      { icon: Bell, label: "Notifications", desc: "Message, group, call tones", view: "notifications" },
+      { icon: Globe, label: "Language", desc: "Choose your language", view: "language" },
+      { icon: HelpCircle, label: "Help", desc: "FAQs, contact us", view: "help" },
     ]},
   ];
 
@@ -714,7 +961,6 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
         </div>
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        {/* Theme toggle */}
         <div className="border-b px-4 py-3">
           <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60">
             {theme === "dark" ? <Sun className="h-5 w-5 text-amber-400" /> : <Moon className="h-5 w-5 text-primary" />}
@@ -730,20 +976,20 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
             {group.items.map((item, i) => {
               const Icon = item.icon;
               return (
-                <button key={i} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60">
+                <button key={i} onClick={() => setView(item.view)} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                    <Icon className="h-4.5 w-4.5 text-primary" />
+                    <Icon className="h-4 w-4 text-primary" />
                   </div>
-                  <div className="text-left">
+                  <div className="text-left flex-1">
                     <p className="text-sm font-medium text-foreground">{item.label}</p>
                     <p className="text-xs text-muted-foreground">{item.desc}</p>
                   </div>
+                  <span className="text-muted-foreground">›</span>
                 </button>
               );
             })}
           </div>
         ))}
-        {/* Replay intro */}
         <div className="border-b px-4 py-2">
           <p className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Discover Buzz</p>
           <button
@@ -751,7 +997,7 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
             className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-              <PlayCircle className="h-4.5 w-4.5 text-primary" />
+              <PlayCircle className="h-4 w-4 text-primary" />
             </div>
             <div className="text-left">
               <p className="text-sm font-medium text-foreground">Replay intro</p>
@@ -765,7 +1011,6 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
             <span className="text-sm font-semibold">Log Out</span>
           </button>
         </div>
-        {/* App info */}
         <div className="flex flex-col items-center py-6 text-muted-foreground/50">
           <img src={buzzLogo} alt="Buzz" className="h-8 w-8 rounded-lg object-cover opacity-40 mb-1" />
           <p className="text-[10px]">Buzz v1.0 · 2026</p>
