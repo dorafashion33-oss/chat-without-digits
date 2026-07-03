@@ -84,6 +84,7 @@ export function useMoments(currentUserId: string | undefined) {
     const channel = supabase
       .channel("moments-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "moments" }, () => fetchMoments())
+      .on("postgres_changes", { event: "*", schema: "public", table: "moment_views" }, () => fetchMoments())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [fetchMoments]);
