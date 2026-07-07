@@ -117,7 +117,7 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
       <div className="flex items-center justify-between gradient-brand px-4 py-3 shadow-sm">
         <div className="flex items-center gap-2.5">
           <img src={buzzLogo} alt="Buzz" className="h-8 w-8 rounded-xl object-cover shadow-sm lg:hidden" />
-          <h1 className="text-lg font-bold text-white tracking-tight">Buzz</h1>
+          <h1 className="text-lg font-bold text-white tracking-tight flex items-center gap-1.5">Buzz <span className="text-sm" title="Made in India">🇮🇳</span></h1>
         </div>
         <div className="flex items-center gap-0.5">
           {onToggleGroups && (
