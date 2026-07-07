@@ -122,7 +122,7 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
         read_at: null,
         _pending: true,
       };
-      // Optimistic update for instant UX
+      // Optimistic update (create thread if missing)
       setThreads((prev) => {
         const existing = prev.find((t) => t.id === receiverId);
         if (existing) {
@@ -132,16 +132,36 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
               : t
           );
         }
-        return prev;
+        const profile = profiles.find((p) => p.user_id === receiverId);
+        if (!profile) return prev;
+        return [
+          { id: receiverId, profile, messages: [optimisticMsg], lastMessage: optimisticMsg.text, lastMessageTime: "Now", unreadCount: 0 },
+          ...prev,
+        ];
       });
-      // Fire-and-forget insert
-      supabase.from("messages").insert({
+      const { error } = await supabase.from("messages").insert({
         sender_id: currentUserId,
         receiver_id: receiverId,
         text: text.trim(),
-      }).then(() => {});
+      });
+      if (error) {
+        console.error("[sendMessage] insert failed:", error);
+        const { toast } = await import("sonner");
+        toast.error("Message failed: " + error.message);
+        // Remove failed optimistic message
+        setThreads((prev) =>
+          prev.map((t) =>
+            t.id === receiverId
+              ? { ...t, messages: t.messages.filter((m) => m.id !== optimisticMsg.id) }
+              : t
+          )
+        );
+      } else {
+        // Refresh to replace optimistic with real
+        fetchMessages();
+      }
     },
-    [currentUserId]
+    [currentUserId, profiles, fetchMessages]
   );
 
   const deleteMessage = useCallback(
