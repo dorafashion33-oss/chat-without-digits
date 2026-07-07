@@ -81,11 +81,12 @@ const AuthPage = ({ onAuth }: AuthPageProps) => {
               <Sparkles className="h-3.5 w-3.5 text-white" />
             </div>
           </div>
-          <h1 className="mt-5 text-2xl font-extrabold text-foreground">
+          <h1 className="mt-5 text-2xl font-extrabold text-foreground flex items-center gap-2">
             {isLogin ? "Welcome back to " : "Join "}<span className="gradient-brand-text">Buzz</span>
+            <span className="text-xl" title="Made in India">🇮🇳</span>
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            {isLogin ? "Sign in with your username" : "Create your unique identity"}
+            {isLogin ? "Sign in with your username" : "Create your unique identity"} · <span className="font-semibold text-primary">Made in India</span>
           </p>
         </div>
 
