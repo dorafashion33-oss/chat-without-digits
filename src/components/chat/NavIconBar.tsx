@@ -25,7 +25,10 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
   return (
     <div className="flex h-full w-[52px] md:w-[64px] flex-shrink-0 flex-col items-center justify-between border-r border-border bg-sidebar-background py-3 md:py-5">
       <div className="flex flex-col items-center gap-4">
-        <img src={buzzLogo} alt="Buzz" className="h-8 w-8 md:h-9 md:w-9 rounded-xl object-cover shadow-md" />
+        <div className="relative">
+          <img src={buzzLogo} alt="Buzz" className="h-8 w-8 md:h-9 md:w-9 rounded-xl object-cover shadow-md" />
+          <span className="absolute -bottom-1 -right-1 text-[11px] leading-none" title="Made in India">🇮🇳</span>
+        </div>
         <div className="flex flex-col items-center gap-0.5">
           {navItems.map((item) => {
             const isActive = active === item.id;
