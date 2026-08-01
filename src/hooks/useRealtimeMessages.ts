@@ -54,6 +54,20 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
 
   const fetchMessages = useCallback(async () => {
     if (!currentUserId) return;
+
+    // Offline: hydrate from local cache so the app fully works without internet
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(cacheKey(currentUserId)) || "null");
+        if (cached?.messages && cached?.profiles) {
+          setProfiles(cached.profiles);
+          setThreads(buildThreads(cached.messages, cached.profiles));
+        }
+      } catch { /* ignore corrupt cache */ }
+      setLoading(false);
+      return;
+    }
+
     const { data: messages } = await supabase
       .from("messages")
       .select("*")
@@ -68,6 +82,12 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
     if (profs) setProfiles(profs);
     if (messages && profs) {
       setThreads(buildThreads(messages, profs));
+      try {
+        localStorage.setItem(
+          cacheKey(currentUserId),
+          JSON.stringify({ messages: messages.slice(-500), profiles: profs })
+        );
+      } catch { /* quota */ }
     }
     setLoading(false);
   }, [currentUserId, buildThreads]);
