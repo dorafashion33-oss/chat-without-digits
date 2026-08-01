@@ -171,6 +171,19 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
           ...prev,
         ];
       });
+      const queue = () => {
+        writeOutbox(currentUserId, [
+          ...readOutbox(currentUserId),
+          { id: optimisticMsg.id, receiver_id: receiverId, text: optimisticMsg.text, created_at: optimisticMsg.created_at },
+        ]);
+      };
+
+      // Offline: keep the message locally and send it automatically on reconnect
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        queue();
+        return;
+      }
+
       const { error } = await supabase.from("messages").insert({
         sender_id: currentUserId,
         receiver_id: receiverId,
@@ -178,16 +191,9 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
       });
       if (error) {
         console.error("[sendMessage] insert failed:", error);
+        queue();
         const { toast } = await import("sonner");
-        toast.error("Message failed: " + error.message);
-        // Remove failed optimistic message
-        setThreads((prev) =>
-          prev.map((t) =>
-            t.id === receiverId
-              ? { ...t, messages: t.messages.filter((m) => m.id !== optimisticMsg.id) }
-              : t
-          )
-        );
+        toast.message("Offline — message queued, reconnect hote hi chala jayega");
       } else {
         // Refresh to replace optimistic with real
         fetchMessages();
@@ -195,6 +201,27 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
     },
     [currentUserId, profiles, fetchMessages]
   );
+
+  // Flush queued offline messages when connectivity returns
+  useEffect(() => {
+    if (!currentUserId) return;
+    const flush = async () => {
+      const items = readOutbox(currentUserId);
+      if (!items.length || !navigator.onLine) return;
+      const remaining: OutboxItem[] = [];
+      for (const item of items) {
+        const { error } = await supabase
+          .from("messages")
+          .insert({ sender_id: currentUserId, receiver_id: item.receiver_id, text: item.text });
+        if (error) remaining.push(item);
+      }
+      writeOutbox(currentUserId, remaining);
+      if (remaining.length < items.length) fetchMessages();
+    };
+    flush();
+    window.addEventListener("online", flush);
+    return () => window.removeEventListener("online", flush);
+  }, [currentUserId, fetchMessages]);
 
   const deleteMessage = useCallback(
     async (messageId: string) => {
