@@ -14,6 +14,18 @@ export interface ChatThread {
   unreadCount: number;
 }
 
+const cacheKey = (uid: string) => `buzz:chat-cache:${uid}`;
+const outboxKey = (uid: string) => `buzz:outbox:${uid}`;
+
+type OutboxItem = { id: string; receiver_id: string; text: string; created_at: string };
+
+const readOutbox = (uid: string): OutboxItem[] => {
+  try { return JSON.parse(localStorage.getItem(outboxKey(uid)) || "[]"); } catch { return []; }
+};
+const writeOutbox = (uid: string, items: OutboxItem[]) => {
+  try { localStorage.setItem(outboxKey(uid), JSON.stringify(items)); } catch { /* quota */ }
+};
+
 export function useRealtimeMessages(currentUserId: string | undefined) {
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [profiles, setProfiles] = useState<DbProfile[]>([]);
