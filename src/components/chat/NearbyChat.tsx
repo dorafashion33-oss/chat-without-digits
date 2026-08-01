@@ -9,6 +9,26 @@ const NUS_TX = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // notify
 
 const STORE_KEY = "buzz:nearby-messages";
 
+type BleChar = {
+  value?: DataView;
+  writeValue(value: BufferSource): Promise<void>;
+  startNotifications(): Promise<unknown>;
+  addEventListener(type: string, cb: (ev: Event) => void): void;
+};
+type BleDevice = {
+  name?: string;
+  gatt?: {
+    connect(): Promise<{ getPrimaryService(uuid: string): Promise<{ getCharacteristic(uuid: string): Promise<BleChar> }> }>;
+    disconnect(): void;
+  };
+  addEventListener(type: string, cb: () => void): void;
+};
+type BleNavigator = Navigator & {
+  bluetooth: {
+    requestDevice(opts: { filters?: { services?: string[] }[]; optionalServices?: string[] }): Promise<BleDevice>;
+  };
+};
+
 export interface NearbyMessage {
   id: string;
   text: string;
@@ -35,8 +55,8 @@ const NearbyChat = ({ username, onClose }: NearbyChatProps) => {
   const [input, setInput] = useState("");
   const [deviceName, setDeviceName] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
-  const rxRef = useRef<BluetoothRemoteGATTCharacteristic | null>(null);
-  const deviceRef = useRef<BluetoothDevice | null>(null);
+  const rxRef = useRef<BleChar | null>(null);
+  const deviceRef = useRef<BleDevice | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -69,7 +89,7 @@ const NearbyChat = ({ username, onClose }: NearbyChatProps) => {
     }
     setConnecting(true);
     try {
-      const device = await navigator.bluetooth.requestDevice({
+      const device = await (navigator as BleNavigator).bluetooth.requestDevice({
         filters: [{ services: [NUS_SERVICE] }],
         optionalServices: [NUS_SERVICE],
       });
@@ -85,7 +105,7 @@ const NearbyChat = ({ username, onClose }: NearbyChatProps) => {
       const tx = await service.getCharacteristic(NUS_TX);
       await tx.startNotifications();
       tx.addEventListener("characteristicvaluechanged", (ev) => {
-        const value = (ev.target as BluetoothRemoteGATTCharacteristic).value;
+        const value = (ev.target as unknown as BleChar).value;
         if (!value) return;
         const text = new TextDecoder().decode(value);
         setMessages((p) => [...p, { id: crypto.randomUUID(), text, mine: false, at: Date.now(), via: "bluetooth" }]);
