@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { Bluetooth, BluetoothConnected, Send, X, WifiOff, Radio } from "lucide-react";
+import { Bluetooth, BluetoothConnected, Send, X, WifiOff, Radio, ShieldCheck, ShieldAlert, QrCode, Lock } from "lucide-react";
 import { toast } from "sonner";
+import NearbyPairing from "./NearbyPairing";
+import {
+  getPairedPeer,
+  encryptMessage,
+  decryptMessage,
+  isEncrypted,
+  getDeviceName as getLocalDeviceName,
+  type PairedPeer,
+} from "@/lib/nearbyCrypto";
 
 // Nordic UART Service — the de-facto standard for BLE serial chat links
 const NUS_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
@@ -35,6 +44,7 @@ export interface NearbyMessage {
   mine: boolean;
   at: number;
   via: "bluetooth" | "local";
+  secure?: boolean;
 }
 
 const load = (): NearbyMessage[] => {
@@ -53,12 +63,16 @@ interface NearbyChatProps {
 const NearbyChat = ({ username, onClose }: NearbyChatProps) => {
   const [messages, setMessages] = useState<NearbyMessage[]>(load);
   const [input, setInput] = useState("");
-  const [deviceName, setDeviceName] = useState<string | null>(null);
+  const [btDeviceName, setBtDeviceName] = useState<string | null>(null);
+  const [peer, setPeer] = useState<PairedPeer | null>(() => getPairedPeer());
+  const [showPairing, setShowPairing] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const rxRef = useRef<BleChar | null>(null);
   const deviceRef = useRef<BleDevice | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const peerRef = useRef<PairedPeer | null>(peer);
+  useEffect(() => { peerRef.current = peer; }, [peer]);
 
   const bleSupported = typeof navigator !== "undefined" && "bluetooth" in navigator;
 
@@ -71,16 +85,28 @@ const NearbyChat = ({ username, onClose }: NearbyChatProps) => {
   useEffect(() => {
     const ch = new BroadcastChannel("buzz-nearby");
     channelRef.current = ch;
-    ch.onmessage = (e) => {
+    ch.onmessage = async (e) => {
       const d = e.data as { text: string; from: string };
       if (!d?.text) return;
+      const { text, secure } = await readIncoming(d.text);
       setMessages((p) => [
         ...p,
-        { id: crypto.randomUUID(), text: `${d.from}: ${d.text}`, mine: false, at: Date.now(), via: "local" },
+        { id: crypto.randomUUID(), text: `${d.from}: ${text}`, mine: false, at: Date.now(), via: "local", secure },
       ]);
     };
     return () => ch.close();
   }, []);
+
+  const readIncoming = async (raw: string): Promise<{ text: string; secure: boolean }> => {
+    if (!isEncrypted(raw)) return { text: raw, secure: false };
+    const current = peerRef.current;
+    if (!current) return { text: "🔒 Encrypted message — pair karo padhne ke liye", secure: true };
+    try {
+      return { text: await decryptMessage(raw, current.publicJwk), secure: true };
+    } catch {
+      return { text: "🔒 Decrypt fail — safety number check karo", secure: true };
+    }
+  };
 
   const connect = async () => {
     if (!bleSupported) {
@@ -95,7 +121,7 @@ const NearbyChat = ({ username, onClose }: NearbyChatProps) => {
       });
       deviceRef.current = device;
       device.addEventListener("gattserverdisconnected", () => {
-        setDeviceName(null);
+        setBtDeviceName(null);
         rxRef.current = null;
         toast.message("Bluetooth disconnected");
       });
@@ -104,13 +130,14 @@ const NearbyChat = ({ username, onClose }: NearbyChatProps) => {
       rxRef.current = await service.getCharacteristic(NUS_RX);
       const tx = await service.getCharacteristic(NUS_TX);
       await tx.startNotifications();
-      tx.addEventListener("characteristicvaluechanged", (ev) => {
+      tx.addEventListener("characteristicvaluechanged", async (ev) => {
         const value = (ev.target as unknown as BleChar).value;
         if (!value) return;
-        const text = new TextDecoder().decode(value);
-        setMessages((p) => [...p, { id: crypto.randomUUID(), text, mine: false, at: Date.now(), via: "bluetooth" }]);
+        const raw = new TextDecoder().decode(value);
+        const { text, secure } = await readIncoming(raw);
+        setMessages((p) => [...p, { id: crypto.randomUUID(), text, mine: false, at: Date.now(), via: "bluetooth", secure }]);
       });
-      setDeviceName(device.name || "Buzz device");
+      setBtDeviceName(device.name || "Buzz device");
       toast.success(`Connected to ${device.name || "device"}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -122,7 +149,7 @@ const NearbyChat = ({ username, onClose }: NearbyChatProps) => {
 
   const disconnect = () => {
     deviceRef.current?.gatt?.disconnect();
-    setDeviceName(null);
+    setBtDeviceName(null);
     rxRef.current = null;
   };
 
@@ -130,14 +157,16 @@ const NearbyChat = ({ username, onClose }: NearbyChatProps) => {
     const text = input.trim();
     if (!text) return;
     setInput("");
+    const secure = !!peer;
     setMessages((p) => [
       ...p,
-      { id: crypto.randomUUID(), text, mine: true, at: Date.now(), via: rxRef.current ? "bluetooth" : "local" },
+      { id: crypto.randomUUID(), text, mine: true, at: Date.now(), via: rxRef.current ? "bluetooth" : "local", secure },
     ]);
-    channelRef.current?.postMessage({ text, from: username || "Buzz user" });
+    const wire = peer ? await encryptMessage(text, peer.publicJwk) : text;
+    channelRef.current?.postMessage({ text: wire, from: username || getLocalDeviceName() });
     if (rxRef.current) {
       try {
-        await rxRef.current.writeValue(new TextEncoder().encode(text));
+        await rxRef.current.writeValue(new TextEncoder().encode(wire));
       } catch {
         toast.error("Bluetooth send failed");
       }
@@ -148,25 +177,45 @@ const NearbyChat = ({ username, onClose }: NearbyChatProps) => {
     <div className="fixed inset-0 z-[90] flex flex-col bg-background">
       <div className="flex items-center justify-between gradient-brand px-4 py-3">
         <div className="flex items-center gap-2.5 text-white">
-          {deviceName ? <BluetoothConnected className="h-5 w-5" /> : <Bluetooth className="h-5 w-5" />}
+          {btDeviceName ? <BluetoothConnected className="h-5 w-5" /> : <Bluetooth className="h-5 w-5" />}
           <div>
             <h2 className="text-base font-bold leading-tight">Offline Nearby Chat</h2>
             <p className="text-[11px] opacity-90">
-              {deviceName ? `Connected · ${deviceName}` : "No internet needed 🇮🇳"}
+              {btDeviceName ? `Connected · ${btDeviceName}` : "No internet needed 🇮🇳"}
             </p>
           </div>
         </div>
+        <button onClick={() => setShowPairing(true)} className="ml-auto mr-1 rounded-full p-2 hover:bg-white/20" title="Secure pairing (QR)">
+          <QrCode className="h-5 w-5 text-white" />
+        </button>
         <button onClick={onClose} className="rounded-full p-2 hover:bg-white/20" title="Close">
           <X className="h-5 w-5 text-white" />
         </button>
       </div>
+
+      <button
+        onClick={() => setShowPairing(true)}
+        className={`flex w-full items-center gap-2 border-b border-border px-4 py-2 text-left ${peer ? "bg-primary/10" : "bg-amber-500/10"}`}
+      >
+        {peer ? <ShieldCheck className="h-4 w-4 text-primary" /> : <ShieldAlert className="h-4 w-4 text-amber-600" />}
+        <span className="flex-1 text-[11px] font-medium text-foreground">
+          {peer
+            ? `End-to-end encrypted with ${peer.name} · Safety no. ${peer.safetyNumber}`
+            : "Not encrypted — QR se device pair karo end-to-end encryption ke liye"}
+        </span>
+        <span className="text-[11px] font-semibold text-primary">{peer ? "Verify" : "Pair"}</span>
+      </button>
+
+      {showPairing && (
+        <NearbyPairing onPaired={(p) => { setPeer(p); setShowPairing(false); }} onClose={() => setShowPairing(false)} />
+      )}
 
       <div className="flex items-center gap-2 border-b border-border bg-accent/40 px-4 py-2">
         <WifiOff className="h-4 w-4 text-muted-foreground" />
         <p className="text-xs text-muted-foreground flex-1">
           Messages Bluetooth link aur local device mesh par jaate hain — server ya internet ki zarurat nahi.
         </p>
-        {deviceName ? (
+        {btDeviceName ? (
           <button onClick={disconnect} className="rounded-full bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive">
             Disconnect
           </button>
@@ -202,6 +251,7 @@ const NearbyChat = ({ username, onClose }: NearbyChatProps) => {
               <p className="whitespace-pre-wrap break-words">{m.text}</p>
               <p className={`mt-0.5 text-[10px] ${m.mine ? "text-white/70" : "text-muted-foreground"}`}>
                 {new Date(m.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {m.via}
+                {m.secure && <Lock className="ml-1 inline h-2.5 w-2.5" />}
               </p>
             </div>
           </div>
