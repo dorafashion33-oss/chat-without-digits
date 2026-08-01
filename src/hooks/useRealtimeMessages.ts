@@ -14,6 +14,18 @@ export interface ChatThread {
   unreadCount: number;
 }
 
+const cacheKey = (uid: string) => `buzz:chat-cache:${uid}`;
+const outboxKey = (uid: string) => `buzz:outbox:${uid}`;
+
+type OutboxItem = { id: string; receiver_id: string; text: string; created_at: string };
+
+const readOutbox = (uid: string): OutboxItem[] => {
+  try { return JSON.parse(localStorage.getItem(outboxKey(uid)) || "[]"); } catch { return []; }
+};
+const writeOutbox = (uid: string, items: OutboxItem[]) => {
+  try { localStorage.setItem(outboxKey(uid), JSON.stringify(items)); } catch { /* quota */ }
+};
+
 export function useRealtimeMessages(currentUserId: string | undefined) {
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [profiles, setProfiles] = useState<DbProfile[]>([]);
@@ -54,6 +66,20 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
 
   const fetchMessages = useCallback(async () => {
     if (!currentUserId) return;
+
+    // Offline: hydrate from local cache so the app fully works without internet
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(cacheKey(currentUserId)) || "null");
+        if (cached?.messages && cached?.profiles) {
+          setProfiles(cached.profiles);
+          setThreads(buildThreads(cached.messages, cached.profiles));
+        }
+      } catch { /* ignore corrupt cache */ }
+      setLoading(false);
+      return;
+    }
+
     const { data: messages } = await supabase
       .from("messages")
       .select("*")
@@ -68,6 +94,12 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
     if (profs) setProfiles(profs);
     if (messages && profs) {
       setThreads(buildThreads(messages, profs));
+      try {
+        localStorage.setItem(
+          cacheKey(currentUserId),
+          JSON.stringify({ messages: messages.slice(-500), profiles: profs })
+        );
+      } catch { /* quota */ }
     }
     setLoading(false);
   }, [currentUserId, buildThreads]);
@@ -139,6 +171,19 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
           ...prev,
         ];
       });
+      const queue = () => {
+        writeOutbox(currentUserId, [
+          ...readOutbox(currentUserId),
+          { id: optimisticMsg.id, receiver_id: receiverId, text: optimisticMsg.text, created_at: optimisticMsg.created_at },
+        ]);
+      };
+
+      // Offline: keep the message locally and send it automatically on reconnect
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        queue();
+        return;
+      }
+
       const { error } = await supabase.from("messages").insert({
         sender_id: currentUserId,
         receiver_id: receiverId,
@@ -146,16 +191,9 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
       });
       if (error) {
         console.error("[sendMessage] insert failed:", error);
+        queue();
         const { toast } = await import("sonner");
-        toast.error("Message failed: " + error.message);
-        // Remove failed optimistic message
-        setThreads((prev) =>
-          prev.map((t) =>
-            t.id === receiverId
-              ? { ...t, messages: t.messages.filter((m) => m.id !== optimisticMsg.id) }
-              : t
-          )
-        );
+        toast.message("Offline — message queued, reconnect hote hi chala jayega");
       } else {
         // Refresh to replace optimistic with real
         fetchMessages();
@@ -163,6 +201,27 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
     },
     [currentUserId, profiles, fetchMessages]
   );
+
+  // Flush queued offline messages when connectivity returns
+  useEffect(() => {
+    if (!currentUserId) return;
+    const flush = async () => {
+      const items = readOutbox(currentUserId);
+      if (!items.length || !navigator.onLine) return;
+      const remaining: OutboxItem[] = [];
+      for (const item of items) {
+        const { error } = await supabase
+          .from("messages")
+          .insert({ sender_id: currentUserId, receiver_id: item.receiver_id, text: item.text });
+        if (error) remaining.push(item);
+      }
+      writeOutbox(currentUserId, remaining);
+      if (remaining.length < items.length) fetchMessages();
+    };
+    flush();
+    window.addEventListener("online", flush);
+    return () => window.removeEventListener("online", flush);
+  }, [currentUserId, fetchMessages]);
 
   const deleteMessage = useCallback(
     async (messageId: string) => {
