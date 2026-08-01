@@ -49,9 +49,8 @@ export default defineConfig(({ mode }) => ({
             },
           },
           {
-            urlPattern: ({ url, request }) =>
-              url.origin === self.location.origin &&
-              ["style", "script", "image", "font"].includes(request.destination),
+            urlPattern: ({ url, request, sameOrigin }) =>
+              !!sameOrigin && ["style", "script", "image", "font"].includes(request.destination) && !!url,
             handler: "CacheFirst",
             options: {
               cacheName: "buzz-assets",
