@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://buzzofficial.vercel.app/sitemap.xml
+Sitemap: https://chat-without-digits.lovable.app/sitemap.xml
