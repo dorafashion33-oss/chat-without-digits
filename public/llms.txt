@@ -1,0 +1,12 @@
+# Buzz
+
+> Buzz is a messaging web app made in India for username-based chat, calls, moments, group conversations, and nearby offline messaging.
+
+## Pages
+
+- [Buzz home](/): Open Buzz and sign in or create an account to chat without phone numbers.
+
+## Optional
+
+- [Privacy policy](/privacy-policy): Privacy information for Buzz users.
+- [Terms](/terms): Terms for using Buzz.
