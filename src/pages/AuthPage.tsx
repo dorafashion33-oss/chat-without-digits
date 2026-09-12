@@ -16,18 +16,19 @@ const AuthPage = ({ onAuth }: AuthPageProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const fakeEmail = (uname: string) => `${uname.toLowerCase().trim()}@buzz.local`;
+  // Accepts a username OR an email. Usernames are normalised so that stray
+  // spaces, dots, dashes and capitals never cause an "invalid" error.
+  const normalizeUsername = (val: string) =>
+    val.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
 
-  const validateUsername = (val: string) => {
-    if (val.trim().length < 3) return "Username must be at least 3 characters";
-    if (!/^[a-zA-Z0-9_]+$/.test(val.trim())) return "Only letters, numbers, and underscores";
-    return "";
-  };
+  const isEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
+
+  const toEmail = (val: string) => (isEmail(val) ? val.trim().toLowerCase() : `${normalizeUsername(val)}@buzz.local`);
 
   const handleSubmit = async () => {
-    const trimmedUsername = username.trim();
-    const usernameErr = validateUsername(trimmedUsername);
-    if (usernameErr) { setError(usernameErr); return; }
+    const raw = username.trim();
+    const trimmedUsername = isEmail(raw) ? raw.split("@")[0].toLowerCase() : normalizeUsername(raw);
+    if (!isEmail(raw) && trimmedUsername.length < 3) { setError("Username must be at least 3 characters (letters, numbers, underscore)"); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
 
     setLoading(true);
