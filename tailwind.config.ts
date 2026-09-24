@@ -59,6 +59,11 @@ export default {
           "bg-pattern": "hsl(var(--chat-bg-pattern))",
         },
         online: "hsl(var(--online))",
+        landing: {
+          canvas: "hsl(var(--landing-canvas))",
+          night: "hsl(var(--landing-night))",
+          bubble: "hsl(var(--landing-bubble))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

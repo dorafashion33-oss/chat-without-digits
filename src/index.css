@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -61,6 +59,9 @@
     --sidebar-accent-foreground: 262 83% 35%;
     --sidebar-border: 250 13% 91%;
     --sidebar-ring: 262 83% 58%;
+    --landing-canvas: 40 43% 96%;
+    --landing-night: 200 41% 9%;
+    --landing-bubble: 145 67% 90%;
   }
 
   .dark {
@@ -115,6 +116,9 @@
     --sidebar-accent-foreground: 262 50% 80%;
     --sidebar-border: 250 25% 15%;
     --sidebar-ring: 262 83% 58%;
+    --landing-canvas: 250 25% 6%;
+    --landing-night: 200 41% 5%;
+    --landing-bubble: 262 45% 18%;
   }
 }
 
@@ -125,7 +129,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: Arial, Helvetica, system-ui, sans-serif;
   }
 }
 

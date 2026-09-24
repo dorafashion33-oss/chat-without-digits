@@ -10,7 +10,11 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-const InstallAppDialog = () => {
+interface InstallAppDialogProps {
+  trigger?: React.ReactNode;
+}
+
+const InstallAppDialog = ({ trigger }: InstallAppDialogProps) => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [installing, setInstalling] = useState(false);
@@ -150,14 +154,14 @@ const InstallAppDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
+        {trigger || <Button
           variant="ghost"
           size="sm"
           className="gap-1.5 text-muted-foreground hover:text-foreground h-auto py-1.5 px-2"
         >
           <Download className="h-4 w-4" />
           <span className="text-[10px] font-medium hidden md:inline">Install</span>
-        </Button>
+        </Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
