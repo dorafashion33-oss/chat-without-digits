@@ -6,9 +6,10 @@ import buzzLogo from "@/assets/buzz-logo.jpeg";
 
 interface AuthPageProps {
   onAuth: () => void;
+  embedded?: boolean;
 }
 
-const AuthPage = ({ onAuth }: AuthPageProps) => {
+const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -37,14 +38,14 @@ const AuthPage = ({ onAuth }: AuthPageProps) => {
     try {
       if (isLogin) {
         const { error: loginErr } = await supabase.auth.signInWithPassword({
-          email: fakeEmail(trimmedUsername),
+          email: toEmail(raw),
           password,
         });
         if (loginErr) throw loginErr;
         toast.success(`Welcome back, @${trimmedUsername}! 🎉`);
       } else {
         const { data, error: signupErr } = await supabase.auth.signUp({
-          email: fakeEmail(trimmedUsername),
+           email: toEmail(raw),
           password,
           options: {
             data: { username: trimmedUsername, display_name: trimmedUsername },
@@ -72,7 +73,7 @@ const AuthPage = ({ onAuth }: AuthPageProps) => {
   };
 
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-background p-6">
+    <div className={`flex w-full items-center justify-center bg-background p-6 ${embedded ? "min-h-[620px] rounded-lg" : "h-screen"}`}>
       <div className="w-full max-w-sm animate-fade-in">
         {/* Logo & Title */}
         <div className="flex flex-col items-center text-center mb-8">

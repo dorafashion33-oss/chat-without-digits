@@ -12,6 +12,7 @@ import CallScreen from "@/components/chat/CallScreen";
 import GroupCallScreen from "@/components/chat/GroupCallScreen";
 import IntroExperience, { hasSeenIntro } from "@/components/chat/IntroExperience";
 import AuthPage from "@/pages/AuthPage";
+import BuzzLanding from "@/pages/BuzzLanding";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { useMoments } from "@/hooks/useMoments";
 import { useGroups } from "@/hooks/useGroups";
@@ -152,7 +153,7 @@ const Index = () => {
     );
   }
 
-  if (!session) return <AuthPage onAuth={() => {}} />;
+  if (!session) return <BuzzLanding />;
 
   const isMobileChatOpen = (!!activeChatId || !!activeGroupId) && isStreamsSection;
 
