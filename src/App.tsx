@@ -20,6 +20,11 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/features" element={<Index />} />
+            <Route path="/privacy" element={<Index />} />
+            <Route path="/buzz-web" element={<Index />} />
+            <Route path="/download" element={<Index />} />
+            <Route path="/contact" element={<Index />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
