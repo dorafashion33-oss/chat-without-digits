@@ -64,6 +64,11 @@ export default {
           night: "hsl(var(--landing-night))",
           bubble: "hsl(var(--landing-bubble))",
         },
+        call: {
+          surface: "hsl(var(--call-surface))",
+          control: "hsl(var(--call-control))",
+          active: "hsl(var(--call-control-active))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

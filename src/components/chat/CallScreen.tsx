@@ -1,12 +1,13 @@
-import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff } from "lucide-react";
+import { Ellipsis, Mic, MicOff, Phone, PhoneOff, UserRoundPlus, Video, VideoOff } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import type { CallState, CallType } from "@/hooks/useWebRTC";
 import { formatDuration } from "@/hooks/useWebRTC";
 
 interface CallScreenProps {
   callState: CallState;
   callType: CallType;
-  remoteProfile: any;
+  remoteProfile: { display_name?: string; username?: string; avatar_url?: string } | null;
   callDuration: number;
   localVideoRef: React.RefObject<HTMLVideoElement>;
   remoteVideoRef: React.RefObject<HTMLVideoElement>;
@@ -18,107 +19,49 @@ interface CallScreenProps {
   onToggleVideo: () => void;
 }
 
-const CallScreen = ({
-  callState, callType, remoteProfile, callDuration,
-  localVideoRef, remoteVideoRef, isRemoteOnline,
-  onEndCall, onAccept, onReject, onToggleMute, onToggleVideo,
-}: CallScreenProps) => {
+const CallScreen = ({ callState, callType, remoteProfile, callDuration, localVideoRef, remoteVideoRef, isRemoteOnline, onEndCall, onAccept, onReject, onToggleMute, onToggleVideo }: CallScreenProps) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
-
-  const displayName = remoteProfile?.display_name || remoteProfile?.username || "Unknown";
-  const initials = displayName.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
-
-  const handleMute = () => { setIsMuted(!isMuted); onToggleMute(); };
-  const handleVideo = () => { setIsVideoOff(!isVideoOff); onToggleVideo(); };
-
-  const getCallingStatus = () => {
-    if (callState === "calling") {
-      if (isRemoteOnline) return "Ringing...";
-      return "Calling...";
-    }
-    if (callState === "ringing") return "Incoming call...";
-    if (callState === "connected") return formatDuration(callDuration);
-    return "";
-  };
+  const displayName = remoteProfile?.display_name || remoteProfile?.username || "Buzz user";
+  const initials = displayName.split(" ").map((word) => word[0]).join("").toUpperCase().slice(0, 2);
+  const status = callState === "calling" ? (isRemoteOnline ? "Ringing…" : "Calling…") : callState === "ringing" ? `Incoming ${callType} call` : formatDuration(callDuration);
+  const toggleMute = () => { setIsMuted((value) => !value); onToggleMute(); };
+  const toggleVideo = () => { setIsVideoOff((value) => !value); onToggleVideo(); };
+  const controlClass = "h-12 w-12 rounded-full bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20";
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-between bg-gradient-to-b from-gray-900 to-black p-6">
-      {/* Remote video (full screen bg) */}
-      {callType === "video" && callState === "connected" && (
-        <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 h-full w-full object-cover" />
-      )}
+    <div className="fixed inset-0 z-[100] overflow-hidden bg-call-surface text-primary-foreground">
+      {callType === "video" && callState === "connected" && <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 h-full w-full object-cover" />}
+      <div className="absolute inset-0 bg-gradient-to-b from-call-surface/55 via-transparent to-call-surface/60" />
 
-      {/* Local video (small pip) */}
-      {callType === "video" && callState === "connected" && (
-        <video ref={localVideoRef} autoPlay playsInline muted className="absolute top-6 right-6 z-10 h-32 w-24 rounded-2xl object-cover border-2 border-white/30 shadow-xl" />
-      )}
-
-      {/* Top area */}
-      <div className="z-10 flex flex-col items-center pt-12">
-        {(callState !== "connected" || callType === "voice") && (
-          <>
-            {remoteProfile?.avatar_url ? (
-              <img src={remoteProfile.avatar_url} alt={displayName} className="h-28 w-28 rounded-full object-cover ring-4 ring-white/20 shadow-2xl" />
-            ) : (
-              <div className="flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-4xl font-bold text-white ring-4 ring-white/20 shadow-2xl">
-                {initials}
-              </div>
-            )}
-            <h2 className="mt-6 text-2xl font-bold text-white">{displayName}</h2>
-            <p className="mt-2 text-sm text-white/70">{getCallingStatus()}</p>
-            
-            {/* Calling animation dots */}
-            {callState === "calling" && (
-              <div className="mt-4 flex gap-1">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-2 w-2 rounded-full bg-white/60 animate-pulse" style={{ animationDelay: `${i * 0.3}s` }} />
-                ))}
-              </div>
-            )}
-
-            {/* Ringing animation for incoming */}
-            {callState === "ringing" && (
-              <div className="mt-4 flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-green-400 animate-ping" />
-                <span className="text-xs text-green-400 animate-pulse">Incoming {callType} call</span>
-              </div>
-            )}
-          </>
-        )}
-
-        {callState === "connected" && callType === "voice" && (
-          <p className="mt-4 text-lg text-white/90 font-medium">{formatDuration(callDuration)}</p>
-        )}
+      <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-5 pb-6 pt-[max(20px,env(safe-area-inset-top))] low-fade">
+        <span className="text-xs font-medium">End-to-end encrypted</span>
+        <Button variant="ghost" size="icon" className="rounded-full text-primary-foreground hover:bg-primary-foreground/10" aria-label="Add participant"><UserRoundPlus /></Button>
       </div>
 
-      {/* Controls */}
-      <div className="z-10 flex items-center gap-6 pb-12">
-        {callState === "ringing" ? (
-          <>
-            <button onClick={onReject} className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 transition-colors">
-              <PhoneOff className="h-7 w-7" />
-            </button>
-            <button onClick={onAccept} className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500 text-white shadow-lg hover:bg-green-600 transition-colors animate-pulse">
-              <Phone className="h-7 w-7" />
-            </button>
-          </>
-        ) : (
-          <>
-            <button onClick={handleMute} className={`flex h-14 w-14 items-center justify-center rounded-full transition-colors ${isMuted ? "bg-white text-gray-900" : "bg-white/20 text-white"}`}>
-              {isMuted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-            </button>
-            {callType === "video" && (
-              <button onClick={handleVideo} className={`flex h-14 w-14 items-center justify-center rounded-full transition-colors ${isVideoOff ? "bg-white text-gray-900" : "bg-white/20 text-white"}`}>
-                {isVideoOff ? <VideoOff className="h-6 w-6" /> : <Video className="h-6 w-6" />}
-              </button>
-            )}
-            <button onClick={onEndCall} className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 transition-colors">
-              <PhoneOff className="h-7 w-7" />
-            </button>
-          </>
-        )}
-      </div>
+      {(callState !== "connected" || callType === "voice") && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 pb-28 text-center low-fade">
+          {remoteProfile?.avatar_url ? <img src={remoteProfile.avatar_url} alt={displayName} className="h-28 w-28 rounded-full object-cover ring-4 ring-primary-foreground/20 shadow-2xl" /> : <div className="gradient-brand flex h-28 w-28 items-center justify-center rounded-full text-4xl font-bold ring-4 ring-primary-foreground/20 shadow-2xl">{initials}</div>}
+          <h2 className="mt-6 text-2xl font-bold">{displayName}</h2>
+          <p className="mt-2 text-sm text-primary-foreground/70">{status}</p>
+        </div>
+      )}
+
+      {callType === "video" && callState === "connected" && <video ref={localVideoRef} autoPlay playsInline muted className="absolute right-4 top-20 z-20 aspect-[3/4] w-24 rounded-md border border-primary-foreground/20 object-cover shadow-xl sm:w-28" />}
+
+      {callState === "ringing" ? (
+        <div className="absolute inset-x-0 bottom-10 z-30 flex justify-center gap-12">
+          <Button variant="destructive" size="icon" onClick={onReject} className="h-16 w-16 rounded-full shadow-xl" aria-label="Decline call"><PhoneOff className="h-7 w-7" /></Button>
+          <Button size="icon" onClick={onAccept} className="h-16 w-16 rounded-full bg-online text-primary-foreground shadow-xl hover:bg-online/90" aria-label="Accept call"><Phone className="h-7 w-7" /></Button>
+        </div>
+      ) : (
+        <div className="absolute bottom-[max(16px,env(safe-area-inset-bottom))] left-1/2 z-30 flex w-[calc(100%-32px)] max-w-sm -translate-x-1/2 items-center justify-around rounded-[22px] border border-primary-foreground/10 bg-call-surface/85 px-3 py-3 shadow-2xl backdrop-blur-xl low-fade-delay">
+          <Button variant="ghost" size="icon" className={controlClass} aria-label="More call options"><Ellipsis /></Button>
+          <Button variant="ghost" size="icon" onClick={toggleVideo} className={`${controlClass} ${isVideoOff ? "bg-call-active text-call-surface" : ""}`} aria-label={isVideoOff ? "Turn camera on" : "Turn camera off"}>{isVideoOff ? <VideoOff /> : <Video />}</Button>
+          <Button variant="ghost" size="icon" onClick={toggleMute} className={`${controlClass} ${isMuted ? "bg-call-active text-call-surface" : ""}`} aria-label={isMuted ? "Unmute" : "Mute"}>{isMuted ? <MicOff /> : <Mic />}</Button>
+          <Button variant="destructive" size="icon" onClick={onEndCall} className="h-12 w-12 rounded-full shadow-lg" aria-label="End call"><PhoneOff /></Button>
+        </div>
+      )}
     </div>
   );
 };

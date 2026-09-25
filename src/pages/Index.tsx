@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import NavIconBar, { type NavSection } from "@/components/chat/NavIconBar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
@@ -21,6 +22,7 @@ import type { Session } from "@supabase/supabase-js";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
 
 const Index = () => {
+  const location = useLocation();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -152,7 +154,7 @@ const Index = () => {
     );
   }
 
-  if (!session) return <BuzzLanding />;
+  if (!session) return <BuzzLanding page={location.pathname} />;
 
   const isMobileChatOpen = (!!activeChatId || !!activeGroupId) && isStreamsSection;
 

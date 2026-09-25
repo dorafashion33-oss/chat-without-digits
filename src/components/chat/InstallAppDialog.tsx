@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Smartphone, CheckCircle2, Sparkles, Image as ImageIcon } from "lucide-react";
+import { Download, Smartphone, Sparkles, Image as ImageIcon, Share, PlusSquare } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
 
@@ -19,6 +19,7 @@ const InstallAppDialog = ({ trigger }: InstallAppDialogProps) => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [open, setOpen] = useState(false);
+  const [installHint, setInstallHint] = useState("");
   const qrWrapRef = useRef<HTMLDivElement>(null);
 
   // Auto-open when scanned via QR (?install=1)
@@ -52,7 +53,13 @@ const InstallAppDialog = ({ trigger }: InstallAppDialogProps) => {
   }, []);
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      setInstallHint(isIOS
+        ? "Tap Share, then Add to Home Screen."
+        : "Open your browser menu and choose Install app or Add to Home screen.");
+      return;
+    }
     setInstalling(true);
     try {
       await deferredPrompt.prompt();
@@ -172,16 +179,27 @@ const InstallAppDialog = ({ trigger }: InstallAppDialogProps) => {
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-5 py-4">
-          {/* Direct install button if browser supports it */}
-          {deferredPrompt && (
-            <Button
-              onClick={handleInstall}
-              disabled={installing}
-              className="gradient-brand text-white px-6 py-3 rounded-2xl shadow-md hover:opacity-90 transition-opacity h-auto w-full"
-            >
-              <Smartphone className="h-4 w-4 mr-2" />
-              {installing ? "Installing..." : "Install on this device"}
-            </Button>
+          <div className="relative low-fade">
+            <img src={buzzLogo} alt="Buzz app logo" className="h-24 w-24 rounded-[24px] object-cover shadow-xl" />
+            <span className="absolute -bottom-2 -right-2 rounded-full bg-card px-2 py-1 text-base shadow">🇮🇳</span>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-semibold text-foreground">Buzz for your device</p>
+            <p className="mt-1 text-sm text-muted-foreground">Fast access from your home screen.</p>
+          </div>
+          <Button
+            onClick={handleInstall}
+            disabled={installing || isInstalled}
+            className="gradient-brand h-12 w-full rounded-xl px-6 text-primary-foreground shadow-md transition-opacity hover:opacity-90"
+          >
+            <Smartphone className="h-4 w-4" />
+            {isInstalled ? "Installed" : installing ? "Installing..." : "Install Buzz"}
+          </Button>
+          {installHint && (
+            <div className="flex w-full items-start gap-2 rounded-md bg-secondary p-3 text-sm text-secondary-foreground">
+              {/iphone|ipad|ipod/i.test(navigator.userAgent) ? <Share className="mt-0.5 h-4 w-4" /> : <PlusSquare className="mt-0.5 h-4 w-4" />}
+              <span>{installHint}</span>
+            </div>
           )}
 
           <div className="flex items-center gap-3 w-full">
@@ -195,12 +213,9 @@ const InstallAppDialog = ({ trigger }: InstallAppDialogProps) => {
           {/* Buzz-styled QR card */}
           <div
             ref={qrWrapRef}
-            className="relative rounded-3xl p-1 shadow-xl glow-purple"
-            style={{
-              background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%)",
-            }}
+            className="relative rounded-[24px] p-1 shadow-xl glow-purple gradient-brand"
           >
-            <div className="rounded-[20px] bg-white p-4 relative">
+            <div className="relative rounded-[20px] bg-card p-4">
               <QRCodeSVG
                 value={appUrl}
                 size={200}
