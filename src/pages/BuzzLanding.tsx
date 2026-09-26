@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { ArrowDownToLine, ArrowRight, CheckCheck, ChevronDown, ExternalLink, LockKeyhole, Menu, MessageCircle, Mic, Paperclip, Phone, Search, ShieldCheck, Users, Video, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import BuzzPublicPage, { publicPages } from "@/pages/BuzzPublicPage";
+import { ArrowDownToLine, ArrowRight, CheckCheck, LockKeyhole, Menu, MessageCircle, Mic, Paperclip, Phone, Search, ShieldCheck, Users, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import AuthPage from "@/pages/AuthPage";
@@ -19,16 +21,16 @@ const Bubble = ({ name, children, own, className = "" }: BubbleProps) => (
 );
 
 const Logo = ({ light = false }: { light?: boolean }) => (
-  <a href="#top" className={`flex items-center gap-2 font-bold ${light ? "text-primary-foreground" : "text-foreground"}`} aria-label="Buzz home">
+  <Link to="/" className={`flex items-center gap-2 font-bold ${light ? "text-primary-foreground" : "text-foreground"}`} aria-label="Buzz home">
     <span className="relative"><img src={buzzLogo} alt="Buzz" className="h-9 w-9 rounded-full object-cover" /><span className="absolute -bottom-1 -right-1 text-xs">🇮🇳</span></span>
     <span className="text-xl">Buzz</span>
   </a>
 );
 
 const TextLink = ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
-  <button onClick={onClick} className="group inline-flex items-center gap-3 border-b-2 border-primary pb-1 text-base font-medium text-foreground">
+  <Button variant="link" onClick={onClick} className="group h-auto rounded-none px-0 inline-flex items-center gap-3 border-b-2 border-primary pb-1 text-base font-medium text-foreground">
     {children}<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-  </button>
+  </Button>
 );
 
 const PhoneChat = ({ dark = false, group = false }: { dark?: boolean; group?: boolean }) => (
@@ -61,7 +63,7 @@ const DesktopApp = () => (
   </div>
 );
 
-const BuzzLanding = () => {
+const BuzzLanding = ({ page = "/" }: { page?: string }) => {
   const [authOpen, setAuthOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const openAuth = () => { setMenuOpen(false); setAuthOpen(true); };
@@ -71,23 +73,21 @@ const BuzzLanding = () => {
       <header className="sticky top-0 z-40 border-b border-border bg-landing-canvas/95 backdrop-blur">
         <div className="mx-auto flex h-[76px] max-w-[1160px] items-center justify-between px-5">
           <Logo />
-          <nav className="hidden items-center gap-9 lg:flex" aria-label="Main navigation">
-            <a href="#features" className="flex items-center gap-1 text-sm font-medium">Features <ChevronDown className="h-4 w-4" /></a>
-            <a href="#privacy" className="text-sm font-medium">Privacy</a><a href="#stories" className="text-sm font-medium">Buzz Web</a>
-            <a href="#download" className="text-sm font-medium">Apps</a><a href="#help" className="flex items-center gap-1 text-sm font-medium">Help Center <ExternalLink className="h-3.5 w-3.5" /></a>
-            <a href="#groups" className="flex items-center gap-1 text-sm font-medium">For Business <ExternalLink className="h-3.5 w-3.5" /></a>
+          <nav className="hidden items-center gap-7 lg:flex" aria-label="Main navigation">
+            {[...publicPages].map(p => <Link key={p} to={`/${p}`} className="text-sm font-medium capitalize hover:text-primary">{p === "buzz-web" ? "Buzz Web" : p}</Link>)}
           </nav>
-          <div className="hidden items-center gap-3 sm:flex">
-            <Button variant="outline" onClick={openAuth} className="h-12 rounded-full border-foreground px-6">Log In <ArrowRight /></Button>
-            <InstallAppDialog trigger={<Button className="h-12 rounded-full px-6 gradient-brand">Download <ArrowDownToLine /></Button>} />
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={openAuth} className="hidden h-10 rounded-full border-foreground px-4 sm:inline-flex">Log In <ArrowRight /></Button>
+            <InstallAppDialog trigger={<Button className="h-10 rounded-full px-4 gradient-brand">Download <ArrowDownToLine /></Button>} />
           </div>
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">{menuOpen ? <X /> : <Menu />}</Button>
         </div>
-        {menuOpen && <div className="border-t border-border bg-landing-canvas p-5 lg:hidden"><nav className="grid gap-4"><a href="#features">Features</a><a href="#privacy">Privacy</a><a href="#groups">Groups</a><Button onClick={openAuth} variant="outline" className="rounded-full">Log In</Button><InstallAppDialog trigger={<Button className="rounded-full gradient-brand">Download <ArrowDownToLine /></Button>} /></nav></div>}
+        {menuOpen && <div className="border-t border-border bg-landing-canvas p-5 lg:hidden"><nav className="grid gap-4" aria-label="Mobile navigation">{publicPages.map(p => <Link key={p} to={`/${p}`} onClick={() => setMenuOpen(false)} className="capitalize">{p === "buzz-web" ? "Buzz Web" : p}</Link>)}<Button onClick={openAuth} variant="outline">Log In</Button></nav></div>}
       </header>
 
       <main>
-        <section className="px-4 pt-2 sm:px-7">
+        {publicPages.includes(page.slice(1) as typeof publicPages[number]) ? <BuzzPublicPage page={page.slice(1) as typeof publicPages[number]} onLogin={openAuth} /> : <>
+        <section className="low-fade px-4 pt-2 sm:px-7">
           <div className="relative mx-auto min-h-[550px] max-w-[1288px] overflow-hidden rounded-[28px] bg-landing-night">
             <img src={heroImage} alt="A Buzz user messaging friends" width={1920} height={1080} className="absolute inset-0 h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-r from-landing-night/90 via-landing-night/25 to-transparent" />
@@ -101,42 +101,43 @@ const BuzzLanding = () => {
           </div>
         </section>
 
-        <section id="stories" className="mx-auto grid min-h-[570px] max-w-[1120px] items-center gap-16 px-7 py-20 lg:grid-cols-2">
+        <section id="stories" className="low-fade mx-auto grid min-h-[570px] max-w-[1120px] items-center gap-16 px-7 py-20 lg:grid-cols-2">
           <DesktopApp />
-          <div><h2 className="text-5xl font-normal leading-[1.02] sm:text-6xl">New! Call on<br />Buzz Web</h2><p className="mt-6 max-w-lg text-lg">Make and receive video or voice calls—one-to-one or in groups—right from your browser.</p><div className="mt-8"><TextLink onClick={openAuth}>Try it</TextLink></div></div>
+          <div><h2 className="text-4xl font-normal leading-[1.02] sm:text-6xl">New! Call on<br />Buzz Web</h2><p className="mt-6 max-w-lg text-lg">Make and receive video or voice calls—one-to-one or in groups—right from your browser.</p><div className="mt-8"><TextLink onClick={openAuth}>Try it</TextLink></div></div>
         </section>
 
-        <section id="features" className="relative mx-auto min-h-[580px] max-w-[1200px] overflow-hidden px-7 py-20">
+        <section id="features" className="relative mx-auto min-h-[440px] max-w-[1200px] overflow-hidden px-7 py-20 low-fade">
           <div className="absolute left-[5%] top-20"><Bubble own>Namaste! 👋</Bubble></div><div className="absolute right-[8%] top-36"><Bubble>Hello from Delhi</Bubble></div><div className="absolute bottom-24 left-[18%]"><Bubble>Bonjour!</Bubble></div><div className="absolute bottom-16 right-[15%]"><Bubble own>Hola!</Bubble></div>
-          <h2 className="relative mx-auto mt-32 max-w-[900px] text-center text-5xl font-normal leading-[1.02] sm:text-6xl">With private messaging and calling, you can be yourself, speak freely and feel close to the people who matter most.</h2>
+          <h2 className="relative mx-auto mt-24 max-w-[900px] text-center text-3xl font-normal leading-[1.08] sm:text-6xl">With private messaging and calling, you can be yourself, speak freely and feel close to the people who matter most.</h2>
         </section>
 
-        <section className="mx-auto grid min-h-[630px] max-w-[1080px] items-center gap-16 px-7 py-16 lg:grid-cols-2">
-          <div><h2 className="text-5xl font-normal leading-[1.03] sm:text-6xl">Never miss a<br />moment with<br />voice and video<br />calls</h2><p className="mt-6 max-w-md text-lg">From a group call with classmates to a quick call with family, feel like you’re in the same room.</p><div className="mt-8"><TextLink onClick={openAuth}>Learn more</TextLink></div></div>
+        <section className="low-fade mx-auto grid min-h-[630px] max-w-[1080px] items-center gap-16 px-7 py-16 lg:grid-cols-2">
+          <div><h2 className="text-4xl font-normal leading-[1.03] sm:text-6xl">Never miss a<br />moment with<br />voice and video<br />calls</h2><p className="mt-6 max-w-md text-lg">From a group call with classmates to a quick call with family, feel like you’re in the same room.</p><div className="mt-8"><TextLink onClick={openAuth}>Learn more</TextLink></div></div>
           <div className="relative mx-auto aspect-[9/16] w-[280px] overflow-hidden rounded-[28px] shadow-2xl"><img src={familyImage} alt="Indian family enjoying a Buzz video call" width={1024} height={1536} loading="lazy" className="h-full w-full object-cover" /><div className="absolute left-3 right-3 top-3 flex items-center justify-between text-primary-foreground"><span className="text-xs">End-to-end encrypted</span><Users className="h-5 w-5" /></div><div className="absolute inset-x-3 bottom-3 flex justify-around rounded-2xl bg-landing-night/90 p-3 text-primary-foreground"><span>•••</span><Video /><Mic /><span className="h-6 w-6 rounded-full bg-destructive" /></div></div>
         </section>
 
-        <section id="download" className="mx-auto grid min-h-[570px] max-w-[1100px] items-center gap-20 px-7 py-20 lg:grid-cols-2">
+        <section id="download" className="low-fade mx-auto grid min-h-[570px] max-w-[1100px] items-center gap-20 px-7 py-20 lg:grid-cols-2">
           <DesktopApp />
-          <div><h2 className="text-5xl font-normal leading-[1.03] sm:text-6xl">Get Buzz for<br />your desktop</h2><p className="mt-6 text-lg">Chat and call on a larger screen with Buzz Web.</p><div className="mt-9"><InstallAppDialog trigger={<Button className="h-13 rounded-full px-7 gradient-brand">Download Buzz <ArrowDownToLine /></Button>} /></div></div>
+          <div><h2 className="text-4xl font-normal leading-[1.03] sm:text-6xl">Get Buzz for<br />your desktop</h2><p className="mt-6 text-lg">Chat and call on a larger screen with Buzz Web.</p><div className="mt-9"><InstallAppDialog trigger={<Button className="h-13 rounded-full px-7 gradient-brand">Download Buzz <ArrowDownToLine /></Button>} /></div></div>
         </section>
 
         <section id="privacy" className="bg-landing-night text-primary-foreground">
-          <div className="mx-auto grid min-h-[650px] max-w-[1100px] items-center gap-20 px-7 py-16 lg:grid-cols-2">
+          <div className="low-fade mx-auto grid min-h-[650px] max-w-[1100px] items-center gap-20 px-7 py-16 lg:grid-cols-2">
             <PhoneChat dark />
-            <div><ShieldCheck className="mb-7 h-12 w-12 text-primary" /><h2 className="text-6xl font-normal leading-none">Speak<br /><span className="gradient-brand-text">freely</span></h2><p className="mt-7 max-w-md text-lg">Your personal messages and calls are protected in transit. Nearby chats use end-to-end encryption, so your conversations stay between you and the people you choose.</p><div className="mt-8"><button onClick={openAuth} className="inline-flex items-center gap-3 border-b-2 border-primary pb-1 font-medium">Start chatting <ArrowRight className="h-4 w-4" /></button></div></div>
+            <div><ShieldCheck className="mb-7 h-12 w-12 text-primary" /><h2 className="text-4xl font-normal leading-none sm:text-6xl">Speak<br /><span className="gradient-brand-text">freely</span></h2><p className="mt-7 max-w-md text-lg">Your personal messages and calls are protected in transit. Nearby chats use end-to-end encryption, so your conversations stay between you and the people you choose.</p><div className="mt-8"><Button variant="link" onClick={openAuth} className="h-auto px-0 text-primary-foreground">Start chatting <ArrowRight className="ml-2 h-4 w-4" /></Button></div></div>
           </div>
         </section>
 
-        <section id="groups" className="mx-auto grid min-h-[650px] max-w-[1080px] items-center gap-20 px-7 py-16 lg:grid-cols-2">
-          <div><h2 className="text-6xl font-normal leading-none">Keep in touch<br />with your<br />groups</h2><p className="mt-7 max-w-md text-lg">Whether it’s planning an outing with friends or staying close to family, Buzz group conversations feel effortless.</p><div className="mt-8"><TextLink onClick={openAuth}>Log in to Buzz</TextLink></div></div>
+        <section id="groups" className="low-fade mx-auto grid min-h-[650px] max-w-[1080px] items-center gap-20 px-7 py-16 lg:grid-cols-2">
+          <div><h2 className="text-4xl font-normal leading-none sm:text-6xl">Keep in touch<br />with your<br />groups</h2><p className="mt-7 max-w-md text-lg">Whether it’s planning an outing with friends or staying close to family, Buzz group conversations feel effortless.</p><div className="mt-8"><TextLink onClick={openAuth}>Log in to Buzz</TextLink></div></div>
           <div className="relative"><PhoneChat group /><div className="absolute -right-5 top-24 hidden w-44 overflow-hidden rounded-lg shadow-xl sm:block"><img src={groupImage} alt="Friends connected on Buzz" width={1536} height={1024} loading="lazy" className="aspect-video w-full object-cover" /></div></div>
         </section>
+        </>}
       </main>
 
-      <footer id="help" className="rounded-t-[38px] bg-landing-night px-7 py-20 text-primary-foreground">
-        <div className="mx-auto grid max-w-[1080px] gap-12 md:grid-cols-[1.2fr_repeat(4,1fr)]"><div><Logo light /><div className="mt-16"><InstallAppDialog trigger={<Button className="rounded-full px-7 gradient-brand">Download <ArrowDownToLine /></Button>} /></div></div>{[{h:"What we do",v:["Features","Security","Calls","For Business"]},{h:"Who we are",v:["About us","Careers","Brand Center","Privacy"]},{h:"Use Buzz",v:["Mobile","Desktop","Buzz Web","Nearby"]},{h:"Need help?",v:["Contact Us","Help Center","Apps","Security"]}].map(c=><div key={c.h}><p className="mb-7 text-xs text-primary-foreground/60">{c.h}</p><ul className="space-y-5">{c.v.map(v=><li key={v}><a href="#top" className="text-base hover:text-primary">{v}</a></li>)}</ul></div>)}</div>
-        <div className="mx-auto mt-16 flex max-w-[1080px] items-center justify-between border-t border-primary-foreground/20 pt-8 text-xs text-primary-foreground/60"><span>© 2026 Buzz · Made in India 🇮🇳</span><span className="flex items-center gap-2"><LockKeyhole className="h-3.5 w-3.5" /> Private by design</span></div>
+      <footer className="bg-landing-night px-7 py-16 text-primary-foreground">
+        <div className="mx-auto flex max-w-[1080px] flex-col justify-between gap-10 sm:flex-row"><div><Logo light /><p className="mt-5 text-sm text-primary-foreground/70">Made in India 🇮🇳</p><div className="mt-6"><InstallAppDialog trigger={<Button className="gradient-brand gap-2"><ArrowDownToLine className="h-4 w-4" /> Download</Button>} /></div></div><nav className="grid grid-cols-2 gap-x-10 gap-y-5 sm:grid-cols-3" aria-label="Footer navigation">{publicPages.map(p => <Link key={p} to={`/${p}`} className="capitalize hover:text-primary">{p === "buzz-web" ? "Buzz Web" : p}</Link>)}</nav></div>
+        <div className="mx-auto mt-14 flex max-w-[1080px] flex-wrap items-center justify-between gap-3 border-t border-primary-foreground/20 pt-8 text-xs text-primary-foreground/60"><span>© 2026 Buzz · Made in India 🇮🇳</span><span className="flex items-center gap-2"><LockKeyhole className="h-3.5 w-3.5" /> Private by design</span></div>
       </footer>
 
       <Dialog open={authOpen} onOpenChange={setAuthOpen}><DialogContent className="max-h-[95vh] max-w-md overflow-y-auto border-0 p-0"><AuthPage onAuth={() => setAuthOpen(false)} embedded /></DialogContent></Dialog>
