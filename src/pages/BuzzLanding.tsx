@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import BuzzPublicPage, { publicPages } from "@/pages/BuzzPublicPage";
-import { ArrowDownToLine, ArrowRight, CheckCheck, LockKeyhole, Menu, MessageCircle, Mic, Paperclip, Phone, Search, ShieldCheck, Users, Video, X } from "lucide-react";
+import { ArrowDownToLine, ArrowRight, CheckCheck, Ellipsis, LockKeyhole, Menu, MessageCircle, Mic, Paperclip, Phone, Search, ShieldCheck, Users, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import AuthPage from "@/pages/AuthPage";
