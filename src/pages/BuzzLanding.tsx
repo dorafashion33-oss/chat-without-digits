@@ -24,7 +24,7 @@ const Logo = ({ light = false }: { light?: boolean }) => (
   <Link to="/" className={`flex items-center gap-2 font-bold ${light ? "text-primary-foreground" : "text-foreground"}`} aria-label="Buzz home">
     <span className="relative"><img src={buzzLogo} alt="Buzz" className="h-9 w-9 rounded-full object-cover" /><span className="absolute -bottom-1 -right-1 text-xs">🇮🇳</span></span>
     <span className="text-xl">Buzz</span>
-  </a>
+  </Link>
 );
 
 const TextLink = ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
@@ -87,13 +87,13 @@ const BuzzLanding = ({ page = "/" }: { page?: string }) => {
 
       <main>
         {publicPages.includes(page.slice(1) as typeof publicPages[number]) ? <BuzzPublicPage page={page.slice(1) as typeof publicPages[number]} onLogin={openAuth} /> : <>
-        <section className="low-fade px-4 pt-2 sm:px-7">
-          <div className="relative mx-auto min-h-[550px] max-w-[1288px] overflow-hidden rounded-[28px] bg-landing-night">
+        <section className="low-fade px-3 pt-2 sm:px-7">
+          <div className="relative mx-auto min-h-[calc(100svh-92px)] max-w-[1288px] overflow-hidden rounded-[20px] bg-landing-night sm:min-h-[550px] sm:rounded-[28px]">
             <img src={heroImage} alt="A Buzz user messaging friends" width={1920} height={1080} className="absolute inset-0 h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-r from-landing-night/90 via-landing-night/25 to-transparent" />
-            <div className="relative z-10 flex min-h-[550px] max-w-[470px] flex-col justify-center px-8 py-16 text-primary-foreground sm:px-20">
+            <div className="relative z-10 flex min-h-[calc(100svh-92px)] max-w-[470px] flex-col justify-end px-6 py-12 text-primary-foreground sm:min-h-[550px] sm:justify-center sm:px-20 sm:py-16">
               <p className="mb-4 text-sm font-semibold">Made in India 🇮🇳</p>
-              <h1 className="text-6xl font-normal leading-[0.95] sm:text-7xl">Message<br />privately</h1>
+              <h1 className="text-5xl font-normal leading-[0.95] sm:text-7xl">Message<br />privately</h1>
               <p className="mt-7 max-w-sm text-lg">Simple, reliable, private messaging and calling—without sharing your phone number.</p>
               <div className="mt-6 flex flex-wrap gap-3"><InstallAppDialog trigger={<Button className="h-13 rounded-full px-7 gradient-brand">Download <ArrowDownToLine /></Button>} /><Button onClick={openAuth} className="h-13 rounded-full bg-card px-7 text-foreground hover:bg-card/90">Log In <ArrowRight /></Button></div>
             </div>
@@ -101,7 +101,7 @@ const BuzzLanding = ({ page = "/" }: { page?: string }) => {
           </div>
         </section>
 
-        <section id="stories" className="low-fade mx-auto grid min-h-[570px] max-w-[1120px] items-center gap-16 px-7 py-20 lg:grid-cols-2">
+        <section id="stories" className="low-fade mx-auto grid min-h-[570px] max-w-[1120px] items-center gap-12 px-5 py-16 sm:px-7 sm:py-20 lg:grid-cols-2 lg:gap-16">
           <DesktopApp />
           <div><h2 className="text-4xl font-normal leading-[1.02] sm:text-6xl">New! Call on<br />Buzz Web</h2><p className="mt-6 max-w-lg text-lg">Make and receive video or voice calls—one-to-one or in groups—right from your browser.</p><div className="mt-8"><TextLink onClick={openAuth}>Try it</TextLink></div></div>
         </section>
@@ -111,12 +111,12 @@ const BuzzLanding = ({ page = "/" }: { page?: string }) => {
           <h2 className="relative mx-auto mt-24 max-w-[900px] text-center text-3xl font-normal leading-[1.08] sm:text-6xl">With private messaging and calling, you can be yourself, speak freely and feel close to the people who matter most.</h2>
         </section>
 
-        <section className="low-fade mx-auto grid min-h-[630px] max-w-[1080px] items-center gap-16 px-7 py-16 lg:grid-cols-2">
+        <section className="low-fade mx-auto grid min-h-[630px] max-w-[1080px] items-center gap-12 px-5 py-16 sm:px-7 lg:grid-cols-2 lg:gap-16">
           <div><h2 className="text-4xl font-normal leading-[1.03] sm:text-6xl">Never miss a<br />moment with<br />voice and video<br />calls</h2><p className="mt-6 max-w-md text-lg">From a group call with classmates to a quick call with family, feel like you’re in the same room.</p><div className="mt-8"><TextLink onClick={openAuth}>Learn more</TextLink></div></div>
-          <div className="relative mx-auto aspect-[9/16] w-[280px] overflow-hidden rounded-[28px] shadow-2xl"><img src={familyImage} alt="Indian family enjoying a Buzz video call" width={1024} height={1536} loading="lazy" className="h-full w-full object-cover" /><div className="absolute left-3 right-3 top-3 flex items-center justify-between text-primary-foreground"><span className="text-xs">End-to-end encrypted</span><Users className="h-5 w-5" /></div><div className="absolute inset-x-3 bottom-3 flex justify-around rounded-2xl bg-landing-night/90 p-3 text-primary-foreground"><span>•••</span><Video /><Mic /><span className="h-6 w-6 rounded-full bg-destructive" /></div></div>
+          <div className="relative mx-auto aspect-[9/16] w-full max-w-[280px] overflow-hidden rounded-[28px] shadow-2xl"><img src={familyImage} alt="Indian family enjoying a Buzz video call" width={1024} height={1536} loading="lazy" className="h-full w-full object-cover" /><div className="absolute left-3 right-3 top-3 flex items-center justify-between text-primary-foreground"><span className="text-xs">End-to-end encrypted</span><Users className="h-5 w-5" /></div><div className="absolute inset-x-3 bottom-3 flex items-center justify-around rounded-2xl bg-landing-night/90 p-3 text-primary-foreground backdrop-blur-xl"><Ellipsis className="h-5 w-5" /><Video className="h-5 w-5" /><Mic className="h-5 w-5" /><span className="h-10 w-10 rounded-full bg-destructive" aria-label="End call" /></div></div>
         </section>
 
-        <section id="download" className="low-fade mx-auto grid min-h-[570px] max-w-[1100px] items-center gap-20 px-7 py-20 lg:grid-cols-2">
+        <section id="download" className="low-fade mx-auto grid min-h-[570px] max-w-[1100px] items-center gap-12 px-5 py-16 sm:px-7 sm:py-20 lg:grid-cols-2 lg:gap-20">
           <DesktopApp />
           <div><h2 className="text-4xl font-normal leading-[1.03] sm:text-6xl">Get Buzz for<br />your desktop</h2><p className="mt-6 text-lg">Chat and call on a larger screen with Buzz Web.</p><div className="mt-9"><InstallAppDialog trigger={<Button className="h-13 rounded-full px-7 gradient-brand">Download Buzz <ArrowDownToLine /></Button>} /></div></div>
         </section>
@@ -128,7 +128,7 @@ const BuzzLanding = ({ page = "/" }: { page?: string }) => {
           </div>
         </section>
 
-        <section id="groups" className="low-fade mx-auto grid min-h-[650px] max-w-[1080px] items-center gap-20 px-7 py-16 lg:grid-cols-2">
+        <section id="groups" className="low-fade mx-auto grid min-h-[650px] max-w-[1080px] items-center gap-12 px-5 py-16 sm:px-7 lg:grid-cols-2 lg:gap-20">
           <div><h2 className="text-4xl font-normal leading-none sm:text-6xl">Keep in touch<br />with your<br />groups</h2><p className="mt-7 max-w-md text-lg">Whether it’s planning an outing with friends or staying close to family, Buzz group conversations feel effortless.</p><div className="mt-8"><TextLink onClick={openAuth}>Log in to Buzz</TextLink></div></div>
           <div className="relative"><PhoneChat group /><div className="absolute -right-5 top-24 hidden w-44 overflow-hidden rounded-lg shadow-xl sm:block"><img src={groupImage} alt="Friends connected on Buzz" width={1536} height={1024} loading="lazy" className="aspect-video w-full object-cover" /></div></div>
         </section>
