@@ -1,4 +1,4 @@
-import { Ellipsis, Mic, MicOff, Phone, PhoneOff, UserRoundPlus, Video, VideoOff } from "lucide-react";
+import { Ellipsis, LockKeyhole, Mic, MicOff, Phone, PhoneOff, UserRoundPlus, Video, VideoOff } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { CallState, CallType } from "@/hooks/useWebRTC";
@@ -35,7 +35,7 @@ const CallScreen = ({ callState, callType, remoteProfile, callDuration, localVid
       <div className="absolute inset-0 bg-gradient-to-b from-call-surface/55 via-transparent to-call-surface/60" />
 
       <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-5 pb-6 pt-[max(20px,env(safe-area-inset-top))] low-fade">
-        <span className="text-xs font-medium">End-to-end encrypted</span>
+        <span className="flex items-center gap-2 text-xs font-medium"><LockKeyhole className="h-4 w-4" /> End-to-end encrypted</span>
         <Button variant="ghost" size="icon" className="rounded-full text-primary-foreground hover:bg-primary-foreground/10" aria-label="Add participant"><UserRoundPlus /></Button>
       </div>
 
@@ -59,7 +59,7 @@ const CallScreen = ({ callState, callType, remoteProfile, callDuration, localVid
           <Button variant="ghost" size="icon" className={controlClass} aria-label="More call options"><Ellipsis /></Button>
           <Button variant="ghost" size="icon" onClick={toggleVideo} className={`${controlClass} ${isVideoOff ? "bg-call-active text-call-surface" : ""}`} aria-label={isVideoOff ? "Turn camera on" : "Turn camera off"}>{isVideoOff ? <VideoOff /> : <Video />}</Button>
           <Button variant="ghost" size="icon" onClick={toggleMute} className={`${controlClass} ${isMuted ? "bg-call-active text-call-surface" : ""}`} aria-label={isMuted ? "Unmute" : "Mute"}>{isMuted ? <MicOff /> : <Mic />}</Button>
-          <Button variant="destructive" size="icon" onClick={onEndCall} className="h-12 w-12 rounded-full shadow-lg" aria-label="End call"><PhoneOff /></Button>
+          <Button variant="destructive" size="icon" onClick={onEndCall} className="h-12 w-12 rounded-full shadow-lg" aria-label="End call"><span className="sr-only">End call</span></Button>
         </div>
       )}
     </div>
