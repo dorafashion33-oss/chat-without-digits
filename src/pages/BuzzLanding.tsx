@@ -115,6 +115,7 @@ const MomentsPhone = () => (
 const BuzzLanding = ({ page = "/" }: { page?: string }) => {
   const [authOpen, setAuthOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
   const openAuth = () => { setMenuOpen(false); setAuthOpen(true); };
 
   return (
