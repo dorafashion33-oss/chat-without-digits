@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import BuzzBurst from "./components/chat/BuzzBurst";
+import MotionFX from "./components/MotionFX";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BuzzBurst />
+        <MotionFX />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
