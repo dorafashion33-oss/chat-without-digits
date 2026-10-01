@@ -193,6 +193,34 @@
   .soft-lift:hover {
     transform: translateY(-3px);
   }
+
+  .radiant-fx-target {
+    opacity: 0;
+    filter: saturate(0.86) brightness(0.94);
+    transform: translateY(16px) scale(0.992);
+    transition:
+      opacity 620ms cubic-bezier(0.22, 1, 0.36, 1),
+      filter 720ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 720ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 320ms ease;
+    will-change: opacity, filter, transform;
+  }
+
+  .radiant-fx-target.radiant-fx-visible {
+    opacity: 1;
+    filter: saturate(1) brightness(1);
+    transform: translateY(0) scale(1);
+  }
+
+  button.radiant-fx-visible:hover,
+  a.radiant-fx-visible:hover {
+    filter: saturate(1.08) brightness(1.03);
+  }
+
+  img.radiant-fx-visible,
+  video.radiant-fx-visible {
+    transition-duration: 820ms;
+  }
 }
 
 @keyframes low-fade {
@@ -206,6 +234,14 @@
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .radiant-fx-target,
+  .radiant-fx-target.radiant-fx-visible {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    will-change: auto !important;
   }
 }
 
