@@ -3,11 +3,17 @@ import { Forward, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import type { DbProfile } from "@/hooks/useRealtimeMessages";
+
+export interface ForwardRecipient {
+  user_id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
 
 interface MessageForwardDialogProps {
   open: boolean;
-  profiles: DbProfile[];
+  profiles: ForwardRecipient[];
   messageText: string;
   onOpenChange: (open: boolean) => void;
   onForward: (receiverId: string, text: string) => void;
