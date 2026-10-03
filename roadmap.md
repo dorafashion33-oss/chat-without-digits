@@ -7,3 +7,4 @@
 - [x] Polish mobile layouts to match desktop completeness and replace decorative templates with authentic Buzz UI.
 - [ ] Match voice/video call controls to the uploaded reference and verify call permission flow.
 - [ ] Validate desktop, mobile, dialogs, navigation, forms, and build health.
+- [ ] Add responsive direct-message forwarding, group-message delete/forward actions, and a clear install-dialog Back path.

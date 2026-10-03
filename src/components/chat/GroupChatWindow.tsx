@@ -1,9 +1,10 @@
-import { Send, ArrowLeft, Users, UserPlus, Trash2, Settings, Phone, Video, Paperclip, X, FileText } from "lucide-react";
+import { Send, ArrowLeft, Users, UserPlus, Trash2, Settings, Phone, Video, Paperclip, X, FileText, Forward } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Group, GroupMessage, GroupMember } from "@/hooks/useGroups";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import MessageContent from "./MessageContent";
+import MessageForwardDialog, { type ForwardRecipient } from "./MessageForwardDialog";
 
 interface GroupChatWindowProps {
   group: Group;
@@ -17,11 +18,13 @@ interface GroupChatWindowProps {
   onStartCall?: (userId: string, type: "voice" | "video") => void;
   onStartGroupCall?: (type: "voice" | "video") => void;
   onBack?: () => void;
+  profiles: ForwardRecipient[];
+  onDeleteMessage?: (messageId: string) => void;
 }
 
 const GroupChatWindow = ({
   group, currentUserId, onSendMessage, fetchMessages, fetchMembers,
-  onAddMember, onRemoveMember, onDeleteGroup, onStartCall, onStartGroupCall, onBack,
+  onAddMember, onRemoveMember, onDeleteGroup, onStartCall, onStartGroupCall, onBack, profiles, onDeleteMessage,
 }: GroupChatWindowProps) => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<GroupMessage[]>([]);
@@ -30,8 +33,11 @@ const GroupChatWindow = ({
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [forwardMessage, setForwardMessage] = useState<GroupMessage | null>(null);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const longPressRef = useRef<ReturnType<typeof setTimeout>>();
   const isAdmin = group.created_by === currentUserId;
 
   const loadMessages = useCallback(async () => {
@@ -50,7 +56,7 @@ const GroupChatWindow = ({
 
     const channel = supabase
       .channel(`group-${group.id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "group_messages", filter: `group_id=eq.${group.id}` }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "group_messages", filter: `group_id=eq.${group.id}` }, () => {
         loadMessages();
       })
       .subscribe();
@@ -201,16 +207,35 @@ const GroupChatWindow = ({
                 const time = new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
                 return (
                   <div key={msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"} ${showSender ? "mt-3" : "mt-0.5"}`}>
-                    <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 ${isOwn ? "bg-chat-bubble-own text-chat-bubble-own-foreground rounded-br-md" : "bg-chat-bubble-other text-chat-bubble-other-foreground rounded-bl-md"}`}>
+                    <div
+                      className="group/message relative max-w-[85%] sm:max-w-[75%]"
+                      onContextMenu={(event) => { event.preventDefault(); setActiveMenuId(activeMenuId === msg.id ? null : msg.id); }}
+                      onTouchStart={() => { longPressRef.current = setTimeout(() => setActiveMenuId(msg.id), 500); }}
+                      onTouchEnd={() => { if (longPressRef.current) clearTimeout(longPressRef.current); }}
+                    >
+                    <div className={`rounded-2xl px-3.5 py-2 ${isOwn ? "bg-chat-bubble-own text-chat-bubble-own-foreground rounded-br-md" : "bg-chat-bubble-other text-chat-bubble-other-foreground rounded-bl-md"}`}>
                       {showSender && <p className="text-xs font-semibold text-primary mb-0.5">{senderName}</p>}
-                      <MessageContent text={msg.text} />
+                      {msg.text.startsWith("[forwarded]") && <p className="mb-1 flex items-center gap-1 text-[10px] opacity-60"><Forward className="h-3 w-3" /> Forwarded</p>}
+                      <MessageContent text={msg.text.startsWith("[forwarded]") ? msg.text.slice("[forwarded]".length) : msg.text} />
                       <p className="text-[10px] opacity-60 text-right mt-0.5">{time}</p>
+                    </div>
+                    <div className={`absolute ${isOwn ? "right-0" : "left-0"} -top-9 z-20 ${activeMenuId === msg.id ? "flex" : "hidden group-hover/message:flex"} items-center gap-1 rounded-lg border bg-popover p-1 shadow-md`}>
+                      <button onClick={() => { setForwardMessage(msg); setActiveMenuId(null); }} aria-label="Forward message" title="Forward" className="rounded p-1.5 hover:bg-accent"><Forward className="h-4 w-4 text-muted-foreground" /></button>
+                      {isOwn && onDeleteMessage && <button onClick={() => { onDeleteMessage(msg.id); setMessages((previous) => previous.filter((item) => item.id !== msg.id)); setActiveMenuId(null); }} aria-label="Delete message" title="Delete" className="rounded p-1.5 hover:bg-destructive/10"><Trash2 className="h-4 w-4 text-destructive" /></button>}
+                    </div>
                     </div>
                   </div>
                 );
               })}
               <div ref={messagesEndRef} />
             </div>
+      <MessageForwardDialog
+        open={Boolean(forwardMessage)}
+        profiles={profiles.filter((profile) => profile.user_id !== currentUserId)}
+        messageText={forwardMessage?.text || ""}
+        onOpenChange={(open) => { if (!open) setForwardMessage(null); }}
+        onForward={(receiverId, text) => onSendMessage(receiverId, `[forwarded]${text}`)}
+      />
           </div>
 
           {/* Attachment preview */}
