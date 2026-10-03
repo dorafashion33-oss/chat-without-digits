@@ -1,4 +1,4 @@
-import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, Clock, X, FileText, Info, Trash2, Pencil, Image, Smile, Reply, CornerDownRight } from "lucide-react";
+import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, Clock, X, FileText, Info, Trash2, Pencil, Image, Smile, Reply, CornerDownRight, Forward } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,6 +9,8 @@ import MessageReactions from "./MessageReactions";
 import VoiceMessageButton from "./VoiceMessageButton";
 import { triggerBuzzBurst } from "./BuzzBurst";
 import MessageContent from "./MessageContent";
+import MessageForwardDialog from "./MessageForwardDialog";
+import type { DbProfile } from "@/hooks/useRealtimeMessages";
 
 interface ChatWindowProps {
   thread: ChatThread;
@@ -20,9 +22,10 @@ interface ChatWindowProps {
   isOtherTyping?: boolean;
   onBack?: () => void;
   onStartCall?: (userId: string, type: "voice" | "video") => void;
+  profiles: DbProfile[];
 }
 
-const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onEditMessage, onTyping, isOtherTyping, onBack, onStartCall }: ChatWindowProps) => {
+const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onEditMessage, onTyping, isOtherTyping, onBack, onStartCall, profiles }: ChatWindowProps) => {
   const [input, setInput] = useState("");
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -31,6 +34,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
   const [editText, setEditText] = useState("");
   const [replyTo, setReplyTo] = useState<DbMessage | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [forwardMessage, setForwardMessage] = useState<DbMessage | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -150,6 +154,11 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
     inputRef.current?.focus();
   };
 
+  const handleForward = (msg: DbMessage) => {
+    setForwardMessage(msg);
+    setActiveMenuId(null);
+  };
+
   const handleSwipeReply = useCallback((msg: DbMessage) => {
     setReplyTo(msg);
     setActiveMenuId(null);
@@ -244,6 +253,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
                   onDelete={isOwn && onDeleteMessage ? () => { onDeleteMessage(msg.id); setActiveMenuId(null); } : undefined}
                   onEdit={isOwn && onEditMessage ? () => handleStartEdit(msg) : undefined}
                   onReply={() => handleReply(msg)}
+                  onForward={() => handleForward(msg)}
                   isEditing={isEditing}
                   editText={editText}
                   onEditTextChange={setEditText}
@@ -341,6 +351,13 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
           )}
         </div>
       </div>
+      <MessageForwardDialog
+        open={Boolean(forwardMessage)}
+        profiles={profiles.filter((profile) => profile.user_id !== currentUserId)}
+        messageText={forwardMessage?.text || ""}
+        onOpenChange={(open) => { if (!open) setForwardMessage(null); }}
+        onForward={onSendMessage}
+      />
     </div>
   );
 };
@@ -407,13 +424,13 @@ const SwipeableMessage = ({ children, isOwn, onSwipeReply }: { children: React.R
 };
 
 const MessageBubble = ({
-  message, isOwn, showTail, reactions, onReact, onDelete, onEdit, onReply,
+  message, isOwn, showTail, reactions, onReact, onDelete, onEdit, onReply, onForward,
   isEditing, editText, onEditTextChange, onSaveEdit, onCancelEdit,
   showMenu, onLongPress, onTouchEnd, onToggleMenu,
 }: {
   message: DbMessage; isOwn: boolean; showTail: boolean;
   reactions: Record<string, number>; onReact: (emoji: string) => void;
-  onDelete?: () => void; onEdit?: () => void; onReply: () => void;
+  onDelete?: () => void; onEdit?: () => void; onReply: () => void; onForward: () => void;
   isEditing?: boolean; editText?: string;
   onEditTextChange?: (text: string) => void; onSaveEdit?: () => void; onCancelEdit?: () => void;
   showMenu?: boolean; onLongPress: () => void; onTouchEnd: () => void;
@@ -446,6 +463,7 @@ const MessageBubble = ({
               <p className="text-[11px] opacity-70 truncate">{replyPreview}</p>
             </div>
           )}
+          {actualText.startsWith("[forwarded]") && <p className="mb-1 flex items-center gap-1 text-[10px] opacity-60"><Forward className="h-3 w-3" /> Forwarded</p>}
           {isEditing ? (
             <div className="flex flex-col gap-2">
               <input
@@ -462,7 +480,7 @@ const MessageBubble = ({
               </div>
             </div>
           ) : (
-            <MessageContent text={actualText} />
+            <MessageContent text={actualText.startsWith("[forwarded]") ? actualText.slice("[forwarded]".length) : actualText} />
           )}
           <div className="mt-0.5 flex items-center justify-end gap-1">
             <span className="text-[10px] opacity-50">{time}</span>
@@ -487,6 +505,9 @@ const MessageBubble = ({
             <button onClick={onReply} className="rounded-lg p-1.5 hover:bg-accent transition-colors" title="Reply">
               <Reply className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
+            <button onClick={onForward} className="rounded-lg p-1.5 hover:bg-accent transition-colors" title="Forward">
+              <Forward className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
             {isOwn && onEdit && (
               <button onClick={onEdit} className="rounded-lg p-1.5 hover:bg-accent transition-colors" title="Edit">
                 <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
@@ -505,6 +526,9 @@ const MessageBubble = ({
           <div className={`absolute ${isOwn ? "right-0" : "left-0"} -top-7 z-10 hidden group-hover:flex items-center gap-0.5 rounded-lg border bg-popover px-1 py-0.5 shadow-md animate-scale-in`}>
             <button onClick={onReply} className="rounded p-1 hover:bg-accent transition-colors" title="Reply">
               <Reply className="h-3 w-3 text-muted-foreground" />
+            </button>
+            <button onClick={onForward} className="rounded p-1 hover:bg-accent transition-colors" title="Forward">
+              <Forward className="h-3 w-3 text-muted-foreground" />
             </button>
             {isOwn && onEdit && (
               <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="rounded p-1 hover:bg-accent transition-colors" title="Edit">
