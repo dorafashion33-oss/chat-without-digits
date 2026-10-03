@@ -94,6 +94,16 @@ export function useGroups(currentUserId: string | undefined) {
     });
   }, [currentUserId]);
 
+  const deleteGroupMessage = useCallback(async (messageId: string) => {
+    if (!currentUserId) return;
+    const { error } = await supabase
+      .from("group_messages")
+      .delete()
+      .eq("id", messageId)
+      .eq("sender_id", currentUserId);
+    if (error) toast.error("Couldn't delete this message");
+  }, [currentUserId]);
+
   const fetchGroupMembers = useCallback(async (groupId: string): Promise<GroupMember[]> => {
     const { data: members } = await supabase
       .from("group_members")
@@ -127,7 +137,7 @@ export function useGroups(currentUserId: string | undefined) {
   }, [fetchGroups]);
 
   return {
-    groups, loading, createGroup, fetchGroupMessages, sendGroupMessage,
+    groups, loading, createGroup, fetchGroupMessages, sendGroupMessage, deleteGroupMessage,
     fetchGroupMembers, addMember, removeMember, deleteGroup, refetch: fetchGroups,
   };
 }
