@@ -1,4 +1,4 @@
-import { Search, MessageSquarePlus, Menu, Settings, User, Moon, Sun, Users, LogOut, Pin, PinOff, FolderPlus, MoreVertical, Check, X, Bluetooth } from "lucide-react";
+import { Search, MessageSquarePlus, Menu, Settings, User, Moon, Sun, Users, LogOut, Pin, PinOff, FolderPlus, MoreVertical, Check, X, Bluetooth, Download } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";

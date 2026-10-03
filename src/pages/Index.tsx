@@ -265,6 +265,7 @@ const Index = () => {
           <GroupChatWindow
             group={activeGroup}
             currentUserId={currentUserId!}
+            profiles={profiles}
             onSendMessage={sendGroupMessage}
             fetchMessages={fetchGroupMessages}
             fetchMembers={fetchGroupMembers}
