@@ -36,7 +36,7 @@ const Index = () => {
   const currentUserId = session?.user?.id;
   const { threads, profiles, sendMessage, deleteMessage, editMessage, markAsRead, sendTyping, typingUsers } = useRealtimeMessages(currentUserId);
   const { moments, postMoment, deleteMoment, recordView } = useMoments(currentUserId);
-  const { groups, createGroup, fetchGroupMessages, sendGroupMessage, fetchGroupMembers, addMember, removeMember, deleteGroup, refetch: refetchGroups } = useGroups(currentUserId);
+  const { groups, createGroup, fetchGroupMessages, sendGroupMessage, deleteGroupMessage, fetchGroupMembers, addMember, removeMember, deleteGroup, refetch: refetchGroups } = useGroups(currentUserId);
   const { callState, callType, remoteProfile, callDuration, localVideoRef, remoteVideoRef, isRemoteOnline, startCall, endCall, acceptCall, rejectCall, toggleMute, toggleVideo } = useWebRTC(currentUserId);
   const groupCall = useGroupCall(currentUserId);
 
@@ -274,12 +274,14 @@ const Index = () => {
             onStartCall={handleStartCall}
             onStartGroupCall={(type) => handleStartGroupCall(activeGroup.id, activeGroup.name, type)}
             onBack={() => setActiveGroupId(null)}
+            onDeleteMessage={deleteGroupMessage}
           />
         ) : isStreamsSection && activeThread ? (
           <ChatWindow
             thread={activeThread}
             currentUserId={currentUserId!}
             onSendMessage={handleSendMessage}
+            profiles={profiles}
             onDeleteMessage={deleteMessage}
             onEditMessage={editMessage}
             onTyping={sendTyping}

@@ -356,7 +356,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
         profiles={profiles.filter((profile) => profile.user_id !== currentUserId)}
         messageText={forwardMessage?.text || ""}
         onOpenChange={(open) => { if (!open) setForwardMessage(null); }}
-        onForward={onSendMessage}
+        onForward={(receiverId, text) => onSendMessage(receiverId, `[forwarded]${text}`)}
       />
     </div>
   );

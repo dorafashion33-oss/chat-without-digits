@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Smartphone, Sparkles, Image as ImageIcon, Share, PlusSquare } from "lucide-react";
+import { Download, Smartphone, Sparkles, Image as ImageIcon, Share, PlusSquare, ArrowLeft } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
 
@@ -170,7 +170,7 @@ const InstallAppDialog = ({ trigger }: InstallAppDialogProps) => {
           <span className="text-[10px] font-medium hidden md:inline">Install</span>
         </Button>}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2.5 text-lg">
             <img src={buzzLogo} alt="Buzz" className="h-7 w-7 rounded-lg object-cover" />
@@ -194,6 +194,9 @@ const InstallAppDialog = ({ trigger }: InstallAppDialogProps) => {
           >
             <Smartphone className="h-4 w-4" />
             {isInstalled ? "Installed" : installing ? "Installing..." : "Install Buzz"}
+          </Button>
+          <Button variant="outline" onClick={() => setOpen(false)} className="h-10 w-full">
+            <ArrowLeft className="h-4 w-4" /> Back
           </Button>
           {installHint && (
             <div className="flex w-full items-start gap-2 rounded-md bg-secondary p-3 text-sm text-secondary-foreground">

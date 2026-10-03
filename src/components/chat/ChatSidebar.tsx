@@ -7,6 +7,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from 
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import NewChatDialog from "./NewChatDialog";
 import NearbyChat from "./NearbyChat";
+import InstallAppDialog from "./InstallAppDialog";
 import type { ChatThread, DbProfile } from "@/hooks/useRealtimeMessages";
 import type { NavSection } from "./NavIconBar";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
@@ -174,6 +175,7 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
                   <User className="h-5 w-5 text-muted-foreground" />
                   <span className="text-sm font-medium text-foreground">Profile</span>
                 </button>
+                <InstallAppDialog trigger={<button className="flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors hover:bg-accent"><Download className="h-5 w-5 text-muted-foreground" /><span className="text-sm font-medium text-foreground">Install Buzz</span></button>} />
                 <div className="h-px bg-border my-2" />
                 <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-destructive/10 text-destructive">
                   <LogOut className="h-5 w-5" />
