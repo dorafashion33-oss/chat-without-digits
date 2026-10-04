@@ -163,7 +163,7 @@ const Index = () => {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
+    <div className="flex h-dvh min-h-0 w-full min-w-0 overflow-hidden bg-background">
 
       {/* Call screen overlay */}
       {callState !== "idle" && (
@@ -218,7 +218,7 @@ const Index = () => {
       </div>
 
       {/* Left panel */}
-      <div className={`h-full w-full flex-shrink-0 border-r border-border lg:w-[380px] ${isMobileChatOpen ? "hidden lg:block" : "block"}`}>
+      <div className={`h-full w-full min-w-0 flex-shrink-0 border-r border-border lg:w-[380px] ${isMobileChatOpen ? "hidden lg:block" : "block"}`}>
         {isStreamsSection ? (
           showGroups ? (
             <GroupSidebar
@@ -260,7 +260,7 @@ const Index = () => {
       </div>
 
       {/* Right panel */}
-      <div className={`h-full flex-1 ${isMobileChatOpen ? "block" : "hidden lg:block"}`}>
+      <div className={`h-full min-w-0 flex-1 ${isMobileChatOpen ? "block" : "hidden lg:block"}`}>
         {isStreamsSection && activeGroupId && activeGroup ? (
           <GroupChatWindow
             group={activeGroup}

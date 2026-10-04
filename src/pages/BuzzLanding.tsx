@@ -34,16 +34,15 @@ const TextLink = ({ children, onClick }: { children: React.ReactNode; onClick?: 
   </Button>
 );
 
-const ScrollSection = ({ children, className, id, direction = "up" }: { children: React.ReactNode; className: string; id?: string; direction?: "up" | "left" | "right" }) => {
+const ScrollSection = ({ children, className, id }: { children: React.ReactNode; className: string; id?: string }) => {
   const reduceMotion = useReducedMotion();
-  const offset = direction === "left" ? { x: -34, y: 0 } : direction === "right" ? { x: 34, y: 0 } : { x: 0, y: 34 };
   return <motion.section
     id={id}
-    className={className}
-    initial={reduceMotion ? false : { opacity: 0, ...offset }}
-    whileInView={reduceMotion ? undefined : { opacity: 1, x: 0, y: 0 }}
-    viewport={{ once: false, amount: 0.14, margin: "-6% 0px -6% 0px" }}
-    transition={{ duration: 0.68, ease: [0.22, 1, 0.36, 1] }}
+    className={`min-w-0 ${className}`}
+    initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+    whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+    viewport={{ once: true, amount: 0.1, margin: "0px" }}
+    transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
   >{children}</motion.section>;
 };
 
@@ -151,7 +150,7 @@ const BuzzLanding = ({ page = "/" }: { page?: string }) => {
           </div>
         </ScrollSection>
 
-        <ScrollSection id="stories" direction="left" className="mx-auto grid min-h-[570px] max-w-[1120px] items-center gap-12 px-5 py-16 sm:px-7 sm:py-20 lg:grid-cols-2 lg:gap-16">
+        <ScrollSection id="stories" className="mx-auto grid min-h-[570px] max-w-[1120px] items-center gap-12 px-5 py-16 sm:px-7 sm:py-20 lg:grid-cols-2 lg:gap-16">
           <DesktopApp />
           <div><h2 className="text-4xl font-normal leading-[1.02] sm:text-6xl"><AnimatedWords text="New! Call on Buzz Web" /></h2><p className="mt-6 max-w-lg text-lg">Make and receive video or voice calls—one-to-one or in groups—right from your browser.</p><div className="mt-8"><TextLink onClick={openAuth}>Try it</TextLink></div></div>
         </ScrollSection>
@@ -161,12 +160,12 @@ const BuzzLanding = ({ page = "/" }: { page?: string }) => {
           <h2 className="relative mx-auto mt-24 max-w-[900px] text-center text-3xl font-normal leading-[1.08] sm:text-6xl">With private messaging and calling, you can be yourself, speak freely and feel close to the people who matter most.</h2>
         </ScrollSection>
 
-        <ScrollSection direction="right" className="mx-auto grid min-h-[630px] max-w-[1080px] items-center gap-12 px-5 py-16 sm:px-7 lg:grid-cols-2 lg:gap-16">
+        <ScrollSection className="mx-auto grid min-h-[630px] max-w-[1080px] items-center gap-12 px-5 py-16 sm:px-7 lg:grid-cols-2 lg:gap-16">
           <div><h2 className="text-4xl font-normal leading-[1.03] sm:text-6xl">Never miss a<br />moment with<br />voice and video<br />calls</h2><p className="mt-6 max-w-md text-lg">From a group call with classmates to a quick call with family, feel like you’re in the same room.</p><div className="mt-8"><TextLink onClick={openAuth}>Learn more</TextLink></div></div>
           <div className="relative mx-auto aspect-[9/16] w-full max-w-[280px] overflow-hidden rounded-[28px] shadow-2xl"><img src={familyImage} alt="Indian family enjoying a Buzz video call" width={1024} height={1536} loading="lazy" className="h-full w-full object-cover" /><div className="absolute left-3 right-3 top-3 flex items-center justify-between text-primary-foreground"><span className="text-xs">End-to-end encrypted</span><Users className="h-5 w-5" /></div><div className="absolute inset-x-3 bottom-3 flex items-center justify-around rounded-2xl bg-landing-night/90 p-3 text-primary-foreground backdrop-blur-xl"><Ellipsis className="h-5 w-5" /><Video className="h-5 w-5" /><Mic className="h-5 w-5" /><span className="h-10 w-10 rounded-full bg-destructive" aria-label="End call" /></div></div>
         </ScrollSection>
 
-        <ScrollSection direction="left" className="bg-secondary/55">
+        <ScrollSection className="bg-secondary/55">
           <div className="mx-auto grid min-h-[680px] max-w-[1080px] items-center gap-12 px-5 py-16 sm:px-7 lg:grid-cols-2 lg:gap-20">
             <MomentsPhone />
             <div><p className="mb-5 flex items-center gap-2 text-sm font-semibold text-primary"><Sparkles className="h-4 w-4" /> BUZZ MOMENTS</p><h2 className="text-4xl font-normal leading-none sm:text-6xl"><AnimatedWords text="Share the moment before it passes" /></h2><p className="mt-7 max-w-md text-lg text-muted-foreground">Post photos, videos or a thought for the people you choose. Moments disappear after 24 hours, and you can see who viewed each one.</p><div className="mt-8"><TextLink onClick={openAuth}>Share a Moment</TextLink></div></div>
@@ -186,9 +185,9 @@ const BuzzLanding = ({ page = "/" }: { page?: string }) => {
           </div>
         </ScrollSection>
 
-        <ScrollSection id="download" direction="right" className="mx-auto grid min-h-[570px] max-w-[1100px] items-center gap-12 px-5 py-16 sm:px-7 sm:py-20 lg:grid-cols-2 lg:gap-20">
-          <DesktopApp />
-          <div><h2 className="text-4xl font-normal leading-[1.03] sm:text-6xl">Get Buzz for<br />your desktop</h2><p className="mt-6 text-lg">Chat and call on a larger screen with Buzz Web.</p><div className="mt-9"><InstallAppDialog trigger={<Button className="h-13 rounded-full px-7 gradient-brand">Download Buzz <ArrowDownToLine /></Button>} /></div></div>
+        <ScrollSection id="download" className="mx-auto grid min-h-0 max-w-[1100px] scroll-mt-20 items-center gap-8 px-5 py-14 sm:px-7 sm:py-16 lg:min-h-[570px] lg:grid-cols-2 lg:gap-20 lg:py-20">
+          <div className="order-1 text-center lg:text-left"><div className="mb-6 flex justify-center lg:hidden"><img src={buzzLogo} alt="Buzz" className="h-20 w-20 rounded-2xl object-cover shadow-lg" /></div><p className="mb-3 text-sm font-semibold text-primary">BUZZ ON EVERY SCREEN</p><h2 className="text-4xl font-normal leading-[1.03] sm:text-6xl">Get Buzz on your phone</h2><p className="mx-auto mt-5 max-w-md text-base text-muted-foreground sm:text-lg lg:mx-0">Chat and call from your phone or desktop. Install Buzz for quick access from your home screen.</p><div className="mt-7 flex justify-center lg:mt-9 lg:justify-start"><InstallAppDialog trigger={<Button className="h-12 w-full max-w-xs rounded-full px-7 gradient-brand">Install Buzz <ArrowDownToLine /></Button>} /></div></div>
+          <div className="order-2 hidden min-w-0 lg:block"><DesktopApp /></div>
         </ScrollSection>
 
         <section id="privacy" className="bg-landing-night text-primary-foreground">
@@ -198,7 +197,7 @@ const BuzzLanding = ({ page = "/" }: { page?: string }) => {
           </div>
         </section>
 
-        <ScrollSection id="groups" direction="left" className="mx-auto grid min-h-[650px] max-w-[1080px] items-center gap-12 px-5 py-16 sm:px-7 lg:grid-cols-2 lg:gap-20">
+        <ScrollSection id="groups" className="mx-auto grid min-h-[650px] max-w-[1080px] items-center gap-12 px-5 py-16 sm:px-7 lg:grid-cols-2 lg:gap-20">
           <div><h2 className="text-4xl font-normal leading-none sm:text-6xl">Keep in touch<br />with your<br />groups</h2><p className="mt-7 max-w-md text-lg">Whether it’s planning an outing with friends or staying close to family, Buzz group conversations feel effortless.</p><div className="mt-8"><TextLink onClick={openAuth}>Log in to Buzz</TextLink></div></div>
           <div className="relative"><PhoneChat group /><div className="absolute -right-5 top-24 hidden w-44 overflow-hidden rounded-lg shadow-xl sm:block"><img src={groupImage} alt="Friends connected on Buzz" width={1536} height={1024} loading="lazy" className="aspect-video w-full object-cover" /></div></div>
         </ScrollSection>

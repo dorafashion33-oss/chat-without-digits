@@ -133,6 +133,20 @@
     @apply border-border;
   }
 
+  html,
+  body,
+  #root {
+    width: 100%;
+    min-width: 320px;
+    min-height: 100%;
+    overflow-x: clip;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    overscroll-behavior-x: none;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: Arial, Helvetica, system-ui, sans-serif;
