@@ -8,3 +8,4 @@
 - [ ] Match voice/video call controls to the uploaded reference and verify call permission flow.
 - [ ] Validate desktop, mobile, dialogs, navigation, forms, and build health.
 - [ ] Add responsive direct-message forwarding, group-message delete/forward actions, and a clear install-dialog Back path.
+- [x] Stabilize mobile scrolling, prevent horizontal page drift, and make the homepage Download section phone-first and clearly usable.
