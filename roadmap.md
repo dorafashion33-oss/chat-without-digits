@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Add default Buzz Theme to direct/group chats, separate Chat Themes selector, saved choices, and verify desktop/mobile behavior.
+- [x] Add default Buzz Theme to direct/group chats, separate Chat Themes selector, saved choices, and verify desktop/mobile behavior.
 
 - [x] Add subtle low-fade motion across the public site and app UI with reduced-motion support.
 - [ ] Remove unwanted navigation/footer options and replace remaining links with functional public pages.

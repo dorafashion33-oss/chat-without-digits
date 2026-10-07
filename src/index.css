@@ -188,7 +188,6 @@
     --chat-bubble-other: 230 15% 19%;
     --chat-bubble-other-foreground: 230 15% 96%;
     --muted-foreground: 230 12% 72%;
-    --foreground: 230 15% 96%;
   }
   .dark .chat-theme-surface[data-chat-theme="mint"] {
     --chat-theme-canvas: 163 25% 9%;
