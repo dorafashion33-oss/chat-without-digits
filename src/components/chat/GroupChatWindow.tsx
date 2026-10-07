@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import MessageContent from "./MessageContent";
 import MessageForwardDialog, { type ForwardRecipient } from "./MessageForwardDialog";
+import { useChatTheme } from "./ChatThemeProvider";
+import { chatWallpaperStyle } from "./ChatThemesPanel";
 
 interface GroupChatWindowProps {
   group: Group;
@@ -26,6 +28,7 @@ const GroupChatWindow = ({
   group, currentUserId, onSendMessage, fetchMessages, fetchMembers,
   onAddMember, onRemoveMember, onDeleteGroup, onStartCall, onStartGroupCall, onBack, profiles, onDeleteMessage,
 }: GroupChatWindowProps) => {
+  const { theme } = useChatTheme();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [members, setMembers] = useState<GroupMember[]>([]);
@@ -118,7 +121,7 @@ const GroupChatWindow = ({
   const colors = ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500", "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600"];
 
   return (
-    <div className="flex h-full flex-col">
+    <div data-chat-theme={theme} style={chatWallpaperStyle} className="chat-theme-surface flex h-full min-h-0 flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-chat-header px-4 py-3">
         {onBack && (
@@ -189,11 +192,8 @@ const GroupChatWindow = ({
       ) : (
         <>
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 scrollbar-thin" style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--border) / 0.3) 1px, transparent 0)`,
-            backgroundSize: "24px 24px",
-          }}>
-            <div className="mx-auto max-w-3xl space-y-1">
+          <div className="chat-wallpaper min-h-0 flex-1 overflow-y-auto p-4 scrollbar-thin" data-motion-fx="off">
+            <div className="relative mx-auto max-w-3xl space-y-1">
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                   <Users className="h-10 w-10 mb-2 opacity-30" />

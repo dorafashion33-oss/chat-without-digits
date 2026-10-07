@@ -20,6 +20,7 @@ import { useWebRTC } from "@/hooks/useWebRTC";
 import { useGroupCall } from "@/hooks/useGroupCall";
 import type { Session } from "@supabase/supabase-js";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
+import { ChatThemeProvider } from "@/components/chat/ChatThemeProvider";
 
 const Index = () => {
   const location = useLocation();
@@ -163,6 +164,7 @@ const Index = () => {
   }
 
   return (
+    <ChatThemeProvider key={session.user.id} userId={session.user.id}>
     <div className="flex h-dvh min-h-0 w-full min-w-0 overflow-hidden bg-background">
 
       {/* Call screen overlay */}
@@ -264,7 +266,7 @@ const Index = () => {
         {isStreamsSection && activeGroupId && activeGroup ? (
           <GroupChatWindow
             group={activeGroup}
-            currentUserId={currentUserId!}
+            currentUserId={session.user.id}
             profiles={profiles}
             onSendMessage={sendGroupMessage}
             fetchMessages={fetchGroupMessages}
@@ -280,7 +282,7 @@ const Index = () => {
         ) : isStreamsSection && activeThread ? (
           <ChatWindow
             thread={activeThread}
-            currentUserId={currentUserId!}
+            currentUserId={session.user.id}
             onSendMessage={handleSendMessage}
             profiles={profiles}
             onDeleteMessage={deleteMessage}
@@ -300,6 +302,7 @@ const Index = () => {
         <MobileBottomNav active={activeSection} onNavigate={handleNavigate} unreadCount={totalUnread} />
       )}
     </div>
+    </ChatThemeProvider>
   );
 };
 
