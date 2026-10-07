@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Add all 12 uploaded collection wallpapers to Chat Themes and verify selection, persistence, and chat rendering.
+
 - [x] Add default Buzz Theme to direct/group chats, separate Chat Themes selector, saved choices, and verify desktop/mobile behavior.
 
 - [x] Add subtle low-fade motion across the public site and app UI with reduced-motion support.
