@@ -8,6 +8,9 @@ import type { DbProfile } from "@/hooks/useRealtimeMessages";
 import type { Moment } from "@/hooks/useMoments";
 import type { Group } from "@/hooks/useGroups";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
+import ChatThemesPanel from "./ChatThemesPanel";
+import { Palette } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SectionPanelProps {
   section: NavSection;
@@ -684,7 +687,7 @@ const DiscoverPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => vo
 };
 
 /* ─── Settings ─── */
-type SettingsView = "main" | "account" | "privacy" | "security" | "notifications" | "language" | "help";
+type SettingsView = "main" | "account" | "privacy" | "security" | "notifications" | "language" | "help" | "chat-themes";
 
 const useLocalToggle = (key: string, def = true) => {
   const [v, setV] = useState<boolean>(() => {
@@ -938,6 +941,7 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
   if (view === "notifications") return <NotificationsView onBack={() => setView("main")} />;
   if (view === "language") return <LanguageView onBack={() => setView("main")} />;
   if (view === "help") return <HelpView onBack={() => setView("main")} />;
+  if (view === "chat-themes") return <ChatThemesPanel onBack={() => setView("main")} />;
 
   const settingGroups: { title: string; items: { icon: typeof User; label: string; desc: string; view: SettingsView }[] }[] = [
     { title: "Account", items: [
@@ -946,6 +950,7 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
       { icon: Shield, label: "Security", desc: "Password, app lock, 2-step", view: "security" },
     ]},
     { title: "Preferences", items: [
+      { icon: Palette, label: "Chat Themes", desc: "Buzz Theme, Mint, Rose, Midnight", view: "chat-themes" },
       { icon: Bell, label: "Notifications", desc: "Message, group, call tones", view: "notifications" },
       { icon: Globe, label: "Language", desc: "Choose your language", view: "language" },
       { icon: HelpCircle, label: "Help", desc: "FAQs, contact us", view: "help" },
@@ -965,7 +970,7 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
           <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60">
             {theme === "dark" ? <Sun className="h-5 w-5 text-amber-400" /> : <Moon className="h-5 w-5 text-primary" />}
             <div className="text-left">
-              <p className="text-sm font-semibold text-foreground">Theme</p>
+              <p className="text-sm font-semibold text-foreground">App appearance</p>
               <p className="text-xs text-muted-foreground">{theme === "dark" ? "Switch to light" : "Switch to dark"}</p>
             </div>
           </button>
@@ -976,7 +981,7 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
             {group.items.map((item, i) => {
               const Icon = item.icon;
               return (
-                <button key={i} onClick={() => setView(item.view)} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60">
+                <Button variant="ghost" key={i} onClick={() => setView(item.view)} className="flex h-auto w-full items-center justify-start gap-3 whitespace-normal rounded-lg p-3 transition-colors hover:bg-accent/60">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
                     <Icon className="h-4 w-4 text-primary" />
                   </div>
@@ -985,7 +990,7 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
                     <p className="text-xs text-muted-foreground">{item.desc}</p>
                   </div>
                   <span className="text-muted-foreground">›</span>
-                </button>
+                </Button>
               );
             })}
           </div>

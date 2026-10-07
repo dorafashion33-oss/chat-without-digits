@@ -50,6 +50,8 @@
     --chat-input-bg: 250 15% 97%;
     --online: 142 70% 45%;
     --chat-bg-pattern: 250 15% 94%;
+    --chat-theme-canvas: 252 45% 97%;
+    --chat-theme-pattern-opacity: 1;
 
     --sidebar-background: 250 15% 98%;
     --sidebar-foreground: 250 20% 20%;
@@ -110,6 +112,8 @@
     --chat-input-bg: 250 25% 11%;
     --online: 142 70% 45%;
     --chat-bg-pattern: 250 25% 8%;
+    --chat-theme-canvas: 250 25% 10%;
+    --chat-theme-pattern-opacity: 0.07;
 
     --sidebar-background: 250 25% 8%;
     --sidebar-foreground: 250 15% 92%;
@@ -154,6 +158,65 @@
 }
 
 @layer utilities {
+  .chat-theme-surface[data-chat-theme="buzz"] {
+    --chat-bubble-own: var(--brand-purple);
+    --chat-bubble-own-foreground: var(--primary-foreground);
+    --chat-bubble-other: var(--card);
+    --chat-bubble-other-foreground: var(--card-foreground);
+  }
+  .chat-theme-surface[data-chat-theme="mint"] {
+    --chat-theme-canvas: 155 32% 95%;
+    --chat-theme-pattern-opacity: 0.45;
+    --chat-bubble-own: 163 60% 27%;
+    --chat-bubble-own-foreground: 0 0% 100%;
+    --chat-bubble-other: 0 0% 100%;
+    --chat-bubble-other-foreground: 165 35% 12%;
+  }
+  .chat-theme-surface[data-chat-theme="rose"] {
+    --chat-theme-canvas: 345 45% 96%;
+    --chat-theme-pattern-opacity: 0.4;
+    --chat-bubble-own: 340 62% 37%;
+    --chat-bubble-own-foreground: 0 0% 100%;
+    --chat-bubble-other: 0 0% 100%;
+    --chat-bubble-other-foreground: 340 35% 13%;
+  }
+  .chat-theme-surface[data-chat-theme="midnight"] {
+    --chat-theme-canvas: 230 18% 10%;
+    --chat-theme-pattern-opacity: 0.055;
+    --chat-bubble-own: 262 55% 40%;
+    --chat-bubble-own-foreground: 0 0% 100%;
+    --chat-bubble-other: 230 15% 19%;
+    --chat-bubble-other-foreground: 230 15% 96%;
+    --muted-foreground: 230 12% 72%;
+  }
+  .dark .chat-theme-surface[data-chat-theme="mint"] {
+    --chat-theme-canvas: 163 25% 9%;
+    --chat-theme-pattern-opacity: 0.06;
+    --chat-bubble-other: 163 20% 16%;
+    --chat-bubble-other-foreground: 155 25% 94%;
+  }
+  .dark .chat-theme-surface[data-chat-theme="rose"] {
+    --chat-theme-canvas: 340 20% 10%;
+    --chat-theme-pattern-opacity: 0.06;
+    --chat-bubble-other: 340 20% 17%;
+    --chat-bubble-other-foreground: 345 25% 94%;
+  }
+  .chat-wallpaper {
+    position: relative;
+    isolation: isolate;
+    background-color: hsl(var(--chat-theme-canvas));
+  }
+  .chat-wallpaper::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--buzz-wallpaper);
+    background-repeat: repeat;
+    background-size: 440px 440px;
+    opacity: var(--chat-theme-pattern-opacity);
+  }
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;

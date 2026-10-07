@@ -4,3 +4,4 @@
 - PWA registration must remain centralized in `src/lib/registerSW.ts` and disabled in development and Lovable previews to prevent stale preview caches.
 - App-wide reveal motion is centralized in `MotionFX` so dynamic screens share one reduced-motion-safe behavior.
 - Direct and group message forwarding share `MessageForwardDialog` so destination selection and message provenance stay consistent across devices.
+- Direct and group chats share an account-scoped ChatThemeProvider and semantic chat-theme CSS tokens; only explicit choices persist locally so navigation and app appearance never reset the selected chat theme.

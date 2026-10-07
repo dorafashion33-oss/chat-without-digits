@@ -11,6 +11,8 @@ import { triggerBuzzBurst } from "./BuzzBurst";
 import MessageContent from "./MessageContent";
 import MessageForwardDialog from "./MessageForwardDialog";
 import type { DbProfile } from "@/hooks/useRealtimeMessages";
+import { useChatTheme } from "./ChatThemeProvider";
+import { chatWallpaperStyle } from "./ChatThemesPanel";
 
 interface ChatWindowProps {
   thread: ChatThread;
@@ -26,6 +28,7 @@ interface ChatWindowProps {
 }
 
 const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onEditMessage, onTyping, isOtherTyping, onBack, onStartCall, profiles }: ChatWindowProps) => {
+  const { theme } = useChatTheme();
   const [input, setInput] = useState("");
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -181,7 +184,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
   const colorIndex = thread.profile.username.charCodeAt(0) % colors.length;
 
   return (
-    <div className="flex h-full flex-col bg-background" onClick={() => setActiveMenuId(null)}>
+    <div data-chat-theme={theme} style={chatWallpaperStyle} className="chat-theme-surface flex h-full min-h-0 flex-col bg-background" onClick={() => setActiveMenuId(null)}>
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-chat-header px-3 py-2.5 shadow-sm">
         {onBack && (
@@ -224,11 +227,8 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 scrollbar-thin" style={{
-        backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--border) / 0.2) 1px, transparent 0)`,
-        backgroundSize: "20px 20px",
-      }}>
-        <div className="mx-auto max-w-3xl space-y-0.5">
+      <div className="chat-wallpaper min-h-0 flex-1 overflow-y-auto p-3 scrollbar-thin" data-motion-fx="off">
+        <div className="relative mx-auto max-w-3xl space-y-0.5">
           {thread.messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <p className="text-sm">No messages yet</p>
