@@ -2,7 +2,6 @@ import { ArrowLeft, Check, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { CHAT_THEMES, useChatTheme } from "./ChatThemeProvider";
-import wallpaper from "@/assets/buzz-chat-wallpaper.jpg";
 import type { CSSProperties } from "react";
 
 const photoWallpapers = import.meta.glob("@/assets/wallpapers/*.jpg", { eager: true, import: "default" }) as Record<string, string>;
@@ -11,9 +10,8 @@ const photoById: Record<string, string> = Object.fromEntries(
 );
 export const isPhotoTheme = (id: string) => id in photoById;
 
-export const chatWallpaperStyle = { "--buzz-wallpaper": `url("${wallpaper}")` } as CSSProperties;
 export const getChatWallpaperStyle = (id: string) =>
-  ({ "--buzz-wallpaper": `url("${photoById[id] ?? wallpaper}")` }) as CSSProperties;
+  ({ "--buzz-wallpaper": `url("${photoById[id] ?? photoById.buzz}")` }) as CSSProperties;
 
 export default function ChatThemesPanel({ onBack }: { onBack: () => void }) {
   const { theme, selectTheme } = useChatTheme();

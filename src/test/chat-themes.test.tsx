@@ -4,7 +4,7 @@ import { ChatThemeProvider, useChatTheme, parseChatTheme, chatThemeKey } from "@
 
 function Probe() {
   const { theme, selectTheme } = useChatTheme();
-  return <><output data-testid="theme">{theme}</output><button onClick={() => selectTheme("mint")}>Mint</button><button onClick={() => selectTheme("buzz")}>Buzz</button></>;
+  return <><output data-testid="theme">{theme}</output><button onClick={() => selectTheme("peony")}>Mint</button><button onClick={() => selectTheme("buzz")}>Buzz</button></>;
 }
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);
@@ -19,23 +19,23 @@ describe("Chat themes", () => {
   it("saves only an explicit selection and restores it after reopening", () => {
     const view = render(<ChatThemeProvider userId="one"><Probe /></ChatThemeProvider>);
     fireEvent.click(screen.getByText("Mint"));
-    expect(localStorage.getItem(chatThemeKey("one"))).toBe("mint");
+    expect(localStorage.getItem(chatThemeKey("one"))).toBe("peony");
     view.unmount();
     render(<ChatThemeProvider userId="one"><Probe /></ChatThemeProvider>);
-    expect(screen.getByTestId("theme")).toHaveTextContent("mint");
+    expect(screen.getByTestId("theme")).toHaveTextContent("peony");
     fireEvent.click(screen.getByText("Buzz"));
     expect(localStorage.getItem(chatThemeKey("one"))).toBe("buzz");
   });
   it("keeps different accounts separate and synchronizes browser tabs", () => {
-    localStorage.setItem(chatThemeKey("one"), "rose");
+    localStorage.setItem(chatThemeKey("one"), "holographic");
     const view = render(<ChatThemeProvider userId="one"><Probe /></ChatThemeProvider>);
-    expect(screen.getByTestId("theme")).toHaveTextContent("rose");
+    expect(screen.getByTestId("theme")).toHaveTextContent("holographic");
     view.rerender(<ChatThemeProvider userId="two"><Probe /></ChatThemeProvider>);
     expect(screen.getByTestId("theme")).toHaveTextContent("buzz");
     act(() => {
-      localStorage.setItem(chatThemeKey("two"), "midnight");
+      localStorage.setItem(chatThemeKey("two"), "floating-oasis");
       window.dispatchEvent(new StorageEvent("storage", { key: chatThemeKey("two") }));
     });
-    expect(screen.getByTestId("theme")).toHaveTextContent("midnight");
+    expect(screen.getByTestId("theme")).toHaveTextContent("floating-oasis");
   });
 });
