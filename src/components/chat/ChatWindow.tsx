@@ -270,7 +270,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
           {isOtherTyping && <TypingIndicator />}
           <div ref={messagesEndRef} />
         </div>
-      </div>
+      </div></div>
 
       {/* Reply preview */}
       {replyTo && (

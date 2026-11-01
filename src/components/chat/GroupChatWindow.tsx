@@ -236,7 +236,7 @@ const GroupChatWindow = ({
         onOpenChange={(open) => { if (!open) setForwardMessage(null); }}
         onForward={(receiverId, text) => onSendMessage(receiverId, `[forwarded]${text}`)}
       />
-          </div>
+          </div></div>
 
           {/* Attachment preview */}
           {attachedFile && (
