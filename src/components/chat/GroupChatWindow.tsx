@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import MessageContent from "./MessageContent";
 import MessageForwardDialog, { type ForwardRecipient } from "./MessageForwardDialog";
 import { useChatTheme } from "./ChatThemeProvider";
-import { chatWallpaperStyle } from "./ChatThemesPanel";
+import { getChatWallpaperStyle, isPhotoTheme } from "./ChatThemesPanel";
 
 interface GroupChatWindowProps {
   group: Group;
@@ -121,7 +121,7 @@ const GroupChatWindow = ({
   const colors = ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500", "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600"];
 
   return (
-    <div data-chat-theme={theme} style={chatWallpaperStyle} className="chat-theme-surface flex h-full min-h-0 flex-col">
+    <div data-chat-theme={theme} data-photo-wallpaper={isPhotoTheme(theme) || undefined} style={getChatWallpaperStyle(theme)} className="chat-theme-surface flex h-full min-h-0 flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-chat-header px-4 py-3">
         {onBack && (

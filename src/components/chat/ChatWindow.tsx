@@ -12,7 +12,7 @@ import MessageContent from "./MessageContent";
 import MessageForwardDialog from "./MessageForwardDialog";
 import type { DbProfile } from "@/hooks/useRealtimeMessages";
 import { useChatTheme } from "./ChatThemeProvider";
-import { chatWallpaperStyle } from "./ChatThemesPanel";
+import { getChatWallpaperStyle, isPhotoTheme } from "./ChatThemesPanel";
 
 interface ChatWindowProps {
   thread: ChatThread;
@@ -184,7 +184,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
   const colorIndex = thread.profile.username.charCodeAt(0) % colors.length;
 
   return (
-    <div data-chat-theme={theme} style={chatWallpaperStyle} className="chat-theme-surface flex h-full min-h-0 flex-col bg-background" onClick={() => setActiveMenuId(null)}>
+    <div data-chat-theme={theme} data-photo-wallpaper={isPhotoTheme(theme) || undefined} style={getChatWallpaperStyle(theme)} className="chat-theme-surface flex h-full min-h-0 flex-col bg-background" onClick={() => setActiveMenuId(null)}>
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-chat-header px-3 py-2.5 shadow-sm">
         {onBack && (
