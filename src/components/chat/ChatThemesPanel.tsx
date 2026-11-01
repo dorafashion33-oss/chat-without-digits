@@ -5,7 +5,15 @@ import { CHAT_THEMES, useChatTheme } from "./ChatThemeProvider";
 import wallpaper from "@/assets/buzz-chat-wallpaper.jpg";
 import type { CSSProperties } from "react";
 
+const photoWallpapers = import.meta.glob("@/assets/wallpapers/*.jpg", { eager: true, import: "default" }) as Record<string, string>;
+const photoById: Record<string, string> = Object.fromEntries(
+  Object.entries(photoWallpapers).map(([path, url]) => [path.split("/").pop()!.replace(".jpg", ""), url]),
+);
+export const isPhotoTheme = (id: string) => id in photoById;
+
 export const chatWallpaperStyle = { "--buzz-wallpaper": `url("${wallpaper}")` } as CSSProperties;
+export const getChatWallpaperStyle = (id: string) =>
+  ({ "--buzz-wallpaper": `url("${photoById[id] ?? wallpaper}")` }) as CSSProperties;
 
 export default function ChatThemesPanel({ onBack }: { onBack: () => void }) {
   const { theme, selectTheme } = useChatTheme();
@@ -21,7 +29,7 @@ export default function ChatThemesPanel({ onBack }: { onBack: () => void }) {
             <Button key={item.id} variant="outline" aria-pressed={theme === item.id} aria-label={item.name}
               onClick={() => { if (selectTheme(item.id)) toast.success(`${item.name} selected`); else toast.error("Theme could not be saved. Please allow browser storage and try again."); }}
               className={`h-auto min-w-0 flex-col items-stretch gap-0 overflow-hidden whitespace-normal p-0 ${theme === item.id ? "border-primary ring-1 ring-primary" : "border-border"}`}>
-              <div data-chat-theme={item.id} style={chatWallpaperStyle} className="chat-theme-surface w-full">
+              <div data-chat-theme={item.id} data-photo-wallpaper={isPhotoTheme(item.id) || undefined} style={getChatWallpaperStyle(item.id)} className="chat-theme-surface w-full">
                 <div className="chat-wallpaper relative flex h-44 flex-col justify-center gap-3 p-3">
                   <div className="relative self-start rounded-lg rounded-bl-sm bg-chat-bubble-other px-3 py-2 text-left text-xs text-chat-bubble-other-foreground">Hey, Buzz! 🐝</div>
                   <div className="relative self-end rounded-lg rounded-br-sm bg-chat-bubble-own px-3 py-2 text-left text-xs text-chat-bubble-own-foreground">Let's talk <CheckCheck className="ml-1 inline h-3 w-3" /></div>
