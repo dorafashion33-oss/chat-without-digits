@@ -223,33 +223,17 @@
     background-position: center;
     opacity: 1;
   }
-  /* Scrolling chat lists: keep wallpaper fixed to the visible area */
-  .chat-wallpaper.overflow-y-auto {
-    background-image: var(--buzz-wallpaper);
-    background-attachment: local;
-    background-repeat: repeat;
-    background-size: 440px 440px;
-  }
+  /* Scrolling chat lists: wallpaper lives on a fixed shell behind the scroller */
+  .chat-wallpaper.overflow-y-auto { background: transparent; position: relative; z-index: 1; }
   .chat-wallpaper.overflow-y-auto::before { display: none; }
-  .chat-theme-surface[data-photo-wallpaper] .chat-wallpaper.overflow-y-auto {
-    background-image: none;
-    background-color: transparent;
-  }
-  .chat-theme-surface[data-photo-wallpaper] .chat-messages-shell {
-    position: relative;
+  .chat-messages-shell { position: relative; isolation: isolate; background-color: hsl(var(--chat-theme-canvas)); }
+  .chat-messages-shell::before {
+    content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background-image: var(--buzz-wallpaper); background-repeat: repeat; background-size: 440px 440px;
+    opacity: var(--chat-theme-pattern-opacity);
   }
   .chat-theme-surface[data-photo-wallpaper] .chat-messages-shell::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-color: hsl(var(--chat-theme-canvas));
-    background-image: var(--buzz-wallpaper);
-    background-size: cover;
-    background-position: center;
-  }
-  .chat-theme-surface:not([data-photo-wallpaper]) .chat-wallpaper.overflow-y-auto {
-    background-color: hsl(var(--chat-theme-canvas));
+    background-repeat: no-repeat; background-size: cover; background-position: center; opacity: 1;
   }
   .scrollbar-thin {
     scrollbar-width: thin;

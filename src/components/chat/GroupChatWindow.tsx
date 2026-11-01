@@ -192,7 +192,7 @@ const GroupChatWindow = ({
       ) : (
         <>
           {/* Messages */}
-          <div className="chat-wallpaper min-h-0 flex-1 overflow-y-auto p-4 scrollbar-thin" data-motion-fx="off">
+          <div className="chat-messages-shell flex min-h-0 flex-1 flex-col"><div className="chat-wallpaper min-h-0 flex-1 overflow-y-auto p-4 scrollbar-thin" data-motion-fx="off">
             <div className="relative mx-auto max-w-3xl space-y-1">
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
