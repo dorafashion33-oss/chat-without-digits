@@ -950,7 +950,7 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
       { icon: Shield, label: "Security", desc: "Password, app lock, 2-step", view: "security" },
     ]},
     { title: "Preferences", items: [
-      { icon: Palette, label: "Chat Themes", desc: "Buzz Theme, Mint, Rose, Midnight", view: "chat-themes" },
+      { icon: Palette, label: "Chat Themes", desc: "Buzz Theme + 15 wallpapers", view: "chat-themes" },
       { icon: Bell, label: "Notifications", desc: "Message, group, call tones", view: "notifications" },
       { icon: Globe, label: "Language", desc: "Choose your language", view: "language" },
       { icon: HelpCircle, label: "Help", desc: "FAQs, contact us", view: "help" },
