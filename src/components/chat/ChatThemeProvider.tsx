@@ -2,21 +2,12 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 
 export const CHAT_THEMES = [
   { id: "buzz", name: "Buzz Theme" },
-  { id: "mint", name: "Mint" },
-  { id: "rose", name: "Rose" },
-  { id: "midnight", name: "Midnight" },
-  { id: "orchid", name: "Orchid" },
+  { id: "peony", name: "Peony" },
   { id: "holographic", name: "Holographic" },
-  { id: "island", name: "Island" },
-  { id: "blossoms", name: "Blossoms" },
-  { id: "lavender", name: "Lavender" },
-  { id: "blueberries", name: "Blueberries" },
-  { id: "orange-lily", name: "Orange Lily" },
-  { id: "golden-petal", name: "Golden Petal" },
-  { id: "sunglasses", name: "Sunglasses" },
-  { id: "green-leaves", name: "Green Leaves" },
-  { id: "sky-blue", name: "Sky Blue" },
-  { id: "macarons", name: "Macarons" },
+  { id: "pink-paradise", name: "Pink Paradise" },
+  { id: "cherry-blossom", name: "Cherry Blossom" },
+  { id: "golden-hibiscus", name: "Golden Hibiscus" },
+  { id: "floating-oasis", name: "Floating Oasis" },
 ] as const;
 export type ChatThemeId = typeof CHAT_THEMES[number]["id"];
 export const chatThemeKey = (userId: string) => `buzz:chat-theme:${userId}`;
