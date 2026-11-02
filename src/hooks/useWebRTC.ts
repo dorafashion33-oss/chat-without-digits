@@ -175,6 +175,7 @@ export function useWebRTC(currentUserId: string | undefined) {
       event: "call-offer",
       payload: { from: currentUserId, to: targetUserId, offer, callType: type },
     });
+    notifyPush(targetUserId, "call", { callType: type });
 
     // Auto-end call after 45 seconds if no answer
     callingTimeoutRef.current = setTimeout(() => {
