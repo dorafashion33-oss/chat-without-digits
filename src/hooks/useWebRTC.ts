@@ -1,3 +1,4 @@
+import { notifyPush } from "@/lib/push";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
