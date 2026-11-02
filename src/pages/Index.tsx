@@ -1,3 +1,4 @@
+import { syncPush } from "@/lib/push";
 import { useState, useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
