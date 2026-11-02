@@ -47,6 +47,8 @@ const Index = () => {
     groupCall.startGroupCall(groupId, gName, memberIds, type);
   }, [groupCall, fetchGroupMembers, currentUserId]);
 
+  useEffect(() => { if (currentUserId) syncPush(currentUserId); }, [currentUserId]);
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
