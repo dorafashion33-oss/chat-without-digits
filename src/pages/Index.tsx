@@ -1,3 +1,4 @@
+import { syncPush } from "@/lib/push";
 import { useState, useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +47,8 @@ const Index = () => {
     const memberIds = members.map((m) => m.user_id).filter((id) => id !== currentUserId);
     groupCall.startGroupCall(groupId, gName, memberIds, type);
   }, [groupCall, fetchGroupMembers, currentUserId]);
+
+  useEffect(() => { if (currentUserId) syncPush(currentUserId); }, [currentUserId]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

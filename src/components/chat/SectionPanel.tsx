@@ -1,3 +1,4 @@
+import { enablePush, pushSupported } from "@/lib/push";
 import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, ArrowLeft, LogOut, Search, Users, Plus, Image, X, Phone, Video, Send, Eye, PlayCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
@@ -845,9 +846,11 @@ const NotificationsView = ({ onBack }: { onBack: () => void }) => {
   const [preview, setPreview] = useLocalToggle("buzz-notif-preview", true);
 
   const requestBrowser = async () => {
-    if (!("Notification" in window)) { toast.error("Not supported on this device"); return; }
-    const perm = await Notification.requestPermission();
-    if (perm === "granted") { toast.success("Notifications enabled"); new Notification("Buzz", { body: "Notifications are working! 🔔" }); }
+    if (!pushSupported()) { toast.error("Not supported on this device — iPhone par pehle Buzz ko Home Screen par install karein"); return; }
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) return;
+    const ok = await enablePush(data.user.id);
+    if (ok) toast.success("Notifications on — app band hone par bhi messages aur calls ki ring aayegi");
     else toast.error("Permission denied");
   };
 

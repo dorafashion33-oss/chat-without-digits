@@ -1,3 +1,4 @@
+import { notifyPush } from "@/lib/push";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -174,6 +175,7 @@ export function useWebRTC(currentUserId: string | undefined) {
       event: "call-offer",
       payload: { from: currentUserId, to: targetUserId, offer, callType: type },
     });
+    notifyPush(targetUserId, "call", { callType: type });
 
     // Auto-end call after 45 seconds if no answer
     callingTimeoutRef.current = setTimeout(() => {

@@ -1,3 +1,4 @@
+import { notifyPush } from "@/lib/push";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -195,6 +196,7 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
         const { toast } = await import("sonner");
         toast.message("Offline — message queued, reconnect hote hi chala jayega");
       } else {
+        notifyPush(receiverId, "message", { text: text.trim().slice(0, 140) });
         // Refresh to replace optimistic with real
         fetchMessages();
       }
