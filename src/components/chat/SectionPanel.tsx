@@ -12,6 +12,7 @@ import buzzLogo from "@/assets/buzz-logo.jpeg";
 import ChatThemesPanel from "./ChatThemesPanel";
 import { Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { QRCodeSVG } from "qrcode.react";
 
 interface SectionPanelProps {
   section: NavSection;
@@ -620,62 +621,115 @@ const ConnectPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => voi
 };
 
 /* ─── Discover ─── */
-const DiscoverPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => void; onStartChat?: (userId: string) => void; onStartCall?: (userId: string, type: "voice" | "video") => void }) => {
+const DiscoverPanel = ({ onBack, onStartChat }: { onBack?: () => void; onStartChat?: (userId: string) => void; onStartCall?: (userId: string, type: "voice" | "video") => void }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [allUsers, setAllUsers] = useState<DbProfile[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [results, setResults] = useState<DbProfile[]>([]);
+  const [me, setMe] = useState<DbProfile | null>(null);
+  const [showQR, setShowQR] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) setCurrentUserId(user.id);
-      const { data } = await supabase.from("profiles").select("*");
-      if (data) setAllUsers(data);
+      if (!user) return;
+      const { data } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
+      if (data) setMe(data);
     })();
   }, []);
 
-  const filtered = searchQuery.trim()
-    ? allUsers.filter((p) => p.user_id !== currentUserId && (p.username.toLowerCase().includes(searchQuery.toLowerCase()) || (p.display_name || "").toLowerCase().includes(searchQuery.toLowerCase())))
-    : allUsers.filter((p) => p.user_id !== currentUserId);
+  useEffect(() => {
+    const q = searchQuery.trim().replace(/^@/, "").replace(/[%_,()]/g, "");
+    if (q.length < 2) { setResults([]); return; }
+    const t = setTimeout(async () => {
+      const { data } = await supabase.from("profiles").select("*")
+        .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`).limit(20);
+      setResults((data || []).filter((p) => p.user_id !== me?.user_id));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery, me?.user_id]);
+
+  const openByUsername = async (raw: string) => {
+    const username = raw.replace(/^buzz:/i, "").replace(/^@/, "").trim();
+    const { data } = await supabase.from("profiles").select("user_id").eq("username", username).maybeSingle();
+    if (data && data.user_id !== me?.user_id) onStartChat?.(data.user_id);
+    else toast.error("Buzz user nahi mila");
+  };
+
+  useEffect(() => {
+    if (!scanning) return;
+    let stream: MediaStream | null = null; let stop = false;
+    (async () => {
+      const BD = (window as any).BarcodeDetector;
+      if (!BD) { toast.error("Is browser mein QR scan support nahi hai"); setScanning(false); return; }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        if (!videoRef.current) return;
+        videoRef.current.srcObject = stream; await videoRef.current.play();
+        const det = new BD({ formats: ["qr_code"] });
+        while (!stop) {
+          const codes = await det.detect(videoRef.current).catch(() => []);
+          if (codes[0]?.rawValue) { stop = true; setScanning(false); openByUsername(codes[0].rawValue); break; }
+          await new Promise((r) => setTimeout(r, 300));
+        }
+      } catch { toast.error("Camera permission chahiye"); setScanning(false); }
+    })();
+    return () => { stop = true; stream?.getTracks().forEach((t) => t.stop()); };
+  }, [scanning]);
 
   const colors = ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500", "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600"];
+  const hasQuery = searchQuery.trim().replace(/^@/, "").length >= 2;
 
   return (
     <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
       <div className="border-b gradient-brand px-5 py-3.5">
         <div className="flex items-center gap-2">
           {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-white/20 lg:hidden transition-colors"><ArrowLeft className="h-5 w-5 text-white" /></button>}
-          <h1 className="text-lg font-bold text-white">Discover</h1>
+          <h1 className="text-lg font-bold text-white">Find people</h1>
         </div>
       </div>
-      <div className="px-4 py-3">
+      <div className="px-4 py-3 space-y-3">
         <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-primary/20">
           <Search className="h-4 w-4 text-muted-foreground" />
-          <input type="text" placeholder="Search by username..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" autoFocus />
+          <input type="text" placeholder="Search @username or name..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
         </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" onClick={() => setShowQR((v) => !v)}>My QR</Button>
+          <Button onClick={() => setScanning(true)}><Camera className="mr-1 h-4 w-4" />Scan QR</Button>
+        </div>
+        {showQR && me && (
+          <div className="flex flex-col items-center gap-2 rounded-xl border bg-card p-4">
+            <div className="rounded-lg bg-background p-3"><QRCodeSVG value={`buzz:@${me.username}`} size={168} /></div>
+            <p className="text-sm font-semibold text-foreground">@{me.username}</p>
+            <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard?.writeText(`@${me.username}`); toast.success("Username copied"); }}>Copy username</Button>
+          </div>
+        )}
+        {scanning && (
+          <div className="relative overflow-hidden rounded-xl border bg-card">
+            <video ref={videoRef} className="aspect-square w-full object-cover" muted playsInline />
+            <button onClick={() => setScanning(false)} className="absolute right-2 top-2 rounded-full bg-background/80 p-1.5"><X className="h-4 w-4" /></button>
+          </div>
+        )}
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        {!hasQuery ? (
+          <div className="flex flex-col items-center justify-center px-8 py-12 text-center text-muted-foreground">
             <Users className="h-10 w-10 mb-2 opacity-20" />
-            <p className="text-sm font-medium">{searchQuery ? "No users found" : "No other users yet"}</p>
+            <p className="text-sm font-medium">Kisi ka @username search karein ya unka QR scan karein</p>
           </div>
+        ) : results.length === 0 ? (
+          <div className="py-12 text-center text-sm text-muted-foreground">No users found</div>
         ) : (
           <div className="px-2">
-            <p className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">{searchQuery ? "Results" : "All Users"} ({filtered.length})</p>
-            {filtered.map((user) => {
+            {results.map((user) => {
               const ci = user.username.charCodeAt(0) % colors.length;
               const initials = (user.display_name || user.username).split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
               return (
                 <button key={user.user_id} onClick={() => onStartChat?.(user.user_id)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-accent">
-                  <div className="relative flex-shrink-0">
-                    {user.avatar_url ? <img src={user.avatar_url} alt={user.username} className="h-12 w-12 rounded-full object-cover" /> : <div className={`flex h-12 w-12 items-center justify-center rounded-full ${colors[ci]} text-sm font-semibold text-white`}>{initials}</div>}
-                    {user.is_online && <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-chat-sidebar bg-online" />}
-                  </div>
+                  {user.avatar_url ? <img src={user.avatar_url} alt={user.username} className="h-12 w-12 rounded-full object-cover" /> : <div className={`flex h-12 w-12 items-center justify-center rounded-full ${colors[ci]} text-sm font-semibold text-white`}>{initials}</div>}
                   <div className="text-left flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground">{user.display_name || user.username}</p>
                     <p className="text-xs text-muted-foreground">@{user.username}</p>
-                    {user.about && <p className="text-xs text-muted-foreground/70 truncate mt-0.5">{user.about}</p>}
                   </div>
                 </button>
               );
