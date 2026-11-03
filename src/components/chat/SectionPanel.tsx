@@ -1,3 +1,4 @@
+import UserProfileDialog from "./UserProfileDialog";
 import { enablePush, pushSupported } from "@/lib/push";
 import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, ArrowLeft, LogOut, Search, Users, Plus, Image, X, Phone, Video, Send, Eye, PlayCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -621,7 +622,7 @@ const ConnectPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => voi
 };
 
 /* ─── Discover ─── */
-const DiscoverPanel = ({ onBack, onStartChat }: { onBack?: () => void; onStartChat?: (userId: string) => void; onStartCall?: (userId: string, type: "voice" | "video") => void }) => {
+const DiscoverPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => void; onStartChat?: (userId: string) => void; onStartCall?: (userId: string, type: "voice" | "video") => void }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<DbProfile[]>([]);
   const [me, setMe] = useState<DbProfile | null>(null);
@@ -649,10 +650,11 @@ const DiscoverPanel = ({ onBack, onStartChat }: { onBack?: () => void; onStartCh
     return () => clearTimeout(t);
   }, [searchQuery, me?.user_id]);
 
+  const [viewing, setViewing] = useState<DbProfile | null>(null);
   const openByUsername = async (raw: string) => {
     const username = raw.replace(/^buzz:/i, "").replace(/^@/, "").trim();
-    const { data } = await supabase.from("profiles").select("user_id").eq("username", username).maybeSingle();
-    if (data && data.user_id !== me?.user_id) onStartChat?.(data.user_id);
+    const { data } = await supabase.from("profiles").select("*").eq("username", username).maybeSingle();
+    if (data && data.user_id !== me?.user_id) setViewing(data);
     else toast.error("Buzz user nahi mila");
   };
 
@@ -725,7 +727,7 @@ const DiscoverPanel = ({ onBack, onStartChat }: { onBack?: () => void; onStartCh
               const ci = user.username.charCodeAt(0) % colors.length;
               const initials = (user.display_name || user.username).split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
               return (
-                <button key={user.user_id} onClick={() => onStartChat?.(user.user_id)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-accent">
+                <button key={user.user_id} onClick={() => setViewing(user)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-accent">
                   {user.avatar_url ? <img src={user.avatar_url} alt={user.username} className="h-12 w-12 rounded-full object-cover" /> : <div className={`flex h-12 w-12 items-center justify-center rounded-full ${colors[ci]} text-sm font-semibold text-white`}>{initials}</div>}
                   <div className="text-left flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground">{user.display_name || user.username}</p>
@@ -737,6 +739,7 @@ const DiscoverPanel = ({ onBack, onStartChat }: { onBack?: () => void; onStartCh
           </div>
         )}
       </div>
+      <UserProfileDialog profile={viewing} onClose={() => setViewing(null)} onMessage={(id) => onStartChat?.(id)} onCall={onStartCall} />
     </div>
   );
 };
