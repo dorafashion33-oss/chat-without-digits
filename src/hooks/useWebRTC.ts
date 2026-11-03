@@ -148,18 +148,10 @@ export function useWebRTC(currentUserId: string | undefined) {
     setRemoteUserId(targetUserId);
     setCallState("calling");
 
-    // Check if remote user is online
+    // Show "Calling…" until the other device confirms it received the call → "Ringing…"
+    setIsRemoteOnline(false);
     const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", targetUserId).single();
-    if (profile) {
-      setRemoteProfile(profile);
-      setIsRemoteOnline(profile.is_online ?? false);
-      
-      if (profile.is_online) {
-        // User online → play dial tone (ring-back)
-        playDialTone();
-      }
-      // If offline, no sound — just show "Calling..."
-    }
+    if (profile) setRemoteProfile(profile);
 
     const stream = await getMedia(type);
     if (!stream) { cleanup(); return; }
@@ -247,6 +239,15 @@ export function useWebRTC(currentUserId: string | undefined) {
           setCallState("ringing");
           playRingtone(); // Play ringtone for incoming call
           (window as any).__pendingOffer = { from: data.from, offer: data.offer, type: data.callType };
+          // Tell caller this device is reachable → caller shows "Ringing"
+          channel.send({ type: "broadcast", event: "call-ringing", payload: { from: currentUserId, to: data.from } });
+        }
+      })
+      .on("broadcast", { event: "call-ringing" }, (payload) => {
+        const data = payload.payload;
+        if (data?.to === currentUserId && pcRef.current && pcRef.current.connectionState !== "connected") {
+          setIsRemoteOnline(true);
+          playDialTone();
         }
       })
       .on("broadcast", { event: "call-answer" }, async (payload) => {
