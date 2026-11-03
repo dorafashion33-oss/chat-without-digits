@@ -1,3 +1,4 @@
+import UserProfileDialog from "./UserProfileDialog";
 import { enablePush, pushSupported } from "@/lib/push";
 import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, ArrowLeft, LogOut, Search, Users, Plus, Image, X, Phone, Video, Send, Eye, PlayCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -621,7 +622,7 @@ const ConnectPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => voi
 };
 
 /* ─── Discover ─── */
-const DiscoverPanel = ({ onBack, onStartChat }: { onBack?: () => void; onStartChat?: (userId: string) => void; onStartCall?: (userId: string, type: "voice" | "video") => void }) => {
+const DiscoverPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => void; onStartChat?: (userId: string) => void; onStartCall?: (userId: string, type: "voice" | "video") => void }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<DbProfile[]>([]);
   const [me, setMe] = useState<DbProfile | null>(null);
@@ -738,6 +739,7 @@ const DiscoverPanel = ({ onBack, onStartChat }: { onBack?: () => void; onStartCh
           </div>
         )}
       </div>
+      <UserProfileDialog profile={viewing} onClose={() => setViewing(null)} onMessage={(id) => onStartChat?.(id)} onCall={onStartCall} />
     </div>
   );
 };

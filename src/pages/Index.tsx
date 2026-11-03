@@ -92,13 +92,18 @@ const Index = () => {
   }, [activeChatId, markAsRead]);
 
   const isStreamsSection = activeSection === "streams";
+  const [extraProfile, setExtraProfile] = useState<import("@/hooks/useRealtimeMessages").DbProfile | null>(null);
+  useEffect(() => {
+    if (!activeChatId || profiles.some((p) => p.user_id === activeChatId) || extraProfile?.user_id === activeChatId) return;
+    supabase.from("profiles").select("*").eq("user_id", activeChatId).maybeSingle().then(({ data }) => { if (data) setExtraProfile(data); });
+  }, [activeChatId, profiles, extraProfile?.user_id]);
 
   // Build virtual thread for new chats
   const activeThread = (() => {
     const existing = threads.find((t) => t.id === activeChatId);
     if (existing) return existing;
     if (!activeChatId || !isStreamsSection || showGroups) return null;
-    const profile = profiles.find((p) => p.user_id === activeChatId);
+    const profile = profiles.find((p) => p.user_id === activeChatId) || (extraProfile?.user_id === activeChatId ? extraProfile : undefined);
     if (!profile) return null;
     return { id: activeChatId, profile, messages: [], lastMessage: "", lastMessageTime: "", unreadCount: 0 } as import("@/hooks/useRealtimeMessages").ChatThread;
   })();
