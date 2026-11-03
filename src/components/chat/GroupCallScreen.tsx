@@ -1,4 +1,4 @@
-import { Ellipsis, LockKeyhole, Mic, MicOff, Users, Video as VideoIcon, VideoOff } from "lucide-react";
+import { LockKeyhole, Mic, MicOff, PhoneOff, Users, Video as VideoIcon, VideoOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { formatDuration } from "@/hooks/useWebRTC";
@@ -13,7 +13,7 @@ const RemoteTile = ({ stream, isVideo }: { stream?: MediaStream; isVideo: boolea
 
 const GroupCallScreen = ({ groupName, callType, duration, participants, localVideoRef, onEnd, onToggleMute, onToggleVideo }: GroupCallScreenProps) => {
   const [muted, setMuted] = useState(false); const [videoOff, setVideoOff] = useState(false); const list = Object.values(participants);
-  const controlClass = "h-12 w-12 rounded-full bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20";
+  const controlClass = "h-14 w-14 rounded-full [&_svg]:h-6 [&_svg]:w-6 active:scale-90 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20";
   return <div className="fixed inset-0 z-[100] flex flex-col bg-call-surface p-4 text-primary-foreground">
     <div className="pb-4 pt-[max(16px,env(safe-area-inset-top))] text-center low-fade"><p className="flex items-center justify-center gap-2 text-xs text-primary-foreground/70"><LockKeyhole className="h-4 w-4" /> End-to-end encrypted</p><h2 className="mt-2 text-xl font-bold">{groupName}</h2><p className="mt-1 text-sm text-primary-foreground/70">{list.length + 1} on call · {formatDuration(duration)}</p></div>
     <div className="grid flex-1 content-center grid-cols-2 gap-2 overflow-y-auto sm:gap-3"><div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-md bg-call-control">{callType === "video" ? <video ref={localVideoRef} autoPlay playsInline muted className="h-full w-full object-cover" /> : <span className="text-sm text-primary-foreground/70">You</span>}<span className="absolute bottom-2 left-2 rounded-sm bg-call-surface/70 px-2 py-1 text-[10px]">You</span></div>{list.map((participant) => <RemoteTile key={participant.userId} stream={participant.stream} isVideo={callType === "video"} />)}</div>
