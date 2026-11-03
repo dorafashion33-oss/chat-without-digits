@@ -49,22 +49,21 @@ export function useGroups(currentUserId: string | undefined) {
 
   const createGroup = useCallback(async (name: string, description: string, memberIds: string[]) => {
     if (!currentUserId) return null;
-    const { data: group, error } = await supabase
-      .from("groups")
-      .insert({ name, description, created_by: currentUserId })
-      .select()
-      .single();
-    if (error || !group) { toast.error("Failed to create group"); return null; }
+    // Generate id client-side: the creator can't SELECT the group until they are a member
+    const id = crypto.randomUUID();
+    const { error } = await supabase.from("groups").insert({ id, name, description, created_by: currentUserId });
+    if (error) { toast.error("Failed to create group"); return null; }
 
-    // Add creator as admin
     const members = [
-      { group_id: group.id, user_id: currentUserId, role: "admin" },
-      ...memberIds.map((uid) => ({ group_id: group.id, user_id: uid, role: "member" })),
+      { group_id: id, user_id: currentUserId, role: "admin" },
+      ...memberIds.map((uid) => ({ group_id: id, user_id: uid, role: "member" })),
     ];
-    await supabase.from("group_members").insert(members);
-    toast.success("Group created! 🎉");
-    fetchGroups();
-    return group as Group;
+    const { error: mErr } = await supabase.from("group_members").insert(members);
+    if (mErr) { toast.error("Group created but members couldn't be added"); }
+    else toast.success("Group created! 🎉");
+    await fetchGroups();
+    const now = new Date().toISOString();
+    return { id, name, description, avatar_url: null, created_by: currentUserId, created_at: now } as Group;
   }, [currentUserId, fetchGroups]);
 
   const fetchGroupMessages = useCallback(async (groupId: string): Promise<GroupMessage[]> => {
