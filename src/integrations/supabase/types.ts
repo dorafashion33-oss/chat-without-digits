@@ -174,6 +174,65 @@ export type Database = {
         }
         Relationships: []
       }
+      guest_messages: {
+        Row: {
+          created_at: string
+          from_guest: boolean
+          id: string
+          text: string
+          thread_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_guest?: boolean
+          id?: string
+          text: string
+          thread_id: string
+        }
+        Update: {
+          created_at?: string
+          from_guest?: boolean
+          id?: string
+          text?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "guest_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_threads: {
+        Row: {
+          created_at: string
+          guest_token: string
+          id: string
+          last_at: string
+          nickname: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          guest_token?: string
+          id?: string
+          last_at?: string
+          nickname?: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          guest_token?: string
+          id?: string
+          last_at?: string
+          nickname?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           created_at: string
@@ -320,6 +379,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      guest_fetch: {
+        Args: { _thread: string; _token: string }
+        Returns: {
+          created_at: string
+          from_guest: boolean
+          id: string
+          text: string
+        }[]
+      }
+      guest_send: {
+        Args: { _text: string; _thread: string; _token: string }
+        Returns: undefined
+      }
+      guest_start: {
+        Args: { _nickname: string; _username: string }
+        Returns: {
+          owner_name: string
+          thread_id: string
+          token: string
+        }[]
+      }
       is_group_member: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
