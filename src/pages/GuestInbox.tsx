@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Copy, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ export default function GuestInbox() {
   const [active, setActive] = useState<string | null>(null);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
+  const activeRef = useRef<string | null>(null);
+  activeRef.current = active;
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
@@ -38,7 +40,7 @@ export default function GuestInbox() {
       .channel(`guest-inbox-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "guest_messages" }, (payload) => {
         const m = payload.new as Msg;
-        setMsgs((prev) => (prev.some((x) => x.id === m.id) || prev[0]?.thread_id !== m.thread_id && prev.length ? prev : [...prev, m]));
+        setMsgs((prev) => (m.thread_id !== activeRef.current || prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
         loadThreads();
       })
       .subscribe();
