@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import GuestChat from "./pages/GuestChat";
+import GuestInbox from "./pages/GuestInbox";
 import BuzzBurst from "./components/chat/BuzzBurst";
 import MotionFX from "./components/MotionFX";
 
@@ -27,6 +29,8 @@ const App = () => (
             <Route path="/buzz-web" element={<Index />} />
             <Route path="/download" element={<Index />} />
             <Route path="/contact" element={<Index />} />
+            <Route path="/c/:username" element={<GuestChat />} />
+            <Route path="/guests" element={<GuestInbox />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
