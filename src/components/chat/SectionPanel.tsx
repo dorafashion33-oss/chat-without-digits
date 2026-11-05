@@ -1034,6 +1034,13 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
               <p className="text-xs text-muted-foreground">{theme === "dark" ? "Switch to light" : "Switch to dark"}</p>
             </div>
           </button>
+          <a href="/guests" className="mt-1 flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60">
+            <Globe className="h-5 w-5 text-primary" />
+            <div className="text-left">
+              <p className="text-sm font-semibold text-foreground">Guest chat link</p>
+              <p className="text-xs text-muted-foreground">Anyone can message you without login</p>
+            </div>
+          </a>
         </div>
         {settingGroups.map((group) => (
           <div key={group.title} className="border-b px-4 py-2">
