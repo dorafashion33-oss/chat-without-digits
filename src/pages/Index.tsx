@@ -21,6 +21,7 @@ import { useGroupCall } from "@/hooks/useGroupCall";
 import type { Session } from "@supabase/supabase-js";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
 import { ChatThemeProvider } from "@/components/chat/ChatThemeProvider";
+import NewFeatureSpotlight from "@/components/chat/NewFeatureSpotlight";
 
 const Index = () => {
   const location = useLocation();
@@ -151,6 +152,7 @@ const Index = () => {
 
   return (
     <ChatThemeProvider key={session.user.id} userId={session.user.id}>
+      <NewFeatureSpotlight userId={session.user.id} />
     <div className="flex h-dvh min-h-0 w-full min-w-0 overflow-hidden bg-background">
 
       {/* Call screen overlay */}
