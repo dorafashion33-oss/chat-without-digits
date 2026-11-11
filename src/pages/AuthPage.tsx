@@ -10,8 +10,11 @@ interface AuthPageProps {
 }
 
 const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [username, setUsername] = useState("");
+  const params = new URLSearchParams(window.location.search);
+  const initialUsername = embedded ? "" : (params.get("username") || "").replace(/^@/, "");
+  const startSignup = !embedded && (params.get("mode") === "signup" || !!initialUsername);
+  const [isLogin, setIsLogin] = useState(!startSignup);
+  const [username, setUsername] = useState(initialUsername);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
