@@ -144,6 +144,9 @@
     min-width: 320px;
     min-height: 100%;
     overflow-x: clip;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   html {
@@ -201,6 +204,7 @@
     --chat-bubble-other: 340 20% 17%;
     --chat-bubble-other-foreground: 345 25% 94%;
   }
+
   .chat-wallpaper {
     position: relative;
     isolation: isolate;
@@ -223,7 +227,6 @@
     background-position: center;
     opacity: 1;
   }
-  /* Scrolling chat lists: wallpaper lives on a fixed shell behind the scroller */
   .chat-wallpaper.overflow-y-auto { background: transparent; position: relative; z-index: 1; }
   .chat-wallpaper.overflow-y-auto::before { display: none; }
   .chat-messages-shell { position: relative; isolation: isolate; background-color: hsl(var(--chat-theme-canvas)); }
@@ -235,6 +238,32 @@
   .chat-theme-surface[data-photo-wallpaper] .chat-messages-shell::before {
     background-repeat: no-repeat; background-size: cover; background-position: center; opacity: 1;
   }
+
+  /* GPU-Accelerated Butter Smooth Momentum Scrolling */
+  .smooth-scroll-momentum {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    scroll-behavior: smooth;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Feed Layer Isolation (Prevents Full Page Repaints on New Message) */
+  .chat-feed-gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    contain: content;
+  }
+
+  /* Tactile Apple-Grade Spring Tap Feel */
+  .butter-tap {
+    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), opacity 160ms ease;
+    will-change: transform;
+  }
+  .butter-tap:active {
+    transform: scale(0.965);
+  }
+
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;
@@ -274,52 +303,39 @@
   }
 
   .low-fade {
-    animation: low-fade 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: low-fade 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .low-fade-delay {
-    animation: low-fade 700ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: low-fade 400ms 80ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .soft-lift {
-    transition: transform 300ms ease, box-shadow 300ms ease;
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms ease;
   }
 
   .soft-lift:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
   }
 
+  /* Ultra-smooth entrance animation with hardware transforms */
   .radiant-fx-target {
     opacity: 0;
-    filter: saturate(0.86) brightness(0.94);
-    transform: translateY(16px) scale(0.992);
+    transform: translateY(10px);
     transition:
-      opacity 620ms cubic-bezier(0.22, 1, 0.36, 1),
-      filter 720ms cubic-bezier(0.22, 1, 0.36, 1),
-      transform 720ms cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 320ms ease;
-    will-change: opacity, filter, transform;
+      opacity 380ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 380ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
   }
 
   .radiant-fx-target.radiant-fx-visible {
     opacity: 1;
-    filter: saturate(1) brightness(1);
-    transform: translateY(0) scale(1);
-  }
-
-  button.radiant-fx-visible:hover,
-  a.radiant-fx-visible:hover {
-    filter: saturate(1.08) brightness(1.03);
-  }
-
-  img.radiant-fx-visible,
-  video.radiant-fx-visible {
-    transition-duration: 820ms;
+    transform: translateY(0);
   }
 }
 
 @keyframes low-fade {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -337,20 +353,5 @@
     filter: none !important;
     transform: none !important;
     will-change: auto !important;
-  }
-}
-
-@keyframes buzz-burst-fly {
-  0% {
-    transform: translate(-50%, -50%) scale(0.4);
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.2);
-  }
-  100% {
-    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.6) rotate(180deg);
-    opacity: 0;
   }
 }
