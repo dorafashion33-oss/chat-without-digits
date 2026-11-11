@@ -1,31 +1,30 @@
 import { useEffect, useState } from "react";
-import { 
-  Sparkles, 
-  Ghost, 
-  Copy, 
-  Check, 
-  Link2, 
-  MessageCircle, 
-  Inbox, 
-  QrCode, 
-  Mic, 
-  ShieldCheck, 
-  Zap, 
-  ChevronDown,
-  ChevronUp
-} from "lucide-react";
+import { Sparkles, Copy, Check, Link2, MessageCircle, Inbox, QrCode, Shield, Send, Users } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-const GHOST_EFFECTS = [
-  { id: "ghost", label: "👻 Ghost", desc: "High pitch disguise" },
-  { id: "mafia", label: "🕶️ Mafia", desc: "Ultra deep rumble" },
-  { id: "robot", label: "🤖 Robot", desc: "Metallic modulation" },
-  { id: "whisper", label: "🤫 Whisper", desc: "Mysterious echo" },
+const STEPS = [
+  {
+    icon: Link2,
+    num: "1",
+    title: "Apna link share karein",
+    desc: "Instagram bio, WhatsApp status ya story par apna link daalein.",
+  },
+  {
+    icon: Users,
+    num: "2",
+    title: "Dost secret message bhejein",
+    desc: "Unhe koi app ya account nahi chahiye — bas link khol kar text ya aawaz badal kar audio note bhej sakte hain.",
+  },
+  {
+    icon: Send,
+    num: "3",
+    title: "Aap Inbox se reply karein",
+    desc: "Messages seedha aapke Buzz Guest Inbox mein aayenge, jahan se aap live reply kar sakte hain.",
+  },
 ];
 
 export default function NewFeatureSpotlight({ userId }: { userId: string }) {
@@ -43,10 +42,8 @@ export default function NewFeatureSpotlight({ userId }: { userId: string }) {
       .maybeSingle()
       .then(({ data }) => setUsername(data?.username ?? ""));
 
-    // Launch popup after brief delay
     const t = setTimeout(() => setOpen(true), 800);
 
-    // Re-open anytime via sidebar event
     const handleOpen = () => setOpen(true);
     window.addEventListener("buzz:open-spotlight", handleOpen);
 
@@ -57,205 +54,152 @@ export default function NewFeatureSpotlight({ userId }: { userId: string }) {
   }, [userId]);
 
   const link = `${window.location.origin}/c/${username}`;
-  const statusCaption = `🔥 Mujhse secret chat karo — bina app, bina login!\n🎙️ Ghost Voice mein aawaz badal ke bolo (Mafia, Robot, Whisper)\n👇 Link par tap karo:\n${link}`;
+  const statusCaption = `🔥 Mujhse secret chat karo — bina app, bina login!\n🎙️ Ghost Voice mein aawaz badal ke bolo.\n👇 Link kholo:\n${link}`;
 
-  const copyToClipboard = async (text: string, type: "link" | "status") => {
+  const copyText = async (text: string, type: "link" | "status") => {
     try {
       await navigator.clipboard.writeText(text);
       if (type === "link") {
         setCopiedLink(true);
         setTimeout(() => setCopiedLink(false), 2000);
-        toast.success("Guest link clipboard mein copy ho gaya! 🚀");
+        toast.success("Guest link copy ho gaya!");
       } else {
         setCopiedStatus(true);
         setTimeout(() => setCopiedStatus(false), 2000);
-        toast.success("Ready-made viral status copy ho gaya! 💬");
+        toast.success("Status caption copy ho gaya!");
       }
     } catch {
-      toast.error("Copy failed");
+      toast.error("Copy nahi ho paaya");
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-md max-h-[92vh] overflow-y-auto rounded-3xl p-0 border border-border/80 shadow-2xl scrollbar-thin">
-        {/* Top Hero Banner */}
-        <div className="relative overflow-hidden gradient-brand px-6 pb-6 pt-7 text-primary-foreground">
-          {/* Subtle background glow effect */}
-          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-          
+      <DialogContent className="w-[94vw] max-w-md md:max-w-2xl lg:max-w-3xl max-h-[92vh] overflow-y-auto rounded-3xl p-0 border border-border shadow-2xl scrollbar-thin">
+        
+        {/* Header Bar */}
+        <div className="gradient-brand px-6 py-5 text-primary-foreground">
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-md">
-              <Sparkles className="h-3.5 w-3.5 text-amber-300 animate-spin-slow" />
-              New Viral Feature
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+              Naya Feature
             </span>
             {username && (
-              <span className="rounded-full bg-black/20 px-2.5 py-0.5 font-mono text-xs font-medium text-white/90">
+              <span className="rounded-full bg-black/20 px-3 py-0.5 font-mono text-xs font-medium text-white/90">
                 @{username}
               </span>
             )}
           </div>
-
-          <DialogTitle className="mt-3 text-2xl font-black tracking-tight text-white">
+          <DialogTitle className="mt-2 text-xl md:text-2xl font-bold text-white">
             Buzz Guest Chat Link
           </DialogTitle>
-          <DialogDescription className="mt-1 text-sm text-white/90 leading-relaxed">
-            Samne wale ko koi app ya account nahi chahiye — link kholte hi direct anonymous chat aur voice notes!
+          <DialogDescription className="mt-1 text-xs md:text-sm text-white/90">
+            Dosto se secret messages aur voice notes paayein — samne wale ko bina kisi login ya app ke!
           </DialogDescription>
-
-          {/* Interactive Ghost Voice Preview Card */}
-          <div className="mt-4 rounded-2xl bg-black/25 p-3.5 backdrop-blur-md border border-white/15">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20">
-                  <Ghost className="h-4 w-4 text-white" />
-                </div>
-                <span className="text-xs font-bold uppercase tracking-wider text-white/90">Ghost Voice Notes</span>
-              </div>
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-300">
-                <Mic className="h-3 w-3 animate-pulse" /> Live Modulator
-              </span>
-            </div>
-
-            {/* Audio Wave Simulation */}
-            <div className="mt-2.5 flex items-center gap-1.5 px-1 py-1">
-              {[40, 75, 50, 95, 60, 30, 85, 100, 45, 70, 90, 35, 65, 80, 55].map((h, i) => (
-                <div
-                  key={i}
-                  className="flex-1 rounded-full bg-white/80 transition-all duration-300"
-                  style={{ height: `${Math.max(12, h * 0.28)}px` }}
-                />
-              ))}
-            </div>
-
-            {/* Filter chips */}
-            <div className="mt-2.5 grid grid-cols-4 gap-1">
-              {GHOST_EFFECTS.map((eff) => (
-                <div
-                  key={eff.id}
-                  className="rounded-lg bg-white/10 px-1.5 py-1 text-center text-[10px] font-medium text-white/90"
-                >
-                  {eff.label}
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
-        {/* Feature Highlights */}
-        <div className="space-y-2.5 px-6 pt-5">
-          <div className="flex items-start gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-xs">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-              <Link2 className="h-4 w-4" />
-            </div>
+        {/* Content Body: Desktop par 2 Columns, Mobile par Single Column */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+          
+          {/* Left Side: 3 Seedhe Steps */}
+          <div className="flex flex-col justify-between space-y-4">
             <div>
-              <p className="text-xs font-bold text-foreground">1. Apna link share karein</p>
-              <p className="text-[11px] text-muted-foreground leading-normal">
-                Instagram bio, WhatsApp story ya status par daalein. Har user ka permanent unique link hota hai.
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                Ye kaise kaam karta hai?
               </p>
+              <div className="space-y-3">
+                {STEPS.map((s) => (
+                  <div key={s.num} className="flex items-start gap-3 rounded-2xl border border-border bg-card p-3.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-sm">
+                      {s.num}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{s.title}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{s.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/80 bg-accent/30 p-3 text-xs text-muted-foreground flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary shrink-0" />
+              <span>100% safe & anonymous — unka number ya naam store nahi hota.</span>
             </div>
           </div>
 
-          <div className="flex items-start gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-xs">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-pink-500/10 text-pink-600 dark:text-pink-400">
-              <ShieldCheck className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-foreground">2. 100% Anonymous & Zero Login</p>
-              <p className="text-[11px] text-muted-foreground leading-normal">
-                Guest bas nickname chunega aur turant baat shuru — koi phone number ya password required nahi.
+          {/* Right Side: Link, QR Code & Share Action Hub */}
+          <div className="flex flex-col justify-between space-y-4">
+            
+            {/* Personal Link Box */}
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+              <p className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5">
+                <Link2 className="h-3.5 w-3.5 text-primary" />
+                Aapka Direct Chat Link:
               </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-xs">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <Zap className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-foreground">3. Live Real-time Inbox</p>
-              <p className="text-[11px] text-muted-foreground leading-normal">
-                Saare secret messages aapke Buzz Guest Inbox mein aate hain jahan se aap live reply kar sakte hain.
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Copy Link Box */}
-          {username && (
-            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3">
-              <p className="text-[11px] font-semibold text-primary mb-1.5 flex items-center gap-1">
-                <Link2 className="h-3 w-3" /> Aapka Personal Link:
-              </p>
-              <div className="flex items-center justify-between gap-2 rounded-xl bg-background border border-border px-3 py-2 text-xs">
-                <span className="truncate font-mono text-muted-foreground select-all">{link}</span>
+              
+              <div className="flex items-center justify-between gap-2 rounded-xl bg-background border border-border p-2.5">
+                <span className="truncate font-mono text-xs text-muted-foreground select-all">
+                  {link}
+                </span>
                 <Button
                   size="sm"
-                  variant="ghost"
-                  onClick={() => copyToClipboard(link, "link")}
-                  className="h-7 shrink-0 px-2 text-primary hover:bg-primary/10"
+                  onClick={() => copyText(link, "link")}
+                  className="h-8 shrink-0 text-xs gradient-brand"
                 >
-                  {copiedLink ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-                  <span className="ml-1 text-[11px]">{copiedLink ? "Copied!" : "Copy"}</span>
+                  {copiedLink ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  <span className="ml-1.5">{copiedLink ? "Copied!" : "Copy Link"}</span>
                 </Button>
               </div>
 
-              {/* QR Code Accordion Button */}
+              {/* QR Code Toggle */}
               <button
                 onClick={() => setShowQR(!showQR)}
-                className="mt-2.5 flex w-full items-center justify-center gap-1.5 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                className="mt-3 flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-primary hover:underline"
               >
                 <QrCode className="h-3.5 w-3.5" />
-                <span>{showQR ? "QR Code chhupayein" : "Scan karne ke liye QR Code dekhein"}</span>
-                {showQR ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                <span>{showQR ? "QR Code chhupayein" : "Scan ke liye QR Code dekhein"}</span>
               </button>
 
-              {/* QR Code Display */}
-              <AnimatePresence>
-                {showQR && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-3 flex flex-col items-center justify-center overflow-hidden rounded-xl bg-white p-4 shadow-inner"
-                  >
-                    <QRCodeSVG
-                      value={link}
-                      size={140}
-                      level="H"
-                      includeMargin={false}
-                    />
-                    <p className="mt-2 font-mono text-[11px] font-bold text-gray-800">@{username}</p>
-                    <p className="text-[10px] text-gray-500">Camera se scan karke baat shuru karein</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {showQR && (
+                <div className="mt-3 flex flex-col items-center justify-center rounded-xl bg-white p-4 shadow-sm border border-border">
+                  <QRCodeSVG value={link} size={140} level="H" />
+                  <p className="mt-2 font-mono text-xs font-bold text-gray-800">@{username}</p>
+                  <p className="text-[11px] text-gray-500">Camera se scan karke direct chat khulegi</p>
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Share Buttons */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Button asChild className="gradient-brand h-10 text-xs font-semibold">
+                  <a href={`https://wa.me/?text=${encodeURIComponent(statusCaption)}`} target="_blank" rel="noreferrer">
+                    <MessageCircle className="mr-1.5 h-4 w-4" /> WhatsApp Status
+                  </a>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => copyText(statusCaption, "status")}
+                  className="h-10 text-xs font-semibold border-border"
+                >
+                  {copiedStatus ? <Check className="mr-1.5 h-4 w-4 text-emerald-500" /> : <Copy className="mr-1.5 h-4 w-4" />}
+                  {copiedStatus ? "Copied!" : "Copy Caption"}
+                </Button>
+              </div>
+
+              <Button variant="ghost" asChild className="w-full h-10 text-xs font-semibold text-primary hover:bg-primary/10">
+                <a href="/guests">
+                  <Inbox className="mr-1.5 h-4 w-4" /> Guest Inbox Kholein
+                </a>
+              </Button>
+            </div>
+
+          </div>
+
         </div>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-2 p-6 pt-3">
-          <Button asChild className="gradient-brand shadow-sm text-xs font-semibold h-10">
-            <a href={`https://wa.me/?text=${encodeURIComponent(statusCaption)}`} target="_blank" rel="noreferrer">
-              <MessageCircle className="mr-1.5 h-4 w-4" /> WhatsApp Status
-            </a>
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={() => copyToClipboard(statusCaption, "status")}
-            className="text-xs font-semibold h-10 border-border"
-          >
-            {copiedStatus ? <Check className="mr-1.5 h-4 w-4 text-emerald-500" /> : <Copy className="mr-1.5 h-4 w-4" />}
-            {copiedStatus ? "Copied!" : "Copy Status"}
-          </Button>
-
-          <Button variant="ghost" className="col-span-2 text-xs font-semibold text-primary hover:bg-primary/10 h-9" asChild>
-            <a href="/guests">
-              <Inbox className="mr-1.5 h-4 w-4" /> Guest Inbox kholo
-            </a>
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
