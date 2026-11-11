@@ -29,6 +29,13 @@
       "when": 1794394598665,
       "tag": "0003_tighten_selected_moment_and_storage_access",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794394640186,
+      "tag": "0004_scope_moment_file_writes_to_owner",
+      "breakpoints": true
     }
   ]
 }
