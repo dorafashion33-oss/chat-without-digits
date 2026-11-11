@@ -11,13 +11,18 @@ type Msg = { id: string; from_guest: boolean; text: string; created_at: string }
 type Session = { thread: string; token: string; owner: string };
 
 const key = (u: string) => `buzz:guest:${u.toLowerCase()}`;
+const nicknameKey = (u: string) => `buzz:guest-nickname:${u.toLowerCase()}`;
+
+const savedNickname = (username: string) => {
+  try { return localStorage.getItem(nicknameKey(username)) || ""; } catch { return ""; }
+};
 
 export default function GuestChat() {
   const { username = "" } = useParams();
   const [session, setSession] = useState<Session | null>(() => {
     try { return JSON.parse(localStorage.getItem(key(username)) || "null"); } catch { return null; }
   });
-  const [nick, setNick] = useState("");
+  const [nick, setNick] = useState(() => savedNickname(username));
   const [text, setText] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [error, setError] = useState("");
@@ -75,7 +80,10 @@ export default function GuestChat() {
 
   const start = async () => {
     setError("");
-    const { data, error } = await supabase.rpc("guest_start", { _username: username, _nickname: nick });
+    const guestNickname = nick.trim() || "Guest";
+    localStorage.setItem(nicknameKey(username), guestNickname);
+    setNick(guestNickname);
+    const { data, error } = await supabase.rpc("guest_start", { _username: username, _nickname: guestNickname });
     if (error || !data?.[0]) { setError("Ye @username Buzz par nahi mila."); return; }
     const s = { thread: data[0].thread_id, token: data[0].token, owner: data[0].owner_name };
     localStorage.setItem(key(username), JSON.stringify(s));
@@ -100,7 +108,7 @@ export default function GuestChat() {
           </div>
           <h1 className="text-xl font-bold text-foreground">Chat with @{username}</h1>
           <p className="text-sm text-muted-foreground">No login, no phone number. Just pick a nickname.</p>
-          <Input placeholder="Your nickname (optional)" value={nick} maxLength={30} onChange={(e) => setNick(e.target.value)} onKeyDown={(e) => e.key === "Enter" && start()} />
+          <Input placeholder="Your nickname (optional)" value={nick} maxLength={30} onChange={(e) => { setNick(e.target.value); localStorage.setItem(nicknameKey(username), e.target.value); }} onKeyDown={(e) => e.key === "Enter" && start()} />
           <Button className="w-full" onClick={start}>Start chatting</Button>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
@@ -114,7 +122,7 @@ export default function GuestChat() {
         <p className="font-semibold">{session.owner}</p>
         <p className="text-xs opacity-80">@{username} · guest chat</p>
       </header>
-      <a href={`/auth?mode=signup&username=${encodeURIComponent(nick || "")}`} className="bg-accent px-4 py-2 text-center text-xs text-accent-foreground">
+      <a href={`/auth?mode=signup&username=${encodeURIComponent(nick.trim() || "Guest")}`} className="bg-accent px-4 py-2 text-center text-xs text-accent-foreground">
         Save this chat forever? Claim your own @username on Buzz →
       </a>
       <div className="chat-messages-shell flex min-h-0 flex-1 flex-col">
@@ -135,7 +143,7 @@ export default function GuestChat() {
           <p className="text-xs text-muted-foreground">Don't lose this chat — claim your own Buzz @username in 5 seconds. Still no phone number.</p>
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setClaimDismissed(true)}>Later</Button>
-            <Button className="flex-1" onClick={() => (window.location.href = `/auth?mode=signup&username=${encodeURIComponent(nick || "")}`)}>Claim username</Button>
+            <Button className="flex-1" onClick={() => (window.location.href = `/auth?mode=signup&username=${encodeURIComponent(nick.trim() || "Guest")}`)}>Claim username</Button>
           </div>
         </div>
       )}
