@@ -114,7 +114,7 @@ export default function GuestChat() {
         <p className="font-semibold">{session.owner}</p>
         <p className="text-xs opacity-80">@{username} · guest chat</p>
       </header>
-      <a href="/" className="bg-accent px-4 py-2 text-center text-xs text-accent-foreground">
+      <a href={`/auth?mode=signup&username=${encodeURIComponent(nick || "")}`} className="bg-accent px-4 py-2 text-center text-xs text-accent-foreground">
         Save this chat forever? Claim your own @username on Buzz →
       </a>
       <div className="chat-messages-shell flex min-h-0 flex-1 flex-col">
@@ -135,7 +135,7 @@ export default function GuestChat() {
           <p className="text-xs text-muted-foreground">Don't lose this chat — claim your own Buzz @username in 5 seconds. Still no phone number.</p>
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={() => setClaimDismissed(true)}>Later</Button>
-            <Button className="flex-1" onClick={() => (window.location.href = `/auth?username=${encodeURIComponent(nick || "")}`)}>Claim username</Button>
+            <Button className="flex-1" onClick={() => (window.location.href = `/auth?mode=signup&username=${encodeURIComponent(nick || "")}`)}>Claim username</Button>
           </div>
         </div>
       )}

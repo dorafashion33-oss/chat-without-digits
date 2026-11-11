@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import GuestChat from "./pages/GuestChat";
 import GuestInbox from "./pages/GuestInbox";
+import AuthPage from "./pages/AuthPage";
 import MotionFX from "./components/MotionFX";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/download" element={<Index />} />
             <Route path="/contact" element={<Index />} />
             <Route path="/c/:username" element={<GuestChat />} />
+            <Route path="/auth" element={<AuthPage onAuth={() => (window.location.href = "/")} />} />
             <Route path="/guests" element={<GuestInbox />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
