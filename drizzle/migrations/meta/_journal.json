@@ -36,6 +36,13 @@
       "when": 1794394640186,
       "tag": "0004_scope_moment_file_writes_to_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794394676212,
+      "tag": "0005_limit_avatar_object_listing_to_owner",
+      "breakpoints": true
     }
   ]
 }
