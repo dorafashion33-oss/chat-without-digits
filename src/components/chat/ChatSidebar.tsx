@@ -1,4 +1,4 @@
-import { Search, MessageSquarePlus, Menu, Settings, User, Moon, Sun, Users, LogOut, Pin, PinOff, FolderPlus, MoreVertical, Check, X, Bluetooth, Download } from "lucide-react";
+import { Search, MessageSquarePlus, Menu, Settings, User, Moon, Sun, Users, LogOut, Pin, PinOff, FolderPlus, MoreVertical, Check, X, Download } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import NewChatDialog from "./NewChatDialog";
-import NearbyChat from "./NearbyChat";
 import InstallAppDialog from "./InstallAppDialog";
 import type { ChatThread, DbProfile } from "@/hooks/useRealtimeMessages";
 import type { NavSection } from "./NavIconBar";
@@ -36,7 +35,6 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFolder, setActiveFolder] = useState<string>("All");
   const [showNewChat, setShowNewChat] = useState(false);
-  const [showNearby, setShowNearby] = useState(false);
   const [online, setOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
   const [pinned, setPinned] = useState<string[]>(() => readJSON<string[]>(PINS_KEY, []));
   const [customFolders, setCustomFolders] = useState<string[]>(() => readJSON<string[]>(FOLDERS_KEY, []));
@@ -137,9 +135,6 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
               <Users className="h-5 w-5 text-white" />
             </button>
           )}
-          <button onClick={() => setShowNearby(true)} className="rounded-full p-2 transition-colors hover:bg-white/20" title="Offline Nearby Chat (Bluetooth)">
-            <Bluetooth className="h-5 w-5 text-white" />
-          </button>
           <button onClick={() => setShowNewChat(true)} className="rounded-full p-2 transition-colors hover:bg-white/20" title="New Chat">
             <MessageSquarePlus className="h-5 w-5 text-white" />
           </button>
@@ -186,14 +181,6 @@ const ChatSidebar = ({ threads, profiles, activeChatId, onSelectChat, onStartCha
           </Drawer>
         </div>
       </div>
-
-      {!online && (
-        <button onClick={() => setShowNearby(true)} className="w-full bg-amber-500/15 px-4 py-1.5 text-left text-[11px] font-medium text-amber-600 dark:text-amber-400">
-          Offline mode — messages queued. Tap for Bluetooth nearby chat.
-        </button>
-      )}
-
-      {showNearby && <NearbyChat username={username} onClose={() => setShowNearby(false)} />}
 
       {/* Search */}
       <div className="px-3 py-2">

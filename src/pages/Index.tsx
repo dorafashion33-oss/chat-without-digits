@@ -12,7 +12,6 @@ import GroupSidebar from "@/components/chat/GroupSidebar";
 import GroupChatWindow from "@/components/chat/GroupChatWindow";
 import CallScreen from "@/components/chat/CallScreen";
 import GroupCallScreen from "@/components/chat/GroupCallScreen";
-import IntroExperience, { hasSeenIntro } from "@/components/chat/IntroExperience";
 import BuzzLanding from "@/pages/BuzzLanding";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { useMoments } from "@/hooks/useMoments";
@@ -32,8 +31,6 @@ const Index = () => {
   const [activeSection, setActiveSection] = useState<NavSection>("streams");
   const [showGroups, setShowGroups] = useState(false);
   const [username, setUsername] = useState<string>("");
-  const [showIntro, setShowIntro] = useState(false);
-  const [introSource, setIntroSource] = useState<"first-visit" | "replay">("first-visit");
 
   const currentUserId = session?.user?.id;
   const { threads, profiles, sendMessage, deleteMessage, editMessage, markAsRead, sendTyping, typingUsers } = useRealtimeMessages(currentUserId);
@@ -70,21 +67,6 @@ const Index = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  // Show intro only the first time the user opens Buzz
-  useEffect(() => {
-    if (!loading && session && !hasSeenIntro()) {
-      setIntroSource("first-visit");
-      setShowIntro(true);
-    }
-  }, [loading, session]);
-
-  // Allow replay from anywhere via a custom event
-  useEffect(() => {
-    const handler = () => { setIntroSource("replay"); setShowIntro(true); };
-    window.addEventListener("buzz-replay-intro", handler);
-    return () => window.removeEventListener("buzz-replay-intro", handler);
   }, []);
 
   useEffect(() => {
@@ -166,10 +148,6 @@ const Index = () => {
   if (!session) return <BuzzLanding page={location.pathname} />;
 
   const isMobileChatOpen = (!!activeChatId || !!activeGroupId) && isStreamsSection;
-
-  if (showIntro) {
-    return <IntroExperience source={introSource} onClose={() => setShowIntro(false)} />;
-  }
 
   return (
     <ChatThemeProvider key={session.user.id} userId={session.user.id}>
