@@ -1,4 +1,4 @@
-import { MessageCircle, CircleDot, Phone, Settings, User, Compass } from "lucide-react";
+import { MessageCircle, CircleDot, Phone, Settings, User, Compass, Sparkles } from "lucide-react";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
 import InstallAppDialog from "./InstallAppDialog";
 
@@ -61,6 +61,25 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
       </div>
 
       <div className="flex flex-col items-center gap-1">
+        {/* What's New Feature Spotlight Button */}
+        <div className="relative group">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("buzz:open-spotlight"))}
+            aria-label="What's New"
+            className="relative flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-200 hover:scale-105 hover:bg-primary/20"
+          >
+            <Sparkles className="h-[18px] w-[18px] md:h-[20px] md:w-[20px]" />
+            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary"></span>
+            </span>
+          </button>
+          <div className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 hidden md:block whitespace-nowrap">
+            What's New
+            <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-foreground" />
+          </div>
+        </div>
+
         <InstallAppDialog />
         <div className="h-px w-6 bg-border my-1" />
         {bottomItems.map((item) => {
