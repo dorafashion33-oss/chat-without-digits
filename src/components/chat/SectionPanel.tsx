@@ -1062,21 +1062,6 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
             })}
           </div>
         ))}
-        <div className="border-b px-4 py-2">
-          <p className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Discover Buzz</p>
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent("buzz-replay-intro"))}
-            className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-              <PlayCircle className="h-4 w-4 text-primary" />
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-medium text-foreground">Replay intro</p>
-              <p className="text-xs text-muted-foreground">Walk through all Buzz features again</p>
-            </div>
-          </button>
-        </div>
         <div className="px-4 py-3">
           <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl p-3 text-destructive transition-colors hover:bg-destructive/10">
             <LogOut className="h-5 w-5" />
