@@ -1,4 +1,4 @@
-import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, Clock, X, FileText, Info, Trash2, Pencil, Image, Smile, Reply, CornerDownRight, Forward } from "lucide-react";
+import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, Clock, X, FileText, Trash2, Pencil, Reply, CornerDownRight, Forward } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -26,7 +26,10 @@ interface ChatWindowProps {
   profiles: DbProfile[];
 }
 
-const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onEditMessage, onTyping, isOtherTyping, onBack, onStartCall, profiles }: ChatWindowProps) => {
+const ChatWindow = ({
+  thread, currentUserId, onSendMessage, onDeleteMessage, onEditMessage,
+  onTyping, isOtherTyping, onBack, onStartCall, profiles,
+}: ChatWindowProps) => {
   const { theme } = useChatTheme();
   const [input, setInput] = useState("");
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
@@ -42,10 +45,17 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const longPressRef = useRef<ReturnType<typeof setTimeout>>();
+  const prevThreadIdRef = useRef<string>(thread.user.id);
 
+  // Chat switch par instant snap (0ms lag), naye message par butter-smooth scroll
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [thread.messages, isOtherTyping]);
+    const isNewChat = prevThreadIdRef.current !== thread.user.id;
+    prevThreadIdRef.current = thread.user.id;
+
+    messagesEndRef.current?.scrollIntoView({
+      behavior: isNewChat ? "auto" : "smooth",
+    });
+  }, [thread.user.id, thread.messages.length, isOtherTyping]);
 
   const handleSend = async () => {
     const text = input.trim();
@@ -57,7 +67,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
       msgText = `[reply:${replyPreview}]${msgText}`;
     }
 
-    // Clear input immediately for instant UX
+    // Clear input immediately for instant feedback
     setInput("");
     setReplyTo(null);
 
@@ -183,11 +193,17 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
   const colorIndex = thread.profile.username.charCodeAt(0) % colors.length;
 
   return (
-    <div data-chat-theme={theme} data-photo-wallpaper={isPhotoTheme(theme) || undefined} style={getChatWallpaperStyle(theme)} className="chat-theme-surface flex h-full min-h-0 flex-col bg-background" onClick={() => setActiveMenuId(null)}>
+    <div
+      data-chat-theme={theme}
+      data-photo-wallpaper={isPhotoTheme(theme) || undefined}
+      style={getChatWallpaperStyle(theme)}
+      className="chat-theme-surface flex h-full min-h-0 flex-col bg-background"
+      onClick={() => setActiveMenuId(null)}
+    >
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-chat-header px-3 py-2.5 shadow-sm">
         {onBack && (
-          <button onClick={onBack} className="mr-0.5 rounded-full p-1.5 hover:bg-accent lg:hidden transition-colors">
+          <button onClick={onBack} className="butter-tap mr-0.5 rounded-full p-1.5 hover:bg-accent lg:hidden transition-colors">
             <ArrowLeft className="h-5 w-5 text-foreground" />
           </button>
         )}
@@ -216,60 +232,62 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
           </p>
         </div>
         <div className="flex items-center gap-0.5">
-          <button onClick={() => onStartCall?.(thread.id, "voice")} className="rounded-full p-2 transition-colors hover:bg-accent" title="Voice call">
+          <button onClick={() => onStartCall?.(thread.id, "voice")} className="butter-tap rounded-full p-2 transition-colors hover:bg-accent" title="Voice call">
             <Phone className="h-[18px] w-[18px] text-muted-foreground" />
           </button>
-          <button onClick={() => onStartCall?.(thread.id, "video")} className="rounded-full p-2 transition-colors hover:bg-accent" title="Video call">
+          <button onClick={() => onStartCall?.(thread.id, "video")} className="butter-tap rounded-full p-2 transition-colors hover:bg-accent" title="Video call">
             <Video className="h-[18px] w-[18px] text-muted-foreground" />
           </button>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="chat-messages-shell flex min-h-0 flex-1 flex-col"><div className="chat-wallpaper min-h-0 flex-1 overflow-y-auto p-3 scrollbar-thin" data-motion-fx="off">
-        <div className="relative mx-auto max-w-3xl space-y-0.5">
-          {thread.messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <p className="text-sm">No messages yet</p>
-              <p className="text-xs mt-1">Say hello! 👋</p>
-            </div>
-          )}
-          {thread.messages.map((msg, i) => {
-            const isOwn = msg.sender_id === currentUserId;
-            const isEditing = editingId === msg.id;
-            return (
-              <SwipeableMessage
-                key={msg.id}
-                isOwn={isOwn}
-                onSwipeReply={() => handleSwipeReply(msg)}
-              >
-                <MessageBubble
-                  message={msg}
+      <div className="chat-messages-shell flex min-h-0 flex-1 flex-col">
+        <div className="chat-wallpaper min-h-0 flex-1 overflow-y-auto p-3 scrollbar-thin smooth-scroll-momentum chat-feed-gpu" data-motion-fx="off">
+          <div className="relative mx-auto max-w-3xl space-y-0.5">
+            {thread.messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                <p className="text-sm">No messages yet</p>
+                <p className="text-xs mt-1">Say hello! 👋</p>
+              </div>
+            )}
+            {thread.messages.map((msg, i) => {
+              const isOwn = msg.sender_id === currentUserId;
+              const isEditing = editingId === msg.id;
+              return (
+                <SwipeableMessage
+                  key={msg.id}
                   isOwn={isOwn}
-                  showTail={i === 0 || thread.messages[i - 1].sender_id !== msg.sender_id}
-                  reactions={reactions[msg.id] || {}}
-                  onReact={(emoji) => handleReact(msg.id, emoji)}
-                  onDelete={isOwn && onDeleteMessage ? () => { onDeleteMessage(msg.id); setActiveMenuId(null); } : undefined}
-                  onEdit={isOwn && onEditMessage ? () => handleStartEdit(msg) : undefined}
-                  onReply={() => handleReply(msg)}
-                  onForward={() => handleForward(msg)}
-                  isEditing={isEditing}
-                  editText={editText}
-                  onEditTextChange={setEditText}
-                  onSaveEdit={handleSaveEdit}
-                  onCancelEdit={() => { setEditingId(null); setEditText(""); }}
-                  showMenu={activeMenuId === msg.id}
-                  onLongPress={() => handleLongPress(msg.id)}
-                  onTouchEnd={handleTouchEnd}
-                  onToggleMenu={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === msg.id ? null : msg.id); }}
-                />
-              </SwipeableMessage>
-            );
-          })}
-          {isOtherTyping && <TypingIndicator />}
-          <div ref={messagesEndRef} />
+                  onSwipeReply={() => handleSwipeReply(msg)}
+                >
+                  <MessageBubble
+                    message={msg}
+                    isOwn={isOwn}
+                    showTail={i === 0 || thread.messages[i - 1].sender_id !== msg.sender_id}
+                    reactions={reactions[msg.id] || {}}
+                    onReact={(emoji) => handleReact(msg.id, emoji)}
+                    onDelete={isOwn && onDeleteMessage ? () => { onDeleteMessage(msg.id); setActiveMenuId(null); } : undefined}
+                    onEdit={isOwn && onEditMessage ? () => handleStartEdit(msg) : undefined}
+                    onReply={() => handleReply(msg)}
+                    onForward={() => handleForward(msg)}
+                    isEditing={isEditing}
+                    editText={editText}
+                    onEditTextChange={setEditText}
+                    onSaveEdit={handleSaveEdit}
+                    onCancelEdit={() => { setEditingId(null); setEditText(""); }}
+                    showMenu={activeMenuId === msg.id}
+                    onLongPress={() => handleLongPress(msg.id)}
+                    onTouchEnd={handleTouchEnd}
+                    onToggleMenu={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === msg.id ? null : msg.id); }}
+                  />
+                </SwipeableMessage>
+              );
+            })}
+            {isOtherTyping && <TypingIndicator />}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
-      </div></div>
+      </div>
 
       {/* Reply preview */}
       {replyTo && (
@@ -282,7 +300,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
               </p>
               <p className="text-xs text-muted-foreground truncate">{replyTo.text.replace(/\[.*?\]/g, "").slice(0, 60)}</p>
             </div>
-            <button onClick={() => setReplyTo(null)} className="rounded-full p-1 hover:bg-accent transition-colors">
+            <button onClick={() => setReplyTo(null)} className="butter-tap rounded-full p-1 hover:bg-accent transition-colors">
               <X className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           </div>
@@ -308,7 +326,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
               <p className="text-sm font-medium text-foreground truncate">{attachedFile.name}</p>
               <p className="text-xs text-muted-foreground">{(attachedFile.size / 1024).toFixed(1)} KB</p>
             </div>
-            <button onClick={() => { setAttachedFile(null); setImagePreview(null); }} className="rounded-full p-1.5 hover:bg-accent transition-colors">
+            <button onClick={() => { setAttachedFile(null); setImagePreview(null); }} className="butter-tap rounded-full p-1.5 hover:bg-accent transition-colors">
               <X className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
@@ -319,7 +337,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
       <div className="border-t bg-chat-header px-3 py-2.5">
         <div className="mx-auto flex max-w-3xl items-center gap-1.5">
           <EmojiPicker onSelect={handleEmojiSelect} onGifSelect={handleGifSelect} />
-          <button onClick={() => fileInputRef.current?.click()} className="rounded-full p-2 transition-colors hover:bg-accent" title="Attach file">
+          <button onClick={() => fileInputRef.current?.click()} className="butter-tap rounded-full p-2 transition-colors hover:bg-accent" title="Attach file">
             <Paperclip className="h-5 w-5 text-muted-foreground" />
           </button>
           <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*,video/*,audio/*,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.7z,.json,.apk" />
@@ -337,7 +355,7 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
           {input.trim() || attachedFile ? (
             <button
               onClick={handleSend}
-              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full gradient-brand text-white transition-all hover:opacity-90 hover:scale-110 active:scale-95 shadow-sm"
+              className="butter-tap flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full gradient-brand text-white transition-all hover:opacity-90 active:scale-95 shadow-sm"
             >
               <Send className="h-4 w-4" />
             </button>
@@ -378,19 +396,19 @@ const SwipeableMessage = ({ children, isOwn, onSwipeReply }: { children: React.R
     // Only allow right swipe (for reply)
     const swipeAmount = Math.max(0, Math.min(diff, 80));
     currentX.current = swipeAmount;
+
     ref.current.style.transform = `translateX(${swipeAmount}px)`;
     ref.current.style.transition = "none";
 
     if (swipeAmount > 60 && !triggered.current) {
       triggered.current = true;
-      // Haptic feedback if available
       if (navigator.vibrate) navigator.vibrate(30);
     }
   };
 
   const handleTouchEnd = () => {
     if (!ref.current) return;
-    ref.current.style.transition = "transform 0.2s ease-out";
+    ref.current.style.transition = "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)";
     ref.current.style.transform = "translateX(0)";
     swiping.current = false;
 
@@ -401,7 +419,6 @@ const SwipeableMessage = ({ children, isOwn, onSwipeReply }: { children: React.R
 
   return (
     <div className="relative overflow-hidden">
-      {/* Reply icon behind */}
       <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-40">
         <Reply className="h-5 w-5 text-primary" />
       </div>
@@ -470,8 +487,8 @@ const MessageBubble = ({
                 autoFocus
               />
               <div className="flex gap-2 justify-end">
-                <button onClick={onCancelEdit} className="text-[10px] text-muted-foreground hover:text-foreground">Cancel</button>
-                <button onClick={onSaveEdit} className="text-[10px] text-primary font-medium">Save</button>
+                <button onClick={onCancelEdit} className="butter-tap text-[10px] text-muted-foreground hover:text-foreground">Cancel</button>
+                <button onClick={onSaveEdit} className="butter-tap text-[10px] text-primary font-medium">Save</button>
               </div>
             </div>
           ) : (
@@ -497,19 +514,19 @@ const MessageBubble = ({
             className={`absolute ${isOwn ? "right-0" : "left-0"} -top-9 z-20 flex items-center gap-0.5 rounded-xl border bg-popover px-1.5 py-1 shadow-lg animate-scale-in`}
             onClick={(e) => e.stopPropagation()}
           >
-            <button onClick={onReply} className="rounded-lg p-1.5 hover:bg-accent transition-colors" title="Reply">
+            <button onClick={onReply} className="butter-tap rounded-lg p-1.5 hover:bg-accent transition-colors" title="Reply">
               <Reply className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
-            <button onClick={onForward} className="rounded-lg p-1.5 hover:bg-accent transition-colors" title="Forward">
+            <button onClick={onForward} className="butter-tap rounded-lg p-1.5 hover:bg-accent transition-colors" title="Forward">
               <Forward className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
             {isOwn && onEdit && (
-              <button onClick={onEdit} className="rounded-lg p-1.5 hover:bg-accent transition-colors" title="Edit">
+              <button onClick={onEdit} className="butter-tap rounded-lg p-1.5 hover:bg-accent transition-colors" title="Edit">
                 <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
             )}
             {isOwn && onDelete && (
-              <button onClick={onDelete} className="rounded-lg p-1.5 hover:bg-destructive/10 transition-colors" title="Delete">
+              <button onClick={onDelete} className="butter-tap rounded-lg p-1.5 hover:bg-destructive/10 transition-colors" title="Delete">
                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
               </button>
             )}
@@ -519,19 +536,19 @@ const MessageBubble = ({
         {/* Desktop hover menu */}
         {!isEditing && !showMenu && (
           <div className={`absolute ${isOwn ? "right-0" : "left-0"} -top-7 z-10 hidden group-hover:flex items-center gap-0.5 rounded-lg border bg-popover px-1 py-0.5 shadow-md animate-scale-in`}>
-            <button onClick={onReply} className="rounded p-1 hover:bg-accent transition-colors" title="Reply">
+            <button onClick={onReply} className="butter-tap rounded p-1 hover:bg-accent transition-colors" title="Reply">
               <Reply className="h-3 w-3 text-muted-foreground" />
             </button>
-            <button onClick={onForward} className="rounded p-1 hover:bg-accent transition-colors" title="Forward">
+            <button onClick={onForward} className="butter-tap rounded p-1 hover:bg-accent transition-colors" title="Forward">
               <Forward className="h-3 w-3 text-muted-foreground" />
             </button>
             {isOwn && onEdit && (
-              <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="rounded p-1 hover:bg-accent transition-colors" title="Edit">
+              <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="butter-tap rounded p-1 hover:bg-accent transition-colors" title="Edit">
                 <Pencil className="h-3 w-3 text-muted-foreground" />
               </button>
             )}
             {isOwn && onDelete && (
-              <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="rounded p-1 hover:bg-destructive/10 transition-colors" title="Delete">
+              <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="butter-tap rounded p-1 hover:bg-destructive/10 transition-colors" title="Delete">
                 <Trash2 className="h-3 w-3 text-destructive" />
               </button>
             )}
@@ -543,9 +560,6 @@ const MessageBubble = ({
     </div>
   );
 };
-
-
-
 
 function formatLastSeen(iso: string): string {
   const date = new Date(iso);
