@@ -29,12 +29,24 @@ const MotionFX = () => {
           entry.target.classList.toggle("radiant-fx-visible", entry.isIntersecting);
         });
       },
-      { rootMargin: "-4% 0px -4% 0px", threshold: 0.08 },
+      { rootMargin: "-2% 0px -2% 0px", threshold: 0.05 },
     );
 
     const registerTargets = (root: ParentNode = document) => {
       root.querySelectorAll(MOTION_TARGETS).forEach((element) => {
-        if (observed.has(element) || element.closest("[data-motion-fx='off']")) return;
+        // Chat messages, typing inputs aur wallpapers ko exclude karein
+        if (
+          observed.has(element) ||
+          element.closest("[data-motion-fx='off']") ||
+          element.closest(".chat-messages-shell") ||
+          element.closest(".chat-wallpaper") ||
+          element.closest("[data-chat-messages]") ||
+          element.closest("input") ||
+          element.closest("textarea")
+        ) {
+          return;
+        }
+
         observed.add(element);
         element.classList.add("radiant-fx-target");
         observer.observe(element);
@@ -42,10 +54,21 @@ const MotionFX = () => {
     };
 
     registerTargets();
-    const mutationObserver = new MutationObserver(() => registerTargets());
+
+    // requestAnimationFrame debounce taaki continuous typing par DOM freeze na ho
+    let rafId: number | null = null;
+    const mutationObserver = new MutationObserver(() => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        registerTargets();
+        rafId = null;
+      });
+    });
+
     mutationObserver.observe(document.body, { childList: true, subtree: true });
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       mutationObserver.disconnect();
       observer.disconnect();
     };
