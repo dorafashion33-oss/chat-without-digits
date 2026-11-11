@@ -8,7 +8,6 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import GuestChat from "./pages/GuestChat";
 import GuestInbox from "./pages/GuestInbox";
-import BuzzBurst from "./components/chat/BuzzBurst";
 import MotionFX from "./components/MotionFX";
 
 const queryClient = new QueryClient();
@@ -19,7 +18,6 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BuzzBurst />
         <MotionFX />
         <BrowserRouter>
           <Routes>

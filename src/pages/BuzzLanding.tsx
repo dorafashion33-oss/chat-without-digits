@@ -178,7 +178,7 @@ const BuzzLanding = ({ page = "/" }: { page?: string }) => {
             {[
               { Icon: MessageCircle, title: "Messages", copy: "Reply, react, share files and keep every conversation moving.", detail: "Ayesha is typing…" },
               { Icon: Play, title: "Moments", copy: "Share a photo or video for 24 hours with live viewer counts.", detail: "12 friends viewed" },
-              { Icon: MapPin, title: "Nearby", copy: "Connect securely with people nearby without sharing your phone number.", detail: "End-to-end encrypted" },
+              { Icon: MapPin, title: "Usernames", copy: "Find friends by @username without sharing your phone number.", detail: "Private by default" },
             ].map(({ Icon, title, copy, detail }, index) => <motion.article key={title} whileHover={reduceMotion ? undefined : { y: -6 }} transition={{ duration: 0.25 }} className="rounded-md border border-border bg-card p-6 shadow-sm">
               <div className="flex h-11 w-11 items-center justify-center rounded-md bg-accent text-accent-foreground"><Icon className="h-5 w-5" /></div><h3 className="mt-8 text-2xl font-semibold">{title}</h3><p className="mt-3 min-h-[72px] text-muted-foreground">{copy}</p><div className="mt-6 flex items-center gap-2 border-t border-border pt-4 text-xs font-medium text-primary"><span className="h-2 w-2 rounded-full bg-online" />{detail}{index === 0 && <CheckCheck className="ml-auto h-4 w-4" />}</div>
             </motion.article>)}
@@ -193,7 +193,7 @@ const BuzzLanding = ({ page = "/" }: { page?: string }) => {
         <section id="privacy" className="bg-landing-night text-primary-foreground">
           <div className="low-fade mx-auto grid min-h-[650px] max-w-[1100px] items-center gap-20 px-7 py-16 lg:grid-cols-2">
             <PhoneChat dark />
-            <div><ShieldCheck className="mb-7 h-12 w-12 text-primary" /><h2 className="text-4xl font-normal leading-none sm:text-6xl">Speak<br /><span className="gradient-brand-text">freely</span></h2><p className="mt-7 max-w-md text-lg">Your personal messages and calls are protected in transit. Nearby chats use end-to-end encryption, so your conversations stay between you and the people you choose.</p><div className="mt-8"><Button variant="link" onClick={openAuth} className="h-auto px-0 text-primary-foreground">Start chatting <ArrowRight className="ml-2 h-4 w-4" /></Button></div></div>
+            <div><ShieldCheck className="mb-7 h-12 w-12 text-primary" /><h2 className="text-4xl font-normal leading-none sm:text-6xl">Speak<br /><span className="gradient-brand-text">freely</span></h2><p className="mt-7 max-w-md text-lg">Your personal messages and calls are protected in transit. Your number stays private, so your conversations stay between you and the people you choose.</p><div className="mt-8"><Button variant="link" onClick={openAuth} className="h-auto px-0 text-primary-foreground">Start chatting <ArrowRight className="ml-2 h-4 w-4" /></Button></div></div>
           </div>
         </section>
 
