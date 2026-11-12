@@ -1,4 +1,4 @@
-import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, Clock, X, FileText, Trash2, Pencil, Reply, CornerDownRight, Forward } from "lucide-react";
+import { Send, Paperclip, Phone, Video, ArrowLeft, Check, CheckCheck, Clock, X, FileText, Info, Trash2, Pencil, Image, Smile, Reply, CornerDownRight, Forward } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -26,10 +26,7 @@ interface ChatWindowProps {
   profiles: DbProfile[];
 }
 
-const ChatWindow = ({
-  thread, currentUserId, onSendMessage, onDeleteMessage, onEditMessage,
-  onTyping, isOtherTyping, onBack, onStartCall, profiles,
-}: ChatWindowProps) => {
+const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onEditMessage, onTyping, isOtherTyping, onBack, onStartCall, profiles }: ChatWindowProps) => {
   const { theme } = useChatTheme();
   const [input, setInput] = useState("");
   const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({});
@@ -41,96 +38,88 @@ const ChatWindow = ({
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [forwardMessage, setForwardMessage] = useState<DbMessage | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const prevThreadIdRef = useRef<string>(thread.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-  const longPressRef = useRef<ReturnType<typeof setTimeout>>();
-  const prevThreadIdRef = useRef<string>(thread.user.id);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Chat switch par instant snap (0ms lag), naye message par butter-smooth scroll
+  const displayName = thread.profile?.display_name || thread.profile?.username || "Unknown";
+  const initials = displayName.slice(0, 2).toUpperCase();
+
+  // Instant scroll on thread change, smooth on new message
   useEffect(() => {
-    const isNewChat = prevThreadIdRef.current !== thread.user.id;
-    prevThreadIdRef.current = thread.user.id;
+    const isNewThread = prevThreadIdRef.current !== thread.id;
+    prevThreadIdRef.current = thread.id;
 
-    messagesEndRef.current?.scrollIntoView({
-      behavior: isNewChat ? "auto" : "smooth",
-    });
-  }, [thread.user.id, thread.messages.length, isOtherTyping]);
-
-  const handleSend = async () => {
-    const text = input.trim();
-    if (!text && !attachedFile) return;
-
-    let msgText = text;
-    if (replyTo) {
-      const replyPreview = replyTo.text.replace(/\[.*?\]/g, "").slice(0, 50) + (replyTo.text.length > 50 ? "..." : "");
-      msgText = `[reply:${replyPreview}]${msgText}`;
-    }
-
-    // Clear input immediately for instant feedback
-    setInput("");
-    setReplyTo(null);
-
-    if (attachedFile) {
-      const currentFile = attachedFile;
-      setAttachedFile(null);
-      setImagePreview(null);
-      const safeName = currentFile.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
-      const ext = safeName.includes(".") ? safeName.split(".").pop() : "bin";
-      const path = `${currentUserId}/${Date.now()}_${safeName}`;
-      const { error: uploadError } = await supabase.storage
-        .from("chat-media")
-        .upload(path, currentFile, { cacheControl: "3600", upsert: false, contentType: currentFile.type || undefined });
-      if (uploadError) {
-        toast.error("Upload failed: " + uploadError.message);
-        return;
-      }
-      const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
-      const mediaUrl = urlData.publicUrl;
-      if (currentFile.type.startsWith("image/")) {
-        msgText = `[img]${mediaUrl}[/img]${text ? `\n${text}` : ""}`;
-      } else if (currentFile.type.startsWith("video/")) {
-        msgText = `[video]${mediaUrl}[/video]${text ? `\n${text}` : ""}`;
+    if (isNewThread) {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
       } else {
-        msgText = `[file:${currentFile.name}]${mediaUrl}[/file]${text ? `\n${text}` : ""}`;
+        messagesEndRef.current?.scrollIntoView({ behavior: "instant" as ScrollBehavior });
       }
-      void ext;
+    } else {
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      });
     }
-
-    if (msgText) onSendMessage(thread.id, msgText);
-  };
+  }, [thread.id, thread.messages]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
     if (onTyping) {
-      clearTimeout(typingTimeoutRef.current);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       onTyping(thread.id);
       typingTimeoutRef.current = setTimeout(() => {}, 2000);
     }
   };
 
-  const handleEmojiSelect = useCallback((emoji: string) => {
-    setInput((prev) => prev + emoji);
-    inputRef.current?.focus();
-  }, []);
+  const handleSend = async () => {
+    let textToSend = input.trim();
 
-  const handleGifSelect = useCallback((gifUrl: string) => {
-    onSendMessage(thread.id, `[gif]${gifUrl}[/gif]`);
-  }, [thread.id, onSendMessage]);
+    if (attachedFile) {
+      try {
+        const ext = attachedFile.name.split(".").pop();
+        const path = `${currentUserId}/${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("chat-media").upload(path, attachedFile);
+        if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = supabase.storage.from("chat-media").getPublicUrl(path);
 
-  const handleReact = useCallback((messageId: string, emoji: string) => {
-    setReactions((prev) => {
-      const msgReactions = { ...(prev[messageId] || {}) };
-      msgReactions[emoji] = (msgReactions[emoji] || 0) + 1;
-      return { ...prev, [messageId]: msgReactions };
-    });
-  }, []);
+        const isImg = attachedFile.type.startsWith("image/");
+        const isVid = attachedFile.type.startsWith("video/");
+        const tag = isImg ? `[img]${publicUrl}[/img]` : isVid ? `[video]${publicUrl}[/video]` : `[file]${publicUrl}|${attachedFile.name}[/file]`;
+        textToSend = textToSend ? `${tag}\n${textToSend}` : tag;
+      } catch (err: any) {
+        toast.error("Upload failed: " + err.message);
+        return;
+      }
+      setAttachedFile(null);
+      setImagePreview(null);
+    }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!textToSend) return;
+
+    if (replyTo) {
+      const replyPrefix = `[reply:${replyTo.id}|${(replyTo as any).profile?.display_name || (replyTo as any).profile?.username || "User"}|${replyTo.text.slice(0, 50)}]`;
+      textToSend = `${replyPrefix}\n${textToSend}`;
+      setReplyTo(null);
+    }
+
+    onSendMessage(thread.id, textToSend);
+    setInput("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error("File too large. Max 50MB.");
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("File size must be under 20MB");
       return;
     }
     setAttachedFile(file);
@@ -138,439 +127,307 @@ const ChatWindow = ({
       const reader = new FileReader();
       reader.onload = (ev) => setImagePreview(ev.target?.result as string);
       reader.readAsDataURL(file);
-    } else if (file.type.startsWith("video/")) {
-      setImagePreview("video:" + URL.createObjectURL(file));
     } else {
       setImagePreview(null);
     }
-    e.target.value = "";
   };
 
-  const handleStartEdit = (msg: DbMessage) => {
-    setEditingId(msg.id);
-    setEditText(msg.text);
-    setActiveMenuId(null);
+  const handleReaction = (messageId: string, emoji: string) => {
+    setReactions((prev) => {
+      const current = prev[messageId] || {};
+      const count = current[emoji] || 0;
+      return { ...prev, [messageId]: { ...current, [emoji]: count > 0 ? 0 : 1 } };
+    });
   };
 
-  const handleSaveEdit = () => {
-    if (editingId && editText.trim() && onEditMessage) {
-      onEditMessage(editingId, editText.trim());
+  const handleSaveEdit = (messageId: string) => {
+    if (editText.trim() && onEditMessage) {
+      onEditMessage(messageId, editText.trim());
     }
     setEditingId(null);
     setEditText("");
   };
 
-  const handleReply = (msg: DbMessage) => {
-    setReplyTo(msg);
-    setActiveMenuId(null);
-    inputRef.current?.focus();
+  const parseReply = (text: string) => {
+    const match = text.match(/^\[reply:([^|]+)\|([^|]+)\|([^\]]*)\]\n?([\s\S]*)$/);
+    if (match) {
+      return { replyId: match[1], senderName: match[2], snippet: match[3], cleanText: match[4] };
+    }
+    return null;
   };
-
-  const handleForward = (msg: DbMessage) => {
-    setForwardMessage(msg);
-    setActiveMenuId(null);
-  };
-
-  const handleSwipeReply = useCallback((msg: DbMessage) => {
-    setReplyTo(msg);
-    setActiveMenuId(null);
-    inputRef.current?.focus();
-  }, []);
-
-  const handleLongPress = (msgId: string) => {
-    longPressRef.current = setTimeout(() => {
-      setActiveMenuId(msgId);
-    }, 500);
-  };
-
-  const handleTouchEnd = () => {
-    if (longPressRef.current) clearTimeout(longPressRef.current);
-  };
-
-  const displayName = thread.profile.display_name || thread.profile.username;
-  const initials = displayName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-  const colors = ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500", "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600"];
-  const colorIndex = thread.profile.username.charCodeAt(0) % colors.length;
 
   return (
-    <div
-      data-chat-theme={theme}
-      data-photo-wallpaper={isPhotoTheme(theme) || undefined}
-      style={getChatWallpaperStyle(theme)}
-      className="chat-theme-surface flex h-full min-h-0 flex-col bg-background"
-      onClick={() => setActiveMenuId(null)}
-    >
+    <div className="flex h-full flex-col bg-background relative overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b bg-chat-header px-3 py-2.5 shadow-sm">
-        {onBack && (
-          <button onClick={onBack} className="butter-tap mr-0.5 rounded-full p-1.5 hover:bg-accent lg:hidden transition-colors">
-            <ArrowLeft className="h-5 w-5 text-foreground" />
+      <div className="flex items-center justify-between border-b border-border px-3 md:px-4 py-2.5 bg-card/60 backdrop-blur-xl z-10 shrink-0">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button onClick={onBack} className="p-1.5 -ml-1 text-muted-foreground hover:text-foreground lg:hidden rounded-full hover:bg-muted/60 transition-colors">
+            <ArrowLeft className="h-5 w-5" />
           </button>
-        )}
-        <div className="relative flex-shrink-0">
-          {thread.profile.avatar_url ? (
-            <img src={thread.profile.avatar_url} alt={displayName} className="h-10 w-10 rounded-full object-cover" />
-          ) : (
-            <div className={`flex h-10 w-10 items-center justify-center rounded-full ${colors[colorIndex]} text-sm font-semibold text-white`}>
-              {initials}
-            </div>
-          )}
-          {thread.profile.is_online && (
-            <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-chat-header bg-online" />
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-semibold text-foreground truncate">{displayName}</h2>
-          <p className="text-[11px] text-muted-foreground">
-            {isOtherTyping ? (
-              <span className="text-primary font-medium animate-pulse">typing...</span>
-            ) : thread.profile.is_online ? (
-              <span className="text-online">Online</span>
-            ) : thread.profile.last_seen ? (
-              `Last seen ${formatLastSeen(thread.profile.last_seen)}`
-            ) : "Offline"}
-          </p>
-        </div>
-        <div className="flex items-center gap-0.5">
-          <button onClick={() => onStartCall?.(thread.id, "voice")} className="butter-tap rounded-full p-2 transition-colors hover:bg-accent" title="Voice call">
-            <Phone className="h-[18px] w-[18px] text-muted-foreground" />
-          </button>
-          <button onClick={() => onStartCall?.(thread.id, "video")} className="butter-tap rounded-full p-2 transition-colors hover:bg-accent" title="Video call">
-            <Video className="h-[18px] w-[18px] text-muted-foreground" />
-          </button>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="chat-messages-shell flex min-h-0 flex-1 flex-col">
-        <div className="chat-wallpaper min-h-0 flex-1 overflow-y-auto p-3 scrollbar-thin smooth-scroll-momentum chat-feed-gpu" data-motion-fx="off">
-          <div className="relative mx-auto max-w-3xl space-y-0.5">
-            {thread.messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                <p className="text-sm">No messages yet</p>
-                <p className="text-xs mt-1">Say hello! 👋</p>
-              </div>
-            )}
-            {thread.messages.map((msg, i) => {
-              const isOwn = msg.sender_id === currentUserId;
-              const isEditing = editingId === msg.id;
-              return (
-                <SwipeableMessage
-                  key={msg.id}
-                  isOwn={isOwn}
-                  onSwipeReply={() => handleSwipeReply(msg)}
-                >
-                  <MessageBubble
-                    message={msg}
-                    isOwn={isOwn}
-                    showTail={i === 0 || thread.messages[i - 1].sender_id !== msg.sender_id}
-                    reactions={reactions[msg.id] || {}}
-                    onReact={(emoji) => handleReact(msg.id, emoji)}
-                    onDelete={isOwn && onDeleteMessage ? () => { onDeleteMessage(msg.id); setActiveMenuId(null); } : undefined}
-                    onEdit={isOwn && onEditMessage ? () => handleStartEdit(msg) : undefined}
-                    onReply={() => handleReply(msg)}
-                    onForward={() => handleForward(msg)}
-                    isEditing={isEditing}
-                    editText={editText}
-                    onEditTextChange={setEditText}
-                    onSaveEdit={handleSaveEdit}
-                    onCancelEdit={() => { setEditingId(null); setEditText(""); }}
-                    showMenu={activeMenuId === msg.id}
-                    onLongPress={() => handleLongPress(msg.id)}
-                    onTouchEnd={handleTouchEnd}
-                    onToggleMenu={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === msg.id ? null : msg.id); }}
-                  />
-                </SwipeableMessage>
-              );
-            })}
-            {isOtherTyping && <TypingIndicator />}
-            <div ref={messagesEndRef} />
-          </div>
-        </div>
-      </div>
-
-      {/* Reply preview */}
-      {replyTo && (
-        <div className="border-t bg-chat-header px-4 py-2 animate-fade-in">
-          <div className="mx-auto max-w-3xl flex items-center gap-3">
-            <CornerDownRight className="h-4 w-4 text-primary flex-shrink-0" />
-            <div className="flex-1 min-w-0 border-l-2 border-primary pl-2">
-              <p className="text-[11px] font-semibold text-primary">
-                {replyTo.sender_id === currentUserId ? "You" : displayName}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">{replyTo.text.replace(/\[.*?\]/g, "").slice(0, 60)}</p>
-            </div>
-            <button onClick={() => setReplyTo(null)} className="butter-tap rounded-full p-1 hover:bg-accent transition-colors">
-              <X className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Attachment preview */}
-      {attachedFile && (
-        <div className="border-t bg-chat-header px-4 py-2">
-          <div className="mx-auto max-w-3xl flex items-center gap-3">
-            {imagePreview ? (
-              imagePreview.startsWith("video:") ? (
-                <video src={imagePreview.replace("video:", "")} className="h-14 w-14 rounded-xl object-cover" muted />
-              ) : (
-                <img src={imagePreview} alt="Preview" className="h-14 w-14 rounded-xl object-cover" />
-              )
+          <div className="relative">
+            {thread.profile?.avatar_url ? (
+              <img src={thread.profile.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover ring-1 ring-border" />
             ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-accent">
-                <FileText className="h-5 w-5 text-muted-foreground" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-full gradient-brand text-xs font-bold text-white shadow-sm">
+                {initials}
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{attachedFile.name}</p>
-              <p className="text-xs text-muted-foreground">{(attachedFile.size / 1024).toFixed(1)} KB</p>
-            </div>
-            <button onClick={() => { setAttachedFile(null); setImagePreview(null); }} className="butter-tap rounded-full p-1.5 hover:bg-accent transition-colors">
-              <X className="h-4 w-4 text-muted-foreground" />
-            </button>
+            {thread.profile?.is_online && (
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-background" />
+            )}
           </div>
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold truncate leading-tight text-foreground">{displayName}</h2>
+            <p className="text-[11px] text-muted-foreground truncate leading-tight">
+              {thread.profile?.is_online ? (
+                <span className="text-emerald-500 font-medium">Online</span>
+              ) : (
+                `@${thread.profile?.username || "user"}`
+              )}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          {onStartCall && (
+            <>
+              <button
+                onClick={() => onStartCall(thread.id, "voice")}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-full transition-colors active:scale-95"
+                title="Voice call"
+              >
+                <Phone className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => onStartCall(thread.id, "video")}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-full transition-colors active:scale-95"
+                title="Video call"
+              >
+                <Video className="h-4 w-4" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Messages Feed with Persistent Wallpaper */}
+      <div
+        ref={messagesContainerRef}
+        className="chat-messages-shell flex-1 overflow-y-auto px-3 md:px-6 py-4 space-y-2 smooth-scroll-momentum chat-feed-gpu relative"
+        style={getChatWallpaperStyle(theme)}
+      >
+        <div className="flex justify-center my-2">
+          <span className="text-[11px] bg-card/80 backdrop-blur-md px-3 py-1 rounded-full border border-border text-muted-foreground/80 shadow-sm">
+            🔒 End-to-end encrypted
+          </span>
+        </div>
+
+        {thread.messages.map((msg) => {
+          const isOwn = msg.sender_id === currentUserId;
+          const replyData = parseReply(msg.text);
+          const displayText = replyData ? replyData.cleanText : msg.text;
+
+          return (
+            <div key={msg.id} className={`group flex flex-col ${isOwn ? "items-end" : "items-start"} low-fade`}>
+              <div
+                className={`relative max-w-[82%] sm:max-w-[70%] rounded-2xl px-3.5 py-2 text-sm shadow-sm transition-shadow ${
+                  isOwn
+                    ? "bg-primary text-primary-foreground rounded-br-xs"
+                    : "bg-card text-foreground border border-border rounded-bl-xs"
+                }`}
+              >
+                {/* Quoted message */}
+                {replyData && (
+                  <div className={`mb-1.5 rounded-lg px-2 py-1 text-xs border-l-2 ${
+                    isOwn ? "bg-black/15 border-white/60 text-white/90" : "bg-muted/60 border-primary text-foreground/80"
+                  }`}>
+                    <p className="font-semibold text-[10px] opacity-80">{replyData.senderName}</p>
+                    <p className="truncate text-[11px]">{replyData.snippet}</p>
+                  </div>
+                )}
+
+                {/* Edit input or message content */}
+                {editingId === msg.id ? (
+                  <div className="flex flex-col gap-1.5 py-1">
+                    <input
+                      type="text"
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      className="rounded bg-background text-foreground px-2 py-1 text-xs border border-border"
+                      autoFocus
+                    />
+                    <div className="flex gap-1 justify-end">
+                      <button onClick={() => setEditingId(null)} className="text-[10px] px-2 py-0.5 rounded bg-muted">Cancel</button>
+                      <button onClick={() => handleSaveEdit(msg.id)} className="text-[10px] px-2 py-0.5 rounded bg-primary text-primary-foreground font-semibold">Save</button>
+                    </div>
+                  </div>
+                ) : (
+                  <MessageContent text={displayText} isOwn={isOwn} />
+                )}
+
+                {/* Meta: time + read status */}
+                <div className={`mt-0.5 flex items-center justify-end gap-1 text-[10px] ${
+                  isOwn ? "text-primary-foreground/75" : "text-muted-foreground"
+                }`}>
+                  {msg.is_edited && <span className="italic">edited</span>}
+                  <span>
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                  {isOwn && (
+                    msg.read_at ? (
+                      <CheckCheck className="h-3.5 w-3.5 text-sky-400" />
+                    ) : (
+                      <Check className="h-3.5 w-3.5 opacity-70" />
+                    )
+                  )}
+                </div>
+
+                {/* Quick actions hover bar */}
+                <div className={`absolute top-0 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5 bg-popover border border-border rounded-full px-1.5 py-0.5 shadow-md ${
+                  isOwn ? "right-2" : "left-2"
+                }`}>
+                  <button onClick={() => setReplyTo(msg)} title="Reply" className="p-1 hover:text-primary text-muted-foreground">
+                    <Reply className="h-3 w-3" />
+                  </button>
+                  <button onClick={() => setForwardMessage(msg)} title="Forward" className="p-1 hover:text-primary text-muted-foreground">
+                    <Forward className="h-3 w-3" />
+                  </button>
+                  {isOwn && onEditMessage && (
+                    <button onClick={() => { setEditingId(msg.id); setEditText(displayText); }} title="Edit" className="p-1 hover:text-primary text-muted-foreground">
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                  )}
+                  {isOwn && onDeleteMessage && (
+                    <button onClick={() => onDeleteMessage(msg.id)} title="Delete" className="p-1 hover:text-destructive text-muted-foreground">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {isOtherTyping && (
+          <div className="flex items-center gap-2 low-fade">
+            <div className="rounded-2xl rounded-bl-xs bg-card border border-border px-3 py-2 text-xs text-muted-foreground">
+              <TypingIndicator />
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} className="h-px" />
+      </div>
+
+      {/* Reply banner preview */}
+      {replyTo && (
+        <div className="flex items-center justify-between border-t border-border bg-muted/40 px-4 py-1.5 text-xs">
+          <div className="flex items-center gap-2 truncate">
+            <CornerDownRight className="h-3.5 w-3.5 text-primary shrink-0" />
+            <span className="font-semibold text-primary">Replying:</span>
+            <span className="truncate text-muted-foreground">{replyTo.text.slice(0, 60)}</span>
+          </div>
+          <button onClick={() => setReplyTo(null)} className="p-1 hover:text-destructive">
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
 
-      {/* Input */}
-      <div className="border-t bg-chat-header px-3 py-2.5">
-        <div className="mx-auto flex max-w-3xl items-center gap-1.5">
-          <EmojiPicker onSelect={handleEmojiSelect} onGifSelect={handleGifSelect} />
-          <button onClick={() => fileInputRef.current?.click()} className="butter-tap rounded-full p-2 transition-colors hover:bg-accent" title="Attach file">
-            <Paperclip className="h-5 w-5 text-muted-foreground" />
-          </button>
-          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} accept="image/*,video/*,audio/*,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.7z,.json,.apk" />
-          <div className="flex flex-1 items-center rounded-2xl bg-chat-input-bg px-4 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-primary/20">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Type a message..."
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            />
+      {/* Attachment Preview */}
+      {attachedFile && (
+        <div className="flex items-center justify-between border-t border-border bg-card/90 px-4 py-2">
+          <div className="flex items-center gap-2.5">
+            {imagePreview ? (
+              <img src={imagePreview} alt="" className="h-10 w-10 rounded-lg object-cover ring-1 ring-border" />
+            ) : (
+              <FileText className="h-6 w-6 text-primary" />
+            )}
+            <div className="text-xs">
+              <p className="font-medium truncate max-w-[200px]">{attachedFile.name}</p>
+              <p className="text-muted-foreground text-[10px]">{(attachedFile.size / 1024).toFixed(0)} KB</p>
+            </div>
           </div>
+          <button onClick={() => { setAttachedFile(null); setImagePreview(null); }} className="p-1 text-muted-foreground hover:text-destructive">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Input bar */}
+      <div className="border-t border-border p-2 sm:p-3 bg-card/80 backdrop-blur-xl shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-full transition-colors shrink-0"
+            title="Attach file"
+          >
+            <Paperclip className="h-5 w-5" />
+          </button>
+
+          <EmojiPicker onSelect={(emoji) => setInput((prev) => prev + emoji)} />
+
+          <input
+            type="text"
+            value={input}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={`Message ${displayName}...`}
+            className="flex-1 rounded-full bg-background border border-border px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+
           {input.trim() || attachedFile ? (
             <button
               onClick={handleSend}
-              className="butter-tap flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full gradient-brand text-white transition-all hover:opacity-90 active:scale-95 shadow-sm"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all shrink-0 active:scale-95 shadow-sm"
+              title="Send"
             >
               <Send className="h-4 w-4" />
             </button>
           ) : (
-            <VoiceMessageButton />
+            <VoiceMessageButton
+              onSendVoice={async (blob) => {
+                const file = new File([blob], `voice_${Date.now()}.webm`, { type: blob.type || "audio/webm" });
+                const path = `${currentUserId}/${Date.now()}_voice.webm`;
+                const { error } = await supabase.storage.from("chat-media").upload(path, file);
+                if (error) { toast.error("Voice upload failed"); return; }
+                const { data } = supabase.storage.from("chat-media").getPublicUrl(path);
+                onSendMessage(thread.id, `[audio]${data.publicUrl}[/audio]`);
+              }}
+            />
           )}
         </div>
       </div>
-      <MessageForwardDialog
-        open={Boolean(forwardMessage)}
-        profiles={profiles.filter((profile) => profile.user_id !== currentUserId)}
-        messageText={forwardMessage?.text || ""}
-        onOpenChange={(open) => { if (!open) setForwardMessage(null); }}
-        onForward={(receiverId, text) => onSendMessage(receiverId, `[forwarded]${text}`)}
-      />
+
+      {/* Forward message dialog */}
+      {forwardMessage && (
+        <MessageForwardDialog
+          open={!!forwardMessage}
+          onOpenChange={(open) => !open && setForwardMessage(null)}
+          messageText={forwardMessage.text}
+          recipients={profiles.map((p) => ({
+            id: p.user_id,
+            name: p.display_name || p.username || "User",
+            subtitle: `@${p.username || "user"}`,
+            avatarUrl: p.avatar_url,
+          }))}
+          currentUserId={currentUserId}
+          onForward={async (targets) => {
+            for (const t of targets) {
+              onSendMessage(t.id, forwardMessage.text);
+            }
+            toast.success("Forwarded message");
+            setForwardMessage(null);
+          }}
+        />
+      )}
     </div>
   );
 };
-
-/* ─── Swipe-to-Reply wrapper ─── */
-const SwipeableMessage = ({ children, isOwn, onSwipeReply }: { children: React.ReactNode; isOwn: boolean; onSwipeReply: () => void }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const startX = useRef(0);
-  const currentX = useRef(0);
-  const swiping = useRef(false);
-  const triggered = useRef(false);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
-    currentX.current = 0;
-    swiping.current = true;
-    triggered.current = false;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!swiping.current || !ref.current) return;
-    const diff = e.touches[0].clientX - startX.current;
-    // Only allow right swipe (for reply)
-    const swipeAmount = Math.max(0, Math.min(diff, 80));
-    currentX.current = swipeAmount;
-
-    ref.current.style.transform = `translateX(${swipeAmount}px)`;
-    ref.current.style.transition = "none";
-
-    if (swipeAmount > 60 && !triggered.current) {
-      triggered.current = true;
-      if (navigator.vibrate) navigator.vibrate(30);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (!ref.current) return;
-    ref.current.style.transition = "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)";
-    ref.current.style.transform = "translateX(0)";
-    swiping.current = false;
-
-    if (triggered.current) {
-      onSwipeReply();
-    }
-  };
-
-  return (
-    <div className="relative overflow-hidden">
-      <div className="absolute left-2 top-1/2 -translate-y-1/2 opacity-40">
-        <Reply className="h-5 w-5 text-primary" />
-      </div>
-      <div
-        ref={ref}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        style={{ willChange: "transform" }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-};
-
-const MessageBubble = ({
-  message, isOwn, showTail, reactions, onReact, onDelete, onEdit, onReply, onForward,
-  isEditing, editText, onEditTextChange, onSaveEdit, onCancelEdit,
-  showMenu, onLongPress, onTouchEnd, onToggleMenu,
-}: {
-  message: DbMessage; isOwn: boolean; showTail: boolean;
-  reactions: Record<string, number>; onReact: (emoji: string) => void;
-  onDelete?: () => void; onEdit?: () => void; onReply: () => void; onForward: () => void;
-  isEditing?: boolean; editText?: string;
-  onEditTextChange?: (text: string) => void; onSaveEdit?: () => void; onCancelEdit?: () => void;
-  showMenu?: boolean; onLongPress: () => void; onTouchEnd: () => void;
-  onToggleMenu: (e: React.MouseEvent) => void;
-}) => {
-  const time = new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-  const replyMatch = message.text.match(/^\[reply:(.*?)\](.*)$/s);
-  const replyPreview = replyMatch ? replyMatch[1] : null;
-  const actualText = replyMatch ? replyMatch[2] : message.text;
-
-  return (
-    <div className={`flex ${isOwn ? "justify-end" : "justify-start"} ${showTail ? "mt-2.5" : "mt-0.5"} animate-fade-in`}>
-      <div
-        className="relative group max-w-[78%] sm:max-w-[70%]"
-        onTouchStart={onLongPress}
-        onTouchEnd={onTouchEnd}
-        onContextMenu={(e) => { e.preventDefault(); onToggleMenu(e); }}
-      >
-        <div
-          className={`relative rounded-2xl px-3 py-2 shadow-sm ${
-            isOwn
-              ? `bg-chat-bubble-own text-chat-bubble-own-foreground ${showTail ? "rounded-br-md" : ""}`
-              : `bg-chat-bubble-other text-chat-bubble-other-foreground ${showTail ? "rounded-bl-md" : ""}`
-          }`}
-        >
-          {replyPreview && (
-            <div className={`mb-1.5 rounded-lg px-2.5 py-1.5 border-l-2 border-primary ${isOwn ? "bg-white/10" : "bg-black/5"}`}>
-              <p className="text-[10px] text-primary font-semibold">Reply</p>
-              <p className="text-[11px] opacity-70 truncate">{replyPreview}</p>
-            </div>
-          )}
-          {actualText.startsWith("[forwarded]") && <p className="mb-1 flex items-center gap-1 text-[10px] opacity-60"><Forward className="h-3 w-3" /> Forwarded</p>}
-          {isEditing ? (
-            <div className="flex flex-col gap-2">
-              <input
-                type="text"
-                value={editText}
-                onChange={(e) => onEditTextChange?.(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") onSaveEdit?.(); if (e.key === "Escape") onCancelEdit?.(); }}
-                className="w-full bg-transparent text-sm outline-none border-b border-primary pb-1"
-                autoFocus
-              />
-              <div className="flex gap-2 justify-end">
-                <button onClick={onCancelEdit} className="butter-tap text-[10px] text-muted-foreground hover:text-foreground">Cancel</button>
-                <button onClick={onSaveEdit} className="butter-tap text-[10px] text-primary font-medium">Save</button>
-              </div>
-            </div>
-          ) : (
-            <MessageContent text={actualText.startsWith("[forwarded]") ? actualText.slice("[forwarded]".length) : actualText} />
-          )}
-          <div className="mt-0.5 flex items-center justify-end gap-1">
-            <span className="text-[10px] opacity-50">{time}</span>
-            {isOwn && (
-              message._pending ? (
-                <Clock className="h-3 w-3 opacity-40" />
-              ) : message.read_at ? (
-                <CheckCheck className="h-3.5 w-3.5 text-primary" />
-              ) : (
-                <CheckCheck className="h-3.5 w-3.5 opacity-50" />
-              )
-            )}
-          </div>
-        </div>
-
-        {/* Context menu */}
-        {!isEditing && showMenu && (
-          <div
-            className={`absolute ${isOwn ? "right-0" : "left-0"} -top-9 z-20 flex items-center gap-0.5 rounded-xl border bg-popover px-1.5 py-1 shadow-lg animate-scale-in`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button onClick={onReply} className="butter-tap rounded-lg p-1.5 hover:bg-accent transition-colors" title="Reply">
-              <Reply className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
-            <button onClick={onForward} className="butter-tap rounded-lg p-1.5 hover:bg-accent transition-colors" title="Forward">
-              <Forward className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
-            {isOwn && onEdit && (
-              <button onClick={onEdit} className="butter-tap rounded-lg p-1.5 hover:bg-accent transition-colors" title="Edit">
-                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
-            )}
-            {isOwn && onDelete && (
-              <button onClick={onDelete} className="butter-tap rounded-lg p-1.5 hover:bg-destructive/10 transition-colors" title="Delete">
-                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Desktop hover menu */}
-        {!isEditing && !showMenu && (
-          <div className={`absolute ${isOwn ? "right-0" : "left-0"} -top-7 z-10 hidden group-hover:flex items-center gap-0.5 rounded-lg border bg-popover px-1 py-0.5 shadow-md animate-scale-in`}>
-            <button onClick={onReply} className="butter-tap rounded p-1 hover:bg-accent transition-colors" title="Reply">
-              <Reply className="h-3 w-3 text-muted-foreground" />
-            </button>
-            <button onClick={onForward} className="butter-tap rounded p-1 hover:bg-accent transition-colors" title="Forward">
-              <Forward className="h-3 w-3 text-muted-foreground" />
-            </button>
-            {isOwn && onEdit && (
-              <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="butter-tap rounded p-1 hover:bg-accent transition-colors" title="Edit">
-                <Pencil className="h-3 w-3 text-muted-foreground" />
-              </button>
-            )}
-            {isOwn && onDelete && (
-              <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="butter-tap rounded p-1 hover:bg-destructive/10 transition-colors" title="Delete">
-                <Trash2 className="h-3 w-3 text-destructive" />
-              </button>
-            )}
-          </div>
-        )}
-
-        <MessageReactions reactions={reactions} onReact={onReact} isOwn={isOwn} />
-      </div>
-    </div>
-  );
-};
-
-function formatLastSeen(iso: string): string {
-  const date = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin} min ago`;
-  const diffHrs = Math.floor(diffMin / 60);
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
-}
 
 export default ChatWindow;
