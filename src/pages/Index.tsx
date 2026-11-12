@@ -1,87 +1,119 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { syncPush } from "@/lib/push";
+import { useState, useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import type { User, Session } from "@supabase/supabase-js";
+import NavIconBar, { type NavSection } from "@/components/chat/NavIconBar";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
-import GroupChatWindow from "@/components/chat/GroupChatWindow";
 import EmptyChat from "@/components/chat/EmptyChat";
+import SectionPanel from "@/components/chat/SectionPanel";
+import MobileBottomNav from "@/components/chat/MobileBottomNav";
+import GroupSidebar from "@/components/chat/GroupSidebar";
+import GroupChatWindow from "@/components/chat/GroupChatWindow";
 import CallScreen from "@/components/chat/CallScreen";
 import GroupCallScreen from "@/components/chat/GroupCallScreen";
-import NavIconBar from "@/components/chat/NavIconBar";
-import MobileBottomNav from "@/components/chat/MobileBottomNav";
-import SectionPanel from "@/components/chat/SectionPanel";
-import BuzzLanding from "./BuzzLanding";
-import { useWebRTC } from "@/hooks/useWebRTC";
+import BuzzLanding from "@/pages/BuzzLanding";
+import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
+import { useMoments } from "@/hooks/useMoments";
 import { useGroups } from "@/hooks/useGroups";
+import { useWebRTC } from "@/hooks/useWebRTC";
 import { useGroupCall } from "@/hooks/useGroupCall";
+import type { Session } from "@supabase/supabase-js";
 import { ChatThemeProvider } from "@/components/chat/ChatThemeProvider";
 import NewFeatureSpotlight from "@/components/chat/NewFeatureSpotlight";
 import BuzzLogoAnimation from "@/components/chat/BuzzLogoAnimation";
 
 const Index = () => {
+  const location = useLocation();
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<"streams" | "moments" | "connect" | "discover">("streams");
-  const location = useLocation();
+  const [activeSection, setActiveSection] = useState<NavSection>("streams");
+  const [showGroups, setShowGroups] = useState(false);
+  const [username, setUsername] = useState<string>("");
 
-  const {
-    callState,
-    callType,
-    remoteProfile,
-    callDuration,
-    startCall,
-    answerCall,
-    endCall,
-    toggleAudio,
-    toggleVideo,
-    isAudioMuted,
-    isVideoMuted,
-    localVideoRef,
-    remoteVideoRef,
-  } = useWebRTC(user?.id);
+  const currentUserId = session?.user?.id;
+  const { threads, profiles, sendMessage, deleteMessage, editMessage, markAsRead, sendTyping, typingUsers } = useRealtimeMessages(currentUserId);
+  const { moments, postMoment, deleteMoment, recordView } = useMoments(currentUserId);
+  const { groups, createGroup, fetchGroupMessages, sendGroupMessage, deleteGroupMessage, fetchGroupMembers, addMember, removeMember, deleteGroup, refetch: refetchGroups } = useGroups(currentUserId);
+  const { callState, callType, remoteProfile, callDuration, localVideoRef, remoteVideoRef, isRemoteOnline, startCall, endCall, acceptCall, rejectCall, toggleMute, toggleVideo } = useWebRTC(currentUserId);
+  const groupCall = useGroupCall(currentUserId);
 
-  const {
-    groups,
-    createGroup,
-    deleteGroup,
-    refetch: refetchGroups,
-  } = useGroups(user?.id);
+  const handleStartGroupCall = useCallback(async (groupId: string, gName: string, type: "voice" | "video") => {
+    const members = await fetchGroupMembers(groupId);
+    const memberIds = members.map((m) => m.user_id).filter((id) => id !== currentUserId);
+    groupCall.startGroupCall(groupId, gName, memberIds, type);
+  }, [groupCall, fetchGroupMembers, currentUserId]);
 
-  const {
-    groupCall,
-    participants: groupParticipants,
-    joinGroupCall,
-    leaveGroupCall,
-    toggleGroupAudio,
-    toggleGroupVideo,
-    isAudioMuted: isGroupAudioMuted,
-    isVideoMuted: isGroupVideoMuted,
-    localStream: groupLocalStream,
-    isHost: isGroupCallHost,
-  } = useGroupCall(user?.id);
+  useEffect(() => { if (currentUserId) syncPush(currentUserId); }, [currentUserId]);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        const meta = session.user.user_metadata;
+        setUsername(meta?.username || meta?.display_name || "User");
+      }
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        const meta = session.user.user_metadata;
+        setUsername(meta?.username || meta?.display_name || "User");
+      }
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleSelectChat = useCallback((threadId: string) => {
-    setActiveChatId(threadId);
+  useEffect(() => {
+    if (activeChatId) markAsRead(activeChatId);
+  }, [activeChatId, markAsRead]);
+
+  const isStreamsSection = activeSection === "streams";
+  const [extraProfile, setExtraProfile] = useState<import("@/hooks/useRealtimeMessages").DbProfile | null>(null);
+  useEffect(() => {
+    if (!activeChatId || profiles.some((p) => p.user_id === activeChatId) || extraProfile?.user_id === activeChatId) return;
+    supabase.from("profiles").select("*").eq("user_id", activeChatId).maybeSingle().then(({ data }) => { if (data) setExtraProfile(data); });
+  }, [activeChatId, profiles, extraProfile?.user_id]);
+
+  // Build virtual thread for new chats
+  const activeThread = (() => {
+    const existing = threads.find((t) => t.id === activeChatId);
+    if (existing) return existing;
+    if (!activeChatId || !isStreamsSection || showGroups) return null;
+    const profile = profiles.find((p) => p.user_id === activeChatId) || (extraProfile?.user_id === activeChatId ? extraProfile : undefined);
+    if (!profile) return null;
+    return { id: activeChatId, profile, messages: [], lastMessage: "", lastMessageTime: "", unreadCount: 0 } as import("@/hooks/useRealtimeMessages").ChatThread;
+  })();
+
+  const activeGroup = groups.find((g) => g.id === activeGroupId) || null;
+  const totalUnread = threads.reduce((sum, t) => sum + t.unreadCount, 0);
+  const isOtherTyping = activeChatId ? typingUsers.has(activeChatId) : false;
+
+  const handleSendMessage = useCallback((receiverId: string, text: string) => { sendMessage(receiverId, text); }, [sendMessage]);
+
+  const handleNavigate = useCallback((section: NavSection) => {
+    setActiveSection(section);
+    if (section !== "streams") { setActiveChatId(null); setShowGroups(false); setActiveGroupId(null); }
+  }, []);
+
+  const handleStartChat = useCallback((userId: string) => {
+    setActiveChatId(userId);
+    setActiveSection("streams");
+    setShowGroups(false);
     setActiveGroupId(null);
+  }, []);
+
+  const handleToggleGroups = useCallback(() => {
+    setShowGroups((prev) => !prev);
+    setActiveChatId(null);
+    setActiveGroupId(null);
+    setActiveSection("streams");
   }, []);
 
   const handleSelectGroup = useCallback((groupId: string) => {
@@ -103,25 +135,24 @@ const Index = () => {
     setActiveGroupId(null);
   }, [deleteGroup]);
 
-  // 10/10 Logo Animation on Loading Screen
+  // 10/10 Snappy Logo Animation on App Loading
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-2">
-          <BuzzLogoAnimation size="lg" showAura={true} showTagline={true} />
-        </div>
+        <BuzzLogoAnimation size="lg" showAura={true} showTagline={true} />
       </div>
     );
   }
 
   if (!session) return <BuzzLanding page={location.pathname} />;
 
-  const isMobileChatOpen = (!!activeChatId || !!activeGroupId) && activeSection === "streams";
+  const isMobileChatOpen = (!!activeChatId || !!activeGroupId) && isStreamsSection;
 
   return (
     <ChatThemeProvider key={session.user.id} userId={session.user.id}>
       <NewFeatureSpotlight userId={session.user.id} />
       <div className="flex h-dvh min-h-0 w-full min-w-0 overflow-hidden bg-background">
+
         {/* Call screen overlay */}
         {callState !== "idle" && (
           <CallScreen
@@ -131,87 +162,119 @@ const Index = () => {
             callDuration={callDuration}
             localVideoRef={localVideoRef as React.RefObject<HTMLVideoElement>}
             remoteVideoRef={remoteVideoRef as React.RefObject<HTMLVideoElement>}
-            isAudioMuted={isAudioMuted}
-            isVideoMuted={isVideoMuted}
-            onAnswer={answerCall}
-            onEnd={endCall}
-            onToggleAudio={toggleAudio}
+            isRemoteOnline={isRemoteOnline}
+            onEndCall={endCall}
+            onAccept={acceptCall}
+            onReject={rejectCall}
+            onToggleMute={toggleMute}
             onToggleVideo={toggleVideo}
           />
         )}
 
-        {/* Group Call Overlay */}
-        {groupCall && (
+        {/* Group call overlay */}
+        {groupCall.state === "connected" && (
           <GroupCallScreen
-            groupCall={groupCall}
-            participants={groupParticipants}
-            currentUserId={session.user.id}
-            localStream={groupLocalStream}
-            isAudioMuted={isGroupAudioMuted}
-            isVideoMuted={isGroupVideoMuted}
-            isHost={isGroupCallHost}
-            onLeave={leaveGroupCall}
-            onToggleAudio={toggleGroupAudio}
-            onToggleVideo={toggleGroupVideo}
+            groupName={groupCall.groupName}
+            callType={groupCall.callType}
+            duration={groupCall.duration}
+            participants={groupCall.participants}
+            localVideoRef={groupCall.localVideoRef as React.RefObject<HTMLVideoElement>}
+            onEnd={groupCall.endGroupCall}
+            onToggleMute={groupCall.toggleMute}
+            onToggleVideo={groupCall.toggleVideo}
           />
         )}
 
-        {/* Desktop Icon Sidebar */}
-        <NavIconBar
-          activeSection={activeSection}
-          onSelectSection={(sec) => {
-            setActiveSection(sec);
-            if (sec !== "streams") {
-              setActiveChatId(null);
-              setActiveGroupId(null);
-            }
-          }}
-          userId={session.user.id}
-        />
+        {/* Incoming group call invite */}
+        {groupCall.incomingInvite && groupCall.state === "idle" && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
+            <div className="bg-card rounded-3xl p-8 max-w-sm w-full mx-4 text-center shadow-2xl">
+              <div className="flex h-20 w-20 mx-auto items-center justify-center rounded-full gradient-brand text-white text-3xl mb-4 animate-pulse">📞</div>
+              <h3 className="text-xl font-bold text-foreground mb-1">Group {groupCall.incomingInvite.type} call</h3>
+              <p className="text-sm text-muted-foreground mb-6">{groupCall.incomingInvite.groupName}</p>
+              <div className="flex gap-4 justify-center">
+                <button onClick={groupCall.rejectInvite} className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">✕</button>
+                <button onClick={groupCall.acceptInvite} className="flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-lg animate-pulse">✓</button>
+              </div>
+            </div>
+          </div>
+        )}
 
-        {/* Left Drawer / Panel */}
-        <div className={`h-full border-r border-border flex flex-col ${
-          isMobileChatOpen ? "hidden md:flex" : "flex"
-        } w-full md:w-80 lg:w-96 shrink-0`}>
-          {activeSection === "streams" ? (
-            <ChatSidebar
-              activeChatId={activeChatId}
-              onSelectChat={handleSelectChat}
-              activeGroupId={activeGroupId}
-              onSelectGroup={handleSelectGroup}
-              groups={groups}
-              onCreateGroup={handleCreateGroup}
-              userId={session.user.id}
-            />
+        {/* Desktop sidebar nav */}
+        <div className="hidden lg:flex">
+          <NavIconBar active={activeSection} onNavigate={handleNavigate} />
+        </div>
+
+        {/* Left panel */}
+        <div className={`h-full w-full min-w-0 flex-shrink-0 border-r border-border lg:w-[380px] ${isMobileChatOpen ? "hidden lg:block" : "block"}`}>
+          {isStreamsSection ? (
+            showGroups ? (
+              <GroupSidebar
+                groups={groups}
+                activeGroupId={activeGroupId}
+                onSelectGroup={handleSelectGroup}
+                onCreateGroup={handleCreateGroup}
+                onBack={() => setShowGroups(false)}
+              />
+            ) : (
+              <ChatSidebar
+                threads={threads}
+                profiles={profiles}
+                activeChatId={activeChatId}
+                onSelectChat={setActiveChatId}
+                onStartChat={handleStartChat}
+                username={username}
+                onNavigate={handleNavigate}
+                onToggleGroups={handleToggleGroups}
+              />
+            )
           ) : (
             <SectionPanel
               section={activeSection}
-              userId={session.user.id}
-              onStartChat={(otherUserId) => {
-                setActiveSection("streams");
-                handleSelectChat(otherUserId);
-              }}
+              onBack={() => setActiveSection("streams")}
+              username={username}
+              currentUserId={currentUserId}
+              onStartChat={handleStartChat}
+              moments={moments}
+              onPostMoment={postMoment}
+              onDeleteMoment={deleteMoment}
+              onRecordView={recordView}
+              groups={groups}
+              onCreateGroup={handleCreateGroup}
+              onSelectGroup={handleSelectGroup}
               onStartCall={handleStartCall}
             />
           )}
         </div>
 
-        {/* Right Chat Panel */}
-        <div className={`h-full flex-1 flex flex-col min-w-0 ${
-          isMobileChatOpen ? "flex" : "hidden md:flex"
-        }`}>
-          {activeGroupId ? (
+        {/* Right panel */}
+        <div className={`h-full min-w-0 flex-1 ${isMobileChatOpen ? "block" : "hidden lg:block"}`}>
+          {isStreamsSection && activeGroupId && activeGroup ? (
             <GroupChatWindow
-              groupId={activeGroupId}
+              group={activeGroup}
               currentUserId={session.user.id}
-              onBack={() => setActiveGroupId(null)}
+              profiles={profiles}
+              onSendMessage={sendGroupMessage}
+              fetchMessages={fetchGroupMessages}
+              fetchMembers={fetchGroupMembers}
+              onAddMember={addMember}
+              onRemoveMember={removeMember}
               onDeleteGroup={handleDeleteGroup}
-              onStartGroupCall={(callType) => joinGroupCall(activeGroupId, callType)}
+              onStartCall={handleStartCall}
+              onStartGroupCall={(type) => handleStartGroupCall(activeGroup.id, activeGroup.name, type)}
+              onBack={() => setActiveGroupId(null)}
+              onDeleteMessage={deleteGroupMessage}
             />
-          ) : activeChatId ? (
+          ) : isStreamsSection && activeThread ? (
             <ChatWindow
-              threadId={activeChatId}
+              thread={activeThread}
               currentUserId={session.user.id}
+              onSendMessage={handleSendMessage}
+              profiles={profiles}
+              onDeleteMessage={deleteMessage}
+              onEditMessage={editMessage}
+              onTyping={sendTyping}
+              isOtherTyping={isOtherTyping}
               onBack={() => setActiveChatId(null)}
               onStartCall={handleStartCall}
             />
@@ -220,16 +283,10 @@ const Index = () => {
           )}
         </div>
 
-        {/* Mobile Bottom Navigation */}
-        <MobileBottomNav
-          activeSection={activeSection}
-          onSelectSection={(sec) => {
-            setActiveSection(sec);
-            setActiveChatId(null);
-            setActiveGroupId(null);
-          }}
-          hidden={isMobileChatOpen}
-        />
+        {/* Mobile bottom nav */}
+        {!isMobileChatOpen && (
+          <MobileBottomNav active={activeSection} onNavigate={handleNavigate} unreadCount={totalUnread} />
+        )}
       </div>
     </ChatThemeProvider>
   );
