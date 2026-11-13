@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 const CLEANUP_KEY = "buzz:last-storage-cleanup";
-const CLEANUP_INTERVAL_MS = 12 * 60 * 60 * 1000; // Har 12 ghante mein ek baar
+const CLEANUP_INTERVAL_MS = 12 * 60 * 60 * 1000; // Har 12 ghante mein ek baar check
 
 export async function runAutoCleanup(userId?: string) {
   try {
@@ -9,7 +9,7 @@ export async function runAutoCleanup(userId?: string) {
     const now = Date.now();
 
     if (lastRun && now - Number(lastRun) < CLEANUP_INTERVAL_MS) {
-      return; // Abhi 12 ghante nahi hue, skip karein
+      return; // Skip agar abhi 12 ghante nahi hue
     }
 
     localStorage.setItem(CLEANUP_KEY, now.toString());
@@ -32,7 +32,6 @@ export async function runAutoCleanup(userId?: string) {
         const filesToRemove: string[] = [];
         for (const m of expiredMoments) {
           if (m.image_url) {
-            // URL se storage filename nikaalna
             const parts = m.image_url.split("/moments/");
             if (parts[1]) filesToRemove.push(decodeURIComponent(parts[1]));
           }
@@ -44,7 +43,6 @@ export async function runAutoCleanup(userId?: string) {
       }
     }
   } catch (err) {
-    // Silent fail — app experience par koi effect nahi hoga
     console.warn("Storage auto-cleanup skipped:", err);
   }
 }
