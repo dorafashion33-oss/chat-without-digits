@@ -68,20 +68,27 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
   const fetchMessages = useCallback(async () => {
     if (!currentUserId) return;
 
-    // Offline: hydrate from local cache so the app fully works without internet
+    // 1. Read existing local cache so older purged messages stay forever on user's device
+    let localMessages: DbMessage[] = [];
+    let localProfiles: DbProfile[] = [];
+    try {
+      const cached = JSON.parse(localStorage.getItem(cacheKey(currentUserId)) || "null");
+      if (cached?.messages) localMessages = cached.messages;
+      if (cached?.profiles) localProfiles = cached.profiles;
+    } catch { /* ignore corrupt cache */ }
+
+    // Offline: hydrate completely from local cache
     if (typeof navigator !== "undefined" && !navigator.onLine) {
-      try {
-        const cached = JSON.parse(localStorage.getItem(cacheKey(currentUserId)) || "null");
-        if (cached?.messages && cached?.profiles) {
-          setProfiles(cached.profiles);
-          setThreads(buildThreads(cached.messages, cached.profiles));
-        }
-      } catch { /* ignore corrupt cache */ }
+      if (localMessages.length && localProfiles.length) {
+        setProfiles(localProfiles);
+        setThreads(buildThreads(localMessages, localProfiles));
+      }
       setLoading(false);
       return;
     }
 
-    const { data: messages } = await supabase
+    // 2. Fetch active server messages
+    const { data: serverMessages } = await supabase
       .from("messages")
       .select("*")
       .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
@@ -92,13 +99,28 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
       .select("*")
       .neq("user_id", currentUserId);
 
-    if (profs) setProfiles(profs);
-    if (messages && profs) {
-      setThreads(buildThreads(messages, profs));
+    const mergedProfiles = profs || localProfiles;
+    if (mergedProfiles.length) setProfiles(mergedProfiles);
+
+    // 3. WhatsApp Store-and-Relay: Merge local cached messages with server messages (dedup by message id)
+    const messageMap = new Map<string, DbMessage>();
+    for (const msg of localMessages) {
+      messageMap.set(msg.id, msg);
+    }
+    if (serverMessages) {
+      for (const msg of serverMessages) {
+        messageMap.set(msg.id, msg);
+      }
+    }
+
+    const mergedMessages = Array.from(messageMap.values());
+
+    if (mergedMessages.length && mergedProfiles.length) {
+      setThreads(buildThreads(mergedMessages, mergedProfiles));
       try {
         localStorage.setItem(
           cacheKey(currentUserId),
-          JSON.stringify({ messages: messages.slice(-500), profiles: profs })
+          JSON.stringify({ messages: mergedMessages.slice(-1000), profiles: mergedProfiles })
         );
       } catch { /* quota */ }
     }
@@ -236,7 +258,6 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
   const editMessage = useCallback(
     async (messageId: string, newText: string) => {
       if (!currentUserId || !newText.trim()) return;
-      // We update as sender
       await supabase.from("messages").update({ text: newText.trim() }).eq("id", messageId).eq("sender_id", currentUserId);
     },
     [currentUserId]
