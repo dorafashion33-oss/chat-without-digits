@@ -1,4 +1,5 @@
 import { syncPush } from "@/lib/push";
+import { runAutoCleanup } from "@/lib/autoCleanup";
 import { useState, useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,7 +47,12 @@ const Index = () => {
     groupCall.startGroupCall(groupId, gName, memberIds, type);
   }, [groupCall, fetchGroupMembers, currentUserId]);
 
-  useEffect(() => { if (currentUserId) syncPush(currentUserId); }, [currentUserId]);
+  useEffect(() => {
+    if (currentUserId) {
+      syncPush(currentUserId);
+      runAutoCleanup(currentUserId);
+    }
+  }, [currentUserId]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -135,7 +141,7 @@ const Index = () => {
     setActiveGroupId(null);
   }, [deleteGroup]);
 
-  // 10/10 Snappy Logo Animation on App Loading
+  // Snappy Logo Animation on App Loading
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
