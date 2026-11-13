@@ -12,6 +12,7 @@ import MessageForwardDialog from "./MessageForwardDialog";
 import type { DbProfile } from "@/hooks/useRealtimeMessages";
 import { useChatTheme } from "./ChatThemeProvider";
 import { getChatWallpaperStyle, isPhotoTheme } from "./ChatThemesPanel";
+import { compressImage } from "@/lib/imageCompress";
 
 interface ChatWindowProps {
   thread: ChatThread;
@@ -78,14 +79,19 @@ const ChatWindow = ({ thread, currentUserId, onSendMessage, onDeleteMessage, onE
 
     if (attachedFile) {
       try {
-        const ext = attachedFile.name.split(".").pop();
+        // Compress image to ~40KB WebP before upload (Zero storage cost)
+        const fileToUpload = attachedFile.type.startsWith("image/")
+          ? await compressImage(attachedFile)
+          : attachedFile;
+
+        const ext = fileToUpload.name.split(".").pop();
         const path = `${currentUserId}/${Date.now()}.${ext}`;
-        const { error: uploadError } = await supabase.storage.from("chat-media").upload(path, attachedFile);
+        const { error: uploadError } = await supabase.storage.from("chat-media").upload(path, fileToUpload);
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from("chat-media").getPublicUrl(path);
 
-        const isImg = attachedFile.type.startsWith("image/");
-        const isVid = attachedFile.type.startsWith("video/");
+        const isImg = fileToUpload.type.startsWith("image/");
+        const isVid = fileToUpload.type.startsWith("video/");
         const tag = isImg ? `[img]${publicUrl}[/img]` : isVid ? `[video]${publicUrl}[/video]` : `[file]${publicUrl}|${attachedFile.name}[/file]`;
         textToSend = textToSend ? `${tag}\n${textToSend}` : tag;
       } catch (err: any) {
