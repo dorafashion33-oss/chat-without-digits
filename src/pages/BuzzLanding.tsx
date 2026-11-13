@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import BuzzPublicPage, { publicPages } from "@/pages/BuzzPublicPage";
-import { ArrowDownToLine, ArrowRight, CheckCheck, Ellipsis, Image, LockKeyhole, MapPin, Menu, MessageCircle, Mic, Paperclip, Phone, Play, Search, ShieldCheck, Sparkles, Users, Video, X } from "lucide-react";
+import { ArrowDownToLine, ArrowRight, CheckCheck, Ellipsis, Image, LockKeyhole, MapPin, Menu, MessageCircle, Mic, Paperclip, Phone, Play, Rocket, Search, ShieldCheck, Sparkles, Users, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import AuthPage from "@/pages/AuthPage";
@@ -111,6 +111,131 @@ const MomentsPhone = () => (
   </div>
 );
 
+// Target: 25th March at 10:30 AM IST (UTC+5:30)
+const LAUNCH_TARGET = new Date("2027-03-25T10:30:00+05:30").getTime();
+
+const LaunchCountdownBar = ({ onClaim }: { onClaim: () => void }) => {
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+    isLive: boolean;
+  }>(() => {
+    const diff = LAUNCH_TARGET - Date.now();
+    if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, isLive: true };
+    return {
+      days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+      minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+      seconds: Math.floor((diff % (1000 * 60)) / 1000),
+      isLive: false,
+    };
+  });
+
+  useEffect(() => {
+    const tick = () => {
+      const diff = LAUNCH_TARGET - Date.now();
+      if (diff <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isLive: true });
+        return;
+      }
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((diff % (1000 * 60)) / 1000),
+        isLive: false,
+      });
+    };
+
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  if (timeLeft.isLive) {
+    return (
+      <aside aria-label="Official launch notice" className="gradient-brand relative z-50 text-white shadow-md select-none border-b border-white/10">
+        <div className="mx-auto flex min-h-[38px] max-w-[1160px] items-center justify-center gap-2 px-3 py-1.5 text-center text-xs sm:text-sm font-medium flex-wrap">
+          <span className="flex items-center gap-1.5 font-semibold tracking-wide">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            🎉 BUZZ IS OFFICIALLY LIVE!
+          </span>
+          <span className="hidden sm:inline opacity-70">·</span>
+          <span className="text-xs sm:text-sm opacity-95">Claim your unique @username before it's taken</span>
+          <button
+            onClick={onClaim}
+            className="ml-1 inline-flex items-center gap-1 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm px-3 py-0.5 text-xs font-bold text-white transition-all hover:scale-105 active:scale-95"
+          >
+            Claim Handle <ArrowRight className="h-3 w-3" />
+          </button>
+        </div>
+      </aside>
+    );
+  }
+
+  return (
+    <aside aria-label="Official launch countdown" className="gradient-brand relative z-50 text-white shadow-md select-none border-b border-white/10">
+      <div className="mx-auto flex min-h-[40px] max-w-[1160px] items-center justify-between gap-2 px-3 sm:px-5 py-1.5 flex-wrap sm:flex-nowrap">
+        
+        {/* Left: Badge & Title */}
+        <div className="flex items-center gap-2 text-xs font-semibold tracking-wide">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span>
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <Rocket className="h-3.5 w-3.5" />
+            <span>OFFICIAL LAUNCH</span>
+          </span>
+          <span className="hidden md:inline-block opacity-65 text-[11px] font-normal">
+            (25 March · 10:30 AM IST)
+          </span>
+        </div>
+
+        {/* Center: Countdown timer units */}
+        <div className="flex items-center gap-1 sm:gap-1.5 font-mono font-bold text-xs sm:text-sm mx-auto sm:mx-0">
+          <div className="flex items-center gap-0.5 rounded bg-black/30 px-1.5 py-0.5 backdrop-blur-sm">
+            <span>{timeLeft.days}</span>
+            <span className="text-[10px] font-sans font-normal opacity-75">d</span>
+          </div>
+          <span className="opacity-60">:</span>
+          <div className="flex items-center gap-0.5 rounded bg-black/30 px-1.5 py-0.5 backdrop-blur-sm">
+            <span>{pad(timeLeft.hours)}</span>
+            <span className="text-[10px] font-sans font-normal opacity-75">h</span>
+          </div>
+          <span className="opacity-60">:</span>
+          <div className="flex items-center gap-0.5 rounded bg-black/30 px-1.5 py-0.5 backdrop-blur-sm">
+            <span>{pad(timeLeft.minutes)}</span>
+            <span className="text-[10px] font-sans font-normal opacity-75">m</span>
+          </div>
+          <span className="opacity-60">:</span>
+          <div className="flex items-center gap-0.5 rounded bg-black/30 px-1.5 py-0.5 backdrop-blur-sm text-amber-200">
+            <span>{pad(timeLeft.seconds)}</span>
+            <span className="text-[10px] font-sans font-normal opacity-75">s</span>
+          </div>
+        </div>
+
+        {/* Right: CTA Button */}
+        <div className="hidden sm:flex items-center">
+          <button
+            onClick={onClaim}
+            className="inline-flex items-center gap-1.5 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm px-3 py-1 text-xs font-semibold text-white transition-all hover:scale-105 active:scale-95 shadow-sm"
+          >
+            Pre-register @handle <ArrowRight className="h-3 w-3" />
+          </button>
+        </div>
+
+      </div>
+    </aside>
+  );
+};
+
 const BuzzLanding = ({ page = "/" }: { page?: string }) => {
   const [authOpen, setAuthOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -120,6 +245,9 @@ const BuzzLanding = ({ page = "/" }: { page?: string }) => {
   return (
     <div id="top" className="min-h-screen bg-landing-canvas text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-landing-canvas/95 backdrop-blur">
+        {/* Sticky Launch Countdown Announcement Bar */}
+        <LaunchCountdownBar onClaim={openAuth} />
+
         <div className="mx-auto flex h-[76px] max-w-[1160px] items-center justify-between px-5">
           <Logo />
           <nav className="hidden items-center gap-7 lg:flex" aria-label="Main navigation">
