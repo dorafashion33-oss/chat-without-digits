@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Sparkles, Copy, Check, Link2, MessageCircle, Inbox, QrCode, Shield, Send, Users } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Sparkles, Copy, Check, Link2, MessageCircle, Inbox, QrCode, Shield, Send, Users, Download } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,7 @@ export default function NewFeatureSpotlight({ userId }: { userId: string }) {
   const [showQR, setShowQR] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedStatus, setCopiedStatus] = useState(false);
+  const qrRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase
@@ -70,6 +71,86 @@ export default function NewFeatureSpotlight({ userId }: { userId: string }) {
       }
     } catch {
       toast.error("Copy nahi ho paaya");
+    }
+  };
+
+  const downloadQR = () => {
+    try {
+      const svg = qrRef.current?.querySelector("svg");
+      if (!svg) {
+        toast.error("QR Code nahi mila");
+        return;
+      }
+
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(svgBlob);
+
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        // Card Size: 360 x 440 (Crisp high-res card)
+        canvas.width = 720;
+        canvas.height = 880;
+
+        // Clean white/cream background
+        ctx.fillStyle = "#FAF8F5";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Header gradient pill
+        const grad = ctx.createLinearGradient(0, 0, canvas.width, 0);
+        grad.addColorStop(0, "#8B5CF6");
+        grad.addColorStop(0.5, "#6366F1");
+        grad.addColorStop(1, "#EC4899");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, 140);
+
+        // Header Text
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 38px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("BUZZ GUEST CHAT", canvas.width / 2, 85);
+
+        // Subtitle pill
+        ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+        ctx.font = "24px sans-serif";
+        ctx.fillText("Scan to chat without app or login", canvas.width / 2, 120);
+
+        // QR Code Box (white card shadow look)
+        ctx.fillStyle = "#FFFFFF";
+        ctx.roundRect?.(110, 200, 500, 500, 24) || ctx.fillRect(110, 200, 500, 500);
+        ctx.fill();
+
+        // Draw QR
+        ctx.drawImage(img, 150, 240, 420, 420);
+
+        // Username Footer
+        ctx.fillStyle = "#1E1B4B";
+        ctx.font = "bold 34px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(`@${username || "user"}`, canvas.width / 2, 770);
+
+        ctx.fillStyle = "#6B7280";
+        ctx.font = "22px sans-serif";
+        ctx.fillText("chat-without-digits.lovable.app", canvas.width / 2, 815);
+
+        // Download trigger
+        const pngUrl = canvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = pngUrl;
+        a.download = `buzz-qr-${username || "guest"}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast.success("QR Code card download ho gaya! 📸");
+      };
+      img.src = url;
+    } catch {
+      toast.error("Download fail ho gaya, dobara try karein");
     }
   };
 
@@ -162,10 +243,20 @@ export default function NewFeatureSpotlight({ userId }: { userId: string }) {
               </button>
 
               {showQR && (
-                <div className="mt-3 flex flex-col items-center justify-center rounded-xl bg-white p-4 shadow-sm border border-border">
-                  <QRCodeSVG value={link} size={140} level="H" />
+                <div ref={qrRef} className="mt-3 flex flex-col items-center justify-center rounded-xl bg-white p-4 shadow-sm border border-border">
+                  <QRCodeSVG value={link} size={150} level="H" />
                   <p className="mt-2 font-mono text-xs font-bold text-gray-800">@{username}</p>
-                  <p className="text-[11px] text-gray-500">Camera se scan karke direct chat khulegi</p>
+                  <p className="text-[11px] text-gray-500 mb-3">Camera se scan karke direct chat khulegi</p>
+                  
+                  {/* Download QR Card Button */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={downloadQR}
+                    className="h-8 text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 w-full"
+                  >
+                    <Download className="mr-1.5 h-3.5 w-3.5" /> Download QR Card (PNG)
+                  </Button>
                 </div>
               )}
             </div>
