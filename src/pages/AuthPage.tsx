@@ -20,20 +20,23 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Accepts a username OR an email. Usernames are normalised so that stray
-  // spaces, dots, dashes and capitals never cause an "invalid" error.
   const normalizeUsername = (val: string) =>
     val.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
 
   const isEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
-
   const toEmail = (val: string) => (isEmail(val) ? val.trim().toLowerCase() : `${normalizeUsername(val)}@buzz.local`);
 
   const handleSubmit = async () => {
     const raw = username.trim();
     const trimmedUsername = isEmail(raw) ? raw.split("@")[0].toLowerCase() : normalizeUsername(raw);
-    if (!isEmail(raw) && trimmedUsername.length < 3) { setError("Username must be at least 3 characters (letters, numbers, underscore)"); return; }
-    if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
+    if (!isEmail(raw) && trimmedUsername.length < 3) {
+      setError("Username must be at least 3 characters (letters, numbers, underscore)");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -48,7 +51,7 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
         toast.success(`Welcome back, @${trimmedUsername}! 🎉`);
       } else {
         const { data, error: signupErr } = await supabase.auth.signUp({
-           email: toEmail(raw),
+          email: toEmail(raw),
           password,
           options: {
             data: { username: trimmedUsername, display_name: trimmedUsername },
@@ -56,7 +59,6 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
         });
         if (signupErr) throw signupErr;
         if (data.user) {
-          // Auto-confirm is enabled, so user is immediately signed in
           toast.success(`Account created! Welcome to Buzz, @${trimmedUsername}! 🚀`);
         }
       }
@@ -76,69 +78,84 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
   };
 
   return (
-    <div className={`flex w-full items-center justify-center bg-background p-6 ${embedded ? "min-h-[620px] rounded-lg" : "h-screen"}`}>
-      <div className="w-full max-w-sm animate-fade-in">
-        {/* Logo & Title */}
-        <div className="flex flex-col items-center text-center mb-8">
+    <div className={`flex w-full items-center justify-center bz-grid-paper p-6 ${embedded ? "min-h-[580px] rounded-2xl" : "min-h-screen"}`}>
+      <div className="w-full max-w-sm rounded-3xl border-4 border-[#0a0a0a] bg-white p-7 shadow-[0_10px_0_0_#0a0a0a] animate-fade-in">
+        {/* Logo & Header */}
+        <div className="flex flex-col items-center text-center mb-7">
           <div className="relative">
-            <img src={buzzLogo} alt="Buzz" className="h-20 w-20 rounded-3xl shadow-2xl glow-purple animate-scale-in object-cover" />
-            <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full gradient-brand shadow-md">
-              <Sparkles className="h-3.5 w-3.5 text-white" />
+            <img
+              src={buzzLogo}
+              alt="Buzz"
+              className="h-20 w-20 rounded-2xl border-2 border-[#0a0a0a] object-cover shadow-[0_4px_0_0_#0a0a0a]"
+            />
+            <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#0a0a0a] bg-[#FCE314] shadow-[0_2px_0_0_#0a0a0a]">
+              <Sparkles className="h-3.5 w-3.5 text-[#0a0a0a]" />
             </div>
           </div>
-          <h1 className="mt-5 text-2xl font-extrabold text-foreground flex items-center gap-2">
-            {isLogin ? "Welcome back to " : "Join "}<span className="gradient-brand-text">Buzz</span>
+          <h1 className="mt-4 text-2xl font-black text-[#0a0a0a] flex items-center gap-1.5 tracking-tight">
+            {isLogin ? "Log in to " : "Join "}
+            <span className="bz-squig">Buzz</span>
             <span className="text-xl" title="Made in India">🇮🇳</span>
           </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {isLogin ? "Sign in with your username" : "Create your unique identity"} · <span className="font-semibold text-primary">Made in India</span>
+          <p className="mt-1 text-xs font-mono font-bold text-[#5b5b55] uppercase tracking-wider">
+            {isLogin ? "Sign in with your @username" : "Claim your unique identity"} · Zero Digits
           </p>
         </div>
 
-        {/* Form */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 rounded-2xl border border-border bg-secondary/60 px-4 py-3.5 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-            <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+        {/* Inputs */}
+        <div className="space-y-3.5">
+          <div className="flex items-center gap-3 rounded-xl border-2 border-[#0a0a0a] bg-white px-3.5 py-3 shadow-[0_2px_0_0_#0a0a0a] transition-all focus-within:shadow-[0_4px_0_0_#0a0a0a] focus-within:bg-[#fffdf6]">
+            <User className="h-4 w-4 text-[#0a0a0a] flex-shrink-0" />
             <input
               type="text"
               value={username}
-              onChange={(e) => { setUsername(e.target.value); setError(""); }}
-              placeholder="Username"
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setError("");
+              }}
+              placeholder="Username or @handle"
+              className="flex-1 bg-transparent text-sm font-semibold text-[#0a0a0a] outline-none placeholder:text-[#0a0a0a]/40"
               autoFocus
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             />
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl border border-border bg-secondary/60 px-4 py-3.5 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-            <Lock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <div className="flex items-center gap-3 rounded-xl border-2 border-[#0a0a0a] bg-white px-3.5 py-3 shadow-[0_2px_0_0_#0a0a0a] transition-all focus-within:shadow-[0_4px_0_0_#0a0a0a] focus-within:bg-[#fffdf6]">
+            <Lock className="h-4 w-4 text-[#0a0a0a] flex-shrink-0" />
             <input
               type={showPassword ? "text" : "password"}
               value={password}
-              onChange={(e) => { setPassword(e.target.value); setError(""); }}
-              placeholder="Password"
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError("");
+              }}
+              placeholder="Password (min. 6 characters)"
+              className="flex-1 bg-transparent text-sm font-semibold text-[#0a0a0a] outline-none placeholder:text-[#0a0a0a]/40"
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             />
-            <button onClick={() => setShowPassword(!showPassword)} className="text-muted-foreground hover:text-foreground transition-colors">
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-[#0a0a0a]/60 hover:text-[#0a0a0a] transition-colors"
+            >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
 
           {error && (
-            <div className="rounded-xl bg-destructive/10 px-3 py-2">
-              <p className="text-sm text-destructive">{error}</p>
+            <div className="rounded-xl border-2 border-red-600 bg-red-100 px-3 py-2 text-xs font-bold text-red-900 shadow-[0_2px_0_0_#0a0a0a]">
+              {error}
             </div>
           )}
 
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl gradient-brand py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50 glow-purple"
+            className="bz-btn bz-btn-yellow w-full py-3.5 text-sm font-black uppercase tracking-wider"
           >
             {loading ? (
               <div className="flex items-center gap-2">
-                <div className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                <div className="h-4 w-4 rounded-full border-2 border-[#0a0a0a] border-t-transparent animate-spin" />
                 Please wait...
               </div>
             ) : (
@@ -150,13 +167,18 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
           </button>
         </div>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+        {/* Toggle Mode */}
+        <p className="mt-6 text-center text-xs font-bold text-[#5b5b55]">
+          {isLogin ? "Don't have a Buzz handle?" : "Already have an account?"}{" "}
           <button
-            onClick={() => { setIsLogin(!isLogin); setError(""); setPassword(""); }}
-            className="font-semibold gradient-brand-text hover:underline"
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setError("");
+              setPassword("");
+            }}
+            className="text-[#0a0a0a] underline underline-offset-4 hover:text-black font-extrabold"
           >
-            {isLogin ? "Sign Up" : "Log In"}
+            {isLogin ? "Claim @username" : "Sign In"}
           </button>
         </p>
       </div>
