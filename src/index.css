@@ -355,3 +355,127 @@
     will-change: auto !important;
   }
 }
+/* =========================================================
+   Buzz Neo-Editorial & Paper Brutalist Design System
+   (buzzmessaging.ai texture, ink borders & tactile styling)
+   ========================================================= */
+:root {
+  --bz-cream: #fffbec;
+  --bz-ink: #0a0a0a;
+  --bz-primary: #fce314;
+  --bz-muted: #5b5b55;
+  --bz-sky: #e2ecff;
+  --bz-mint: #dcf4e4;
+  --bz-lilac: #eee5ff;
+  --bz-peach: #ffe4cc;
+  --bz-y-soft: #fff6b8;
+}
+
+/* 28px Graph paper grid texture */
+.bz-grid-paper {
+  background-color: var(--bz-cream);
+  background-image: linear-gradient(#0a0a0a0e 1px, transparent 1px),
+                    linear-gradient(90deg, #0a0a0a0e 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Vintage diagonal hatch texture */
+.bz-hatch {
+  background: repeating-linear-gradient(-45deg, #f5efd9 0 10px, #fffbec 10px 20px);
+  border: 2px dashed rgba(10, 10, 10, 0.25);
+}
+
+/* Tactile Neo-Brutalist Card with hard drop shadow */
+.bz-card {
+  border: 2px solid var(--bz-ink);
+  box-shadow: 0 6px 0 -1px var(--bz-ink);
+  background: #ffffff;
+  border-radius: 16px;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+}
+
+.bz-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 0 -1px var(--bz-ink);
+}
+
+.bz-card-flat {
+  border: 2px solid var(--bz-ink);
+  background: #ffffff;
+  border-radius: 16px;
+}
+
+/* Tactile Pill Buttons with spring hover lift */
+.bz-btn {
+  border: 2px solid var(--bz-ink);
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  user-select: none;
+}
+
+.bz-btn:hover {
+  transform: translateY(-2px);
+}
+
+.bz-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 -1px var(--bz-ink) !important;
+}
+
+.bz-btn-yellow {
+  background: var(--bz-primary);
+  color: var(--bz-ink);
+  box-shadow: 0 5px 0 -1px var(--bz-ink);
+}
+
+.bz-btn-yellow:hover {
+  box-shadow: 0 8px 0 -1px var(--bz-ink);
+}
+
+.bz-btn-ink {
+  background: var(--bz-ink);
+  color: #ffffff;
+  box-shadow: 0 5px 0 -1px #444444;
+}
+
+.bz-btn-ink:hover {
+  box-shadow: 0 8px 0 -1px #222222;
+}
+
+.bz-btn-white {
+  background: #ffffff;
+  color: var(--bz-ink);
+  box-shadow: 0 5px 0 -1px var(--bz-ink);
+}
+
+.bz-btn-white:hover {
+  box-shadow: 0 8px 0 -1px var(--bz-ink);
+}
+
+/* Monospace Upper Label */
+.bz-label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bz-muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Squiggle underline for key words */
+.bz-squig {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='10' viewBox='0 0 40 10'%3E%3Cpath d='M0 5 Q5 0 10 5 T20 5 T30 5 T40 5' fill='none' stroke='%23FCE314' stroke-width='4'/%3E%3C/svg%3E") 0 100% / 40px 10px repeat-x;
+  padding-bottom: 6px;
+}
+
+.bz-squig-purple {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='10' viewBox='0 0 40 10'%3E%3Cpath d='M0 5 Q5 0 10 5 T20 5 T30 5 T40 5' fill='none' stroke='%238B5CF6' stroke-width='4'/%3E%3C/svg%3E") 0 100% / 40px 10px repeat-x;
+  padding-bottom: 6px;
+}
