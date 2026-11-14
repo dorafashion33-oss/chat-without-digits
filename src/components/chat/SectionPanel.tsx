@@ -1,6 +1,32 @@
 import UserProfileDialog from "./UserProfileDialog";
 import { enablePush, pushSupported } from "@/lib/push";
-import { Camera, Bell, Shield, HelpCircle, Moon, Sun, Globe, User, Lock, ArrowLeft, LogOut, Search, Users, Plus, Image, X, Phone, Video, Send, Eye, PlayCircle } from "lucide-react";
+import {
+  Camera,
+  Bell,
+  Shield,
+  HelpCircle,
+  Moon,
+  Sun,
+  Globe,
+  User,
+  Lock,
+  ArrowLeft,
+  LogOut,
+  Search,
+  Users,
+  Plus,
+  Image,
+  X,
+  Phone,
+  Video,
+  Send,
+  Eye,
+  PlayCircle,
+  Palette,
+  QrCode,
+  Check,
+  CheckCheck,
+} from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +37,6 @@ import type { Moment } from "@/hooks/useMoments";
 import type { Group } from "@/hooks/useGroups";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
 import ChatThemesPanel from "./ChatThemesPanel";
-import { Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -31,10 +56,34 @@ interface SectionPanelProps {
   onStartCall?: (userId: string, type: "voice" | "video") => void;
 }
 
-const SectionPanel = ({ section, onBack, username, currentUserId, onStartChat, moments, onPostMoment, onDeleteMoment, onRecordView, groups, onCreateGroup, onSelectGroup, onStartCall }: SectionPanelProps) => {
+const SectionPanel = ({
+  section,
+  onBack,
+  username,
+  currentUserId,
+  onStartChat,
+  moments,
+  onPostMoment,
+  onDeleteMoment,
+  onRecordView,
+  groups,
+  onCreateGroup,
+  onSelectGroup,
+  onStartCall,
+}: SectionPanelProps) => {
   switch (section) {
     case "moments":
-      return <MomentsPanel onBack={onBack} currentUserId={currentUserId} moments={moments} onPostMoment={onPostMoment} onDeleteMoment={onDeleteMoment} onRecordView={onRecordView} username={username} />;
+      return (
+        <MomentsPanel
+          onBack={onBack}
+          currentUserId={currentUserId}
+          moments={moments}
+          onPostMoment={onPostMoment}
+          onDeleteMoment={onDeleteMoment}
+          onRecordView={onRecordView}
+          username={username}
+        />
+      );
     case "connect":
       return <ConnectPanel onBack={onBack} onStartChat={onStartChat} onStartCall={onStartCall} />;
     case "discover":
@@ -68,9 +117,20 @@ const TEXT_STYLES: { label: string; className: string }[] = [
   { label: "Script", className: "text-xl font-serif italic" },
 ];
 
-const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDeleteMoment, onRecordView, username }: {
-  onBack?: () => void; currentUserId?: string; moments?: Moment[];
-  onPostMoment?: (text: string, imageFile?: File) => void; onDeleteMoment?: (id: string) => void;
+const MomentsPanel = ({
+  onBack,
+  currentUserId,
+  moments = [],
+  onPostMoment,
+  onDeleteMoment,
+  onRecordView,
+  username,
+}: {
+  onBack?: () => void;
+  currentUserId?: string;
+  moments?: Moment[];
+  onPostMoment?: (text: string, imageFile?: File) => void;
+  onDeleteMoment?: (id: string) => void;
   onRecordView?: (momentId: string) => void;
   username?: string;
 }) => {
@@ -109,530 +169,346 @@ const MomentsPanel = ({ onBack, currentUserId, moments = [], onPostMoment, onDel
       reader.onload = (ev) => setImagePreview(ev.target?.result as string);
       reader.readAsDataURL(file);
     }
-    e.target.value = "";
   };
 
   const handlePost = () => {
-    if (!momentText.trim() && !momentImage) return;
+    if (!momentText.trim() && !momentImage) {
+      toast.error("Please add text or an image/video");
+      return;
+    }
     onPostMoment?.(momentText, momentImage || undefined);
     setMomentText("");
     setMomentImage(null);
     setImagePreview(null);
     setShowCompose(false);
-    setSelectedBg(0);
-    setSelectedTextStyle(0);
+    toast.success("Moment posted! Active for 24 hours 🌟");
   };
 
-  const timeAgo = (iso: string) => {
-    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-    if (diff < 1) return "Just now";
-    if (diff < 60) return `${diff}m ago`;
-    return `${Math.floor(diff / 60)}h ago`;
-  };
-
-  // Viewing a moment fullscreen
-  // Record view when viewing someone else's moment
-  useEffect(() => {
-    if (viewingMoment && viewingMoment.user_id !== currentUserId) {
-      onRecordView?.(viewingMoment.id);
-    }
-  }, [viewingMoment?.id]);
-
-  if (viewingMoment) {
-
-    const isOwn = viewingMoment.user_id === currentUserId;
-    const viewers = viewingMoment.views || [];
-    const viewCount = viewingMoment.view_count || 0;
-
-    return (
-      <div className="flex h-full flex-col bg-black animate-fade-in">
-        <div className="flex items-center gap-3 px-4 py-3 bg-black/80 backdrop-blur-sm">
-          <button onClick={() => { setViewingMoment(null); setShowViewers(false); }} className="rounded-full p-1.5 hover:bg-white/10 transition-colors"><ArrowLeft className="h-5 w-5 text-white" /></button>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-white">{viewingMoment.profile?.display_name || viewingMoment.profile?.username || username}</p>
-            <p className="text-xs text-white/60">{timeAgo(viewingMoment.created_at)}</p>
-          </div>
-          {isOwn && onDeleteMoment && (
-            <button onClick={() => { onDeleteMoment(viewingMoment.id); setViewingMoment(null); }} className="rounded-full p-2 hover:bg-white/10 transition-colors">
-              <X className="h-4 w-4 text-white/70" />
-            </button>
-          )}
-        </div>
-        <div className="px-4 py-1">
-          <div className="h-0.5 rounded-full bg-white/20">
-            <div className="h-full w-full rounded-full bg-white/80 animate-[progress_5s_linear]" />
-          </div>
-        </div>
-
-        {/* Viewers panel (slide up) */}
-        {showViewers && isOwn ? (
-          <div className="flex-1 overflow-y-auto bg-gray-900/95 backdrop-blur-sm animate-fade-in">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4 text-white/70" />
-                <span className="text-sm font-medium text-white">{viewCount} views</span>
-              </div>
-              <button onClick={() => setShowViewers(false)} className="text-xs text-primary">Close</button>
-            </div>
-            {viewers.length === 0 ? (
-              <p className="text-center py-8 text-sm text-white/50">No views yet</p>
-            ) : (
-              <div className="px-2 py-2">
-                {viewers.map((v) => (
-                  <div key={v.viewer_id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl">
-                    {v.profile?.avatar_url ? (
-                      <img src={v.profile.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/30 text-white text-sm font-semibold">
-                        {(v.profile?.username || "U")[0]?.toUpperCase()}
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-sm font-medium text-white">{v.profile?.display_name || v.profile?.username || "Unknown"}</p>
-                      <p className="text-xs text-white/50">@{v.profile?.username || "unknown"}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-1 items-center justify-center p-4 relative">
-            {viewingMoment.image_url && (
-              viewingMoment.image_url.match(/\.(mp4|webm|mov|avi)(\?|$)/i) ? (
-                <video src={viewingMoment.image_url} controls autoPlay className="max-h-[65vh] rounded-2xl" />
-              ) : (
-                <img src={viewingMoment.image_url} alt="" className="max-h-[65vh] rounded-2xl object-contain" />
-              )
-            )}
-            {viewingMoment.text && (
-              <div className={viewingMoment.image_url ? "absolute bottom-8 left-0 right-0 px-6" : ""}>
-                <p className={`text-center ${viewingMoment.image_url ? "text-white text-lg font-medium drop-shadow-lg bg-black/50 rounded-xl p-4 backdrop-blur-sm" : "text-white text-2xl font-bold"}`}>
-                  {viewingMoment.text}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Bottom: view count for own moments */}
-        {isOwn && !showViewers && (
-          <button onClick={() => setShowViewers(true)} className="flex items-center justify-center gap-2 py-4 border-t border-white/10 hover:bg-white/5 transition-colors">
-            <Eye className="h-4 w-4 text-white/70" />
-            <span className="text-sm text-white/80 font-medium">{viewCount} {viewCount === 1 ? "view" : "views"}</span>
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  // Compose with stickers, text styles, backgrounds
-  if (showCompose) {
-    return (
-      <div className="flex h-full flex-col bg-chat-sidebar animate-fade-in">
-        <div className="flex items-center gap-2 border-b px-5 py-3.5">
-          <button onClick={() => { setShowCompose(false); setMomentImage(null); setImagePreview(null); setMomentText(""); setShowStickers(false); }} className="rounded-lg p-1 hover:bg-accent transition-colors"><ArrowLeft className="h-5 w-5" /></button>
-          <h1 className="text-lg font-bold text-foreground">New Moment</h1>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Preview area */}
-          {imagePreview ? (
-            <div className="relative">
-              {imagePreview.startsWith("video:") ? (
-                <video src={imagePreview.replace("video:", "")} controls className="w-full rounded-2xl max-h-64" />
-              ) : (
-                <img src={imagePreview} alt="Preview" className="w-full rounded-2xl object-cover max-h-64" />
-              )}
-              <button onClick={() => { setMomentImage(null); setImagePreview(null); }} className="absolute top-2 right-2 rounded-full bg-black/60 p-1.5 hover:bg-black/80 transition-colors">
-                <X className="h-4 w-4 text-white" />
-              </button>
-            </div>
-          ) : momentText.trim() ? (
-            <div className={`w-full rounded-2xl p-8 min-h-[180px] flex items-center justify-center ${BG_COLORS[selectedBg]}`}>
-              <p className={`text-white text-center ${TEXT_STYLES[selectedTextStyle].className}`}>{momentText}</p>
-            </div>
-          ) : (
-            <button onClick={() => fileRef.current?.click()} className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border p-10 text-muted-foreground hover:border-primary hover:text-primary transition-all">
-              <Image className="h-6 w-6" />
-              <span className="text-sm font-medium">Add Photo / Video</span>
-            </button>
-          )}
-          <input ref={fileRef} type="file" className="hidden" accept="image/*,video/*" onChange={handleImageSelect} />
-
-          {/* Text input */}
-          <textarea
-            value={momentText}
-            onChange={(e) => setMomentText(e.target.value)}
-            placeholder="What's on your mind? ✨"
-            className="w-full rounded-2xl bg-secondary p-4 text-sm outline-none placeholder:text-muted-foreground resize-none min-h-[80px] focus:ring-2 focus:ring-primary/20 transition-shadow"
-          />
-
-          {/* Background colors (only for text-only moments) */}
-          {!imagePreview && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">Background</p>
-              <div className="flex gap-2 flex-wrap">
-                {BG_COLORS.map((bg, i) => (
-                  <button key={i} onClick={() => setSelectedBg(i)} className={`h-8 w-8 rounded-full ${bg} transition-all ${selectedBg === i ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110" : "hover:scale-105"}`} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Text styles */}
-          <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2">Text Style</p>
-            <div className="flex gap-2 flex-wrap">
-              {TEXT_STYLES.map((style, i) => (
-                <button key={i} onClick={() => setSelectedTextStyle(i)} className={`px-3 py-1.5 rounded-xl text-xs transition-all ${selectedTextStyle === i ? "gradient-brand text-white shadow-sm" : "bg-secondary text-foreground hover:bg-accent"}`}>
-                  {style.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Stickers */}
-          <div>
-            <button onClick={() => setShowStickers(!showStickers)} className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1 hover:text-foreground transition-colors">
-              😊 Stickers {showStickers ? "▲" : "▼"}
-            </button>
-            {showStickers && (
-              <div className="grid grid-cols-6 gap-2 bg-secondary rounded-2xl p-3">
-                {STICKERS.map((s, i) => (
-                  <button key={i} onClick={() => setMomentText((prev) => prev + s)} className="text-2xl h-10 w-10 flex items-center justify-center rounded-xl hover:bg-accent transition-colors hover:scale-110">
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Action buttons row */}
-          <div className="flex gap-2">
-            <button onClick={() => { if (fileRef.current) { fileRef.current.accept = "image/*"; fileRef.current.click(); } }} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-secondary py-2.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
-              <Image className="h-4 w-4" /> Photo
-            </button>
-            <button onClick={() => { if (fileRef.current) { fileRef.current.accept = "video/*"; fileRef.current.click(); } }} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-secondary py-2.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
-              <Video className="h-4 w-4" /> Video
-            </button>
-            <button onClick={() => { if (fileRef.current) { fileRef.current.accept = "image/*"; fileRef.current.capture = "environment"; fileRef.current.click(); } }} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-secondary py-2.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
-              <Camera className="h-4 w-4" /> Camera
-            </button>
-          </div>
-
-          {/* Inline send button when media is attached */}
-          {(momentImage || momentText.trim()) && (
-            <button
-              onClick={handlePost}
-              className="w-full rounded-2xl gradient-brand py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md flex items-center justify-center gap-2 animate-fade-in"
-            >
-              <Send className="h-4 w-4" />
-              Send Moment ✨
-            </button>
-          )}
-        </div>
-        {/* Fixed Send/Post button at bottom - always visible */}
-        <div className="border-t px-4 py-3 bg-chat-sidebar">
-          <button
-            onClick={handlePost}
-            disabled={!momentText.trim() && !momentImage}
-            className="w-full rounded-2xl gradient-brand py-3.5 text-sm font-semibold text-white disabled:opacity-40 hover:opacity-90 transition-opacity shadow-sm flex items-center justify-center gap-2"
-          >
-            <Send className="h-4 w-4" />
-            Send Moment ✨
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // List
   return (
-    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
-      <div className="border-b px-5 py-3.5 gradient-brand">
+    <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
+      {/* Top Bar */}
+      <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-5 py-3.5 shadow-sm text-[#0a0a0a]">
         <div className="flex items-center gap-2">
-          {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-white/20 lg:hidden transition-colors"><ArrowLeft className="h-5 w-5 text-white" /></button>}
-          <h1 className="text-lg font-bold text-white">Moments</h1>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] lg:hidden"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          )}
+          <h1 className="text-lg font-black text-[#0a0a0a]">Moments 📸</h1>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-3 scrollbar-thin">
-        {/* My moment button */}
-        <button onClick={() => setShowCompose(true)} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60">
+
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 bz-grid-paper">
+        {/* My Moment Trigger */}
+        <div
+          onClick={() => setShowCompose(true)}
+          className="bz-card p-3.5 flex items-center gap-3 cursor-pointer hover:bg-[#FFF6B8]"
+        >
           <div className="relative">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary font-bold text-lg">
+            <div className="grid h-12 w-12 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#FCE314] font-black text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]">
               {username?.[0]?.toUpperCase() || "U"}
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full gradient-brand text-white shadow-sm">
-              <Plus className="h-3.5 w-3.5" />
+            <div className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border border-[#0a0a0a] bg-black text-white">
+              <Plus className="h-3 w-3" />
             </div>
           </div>
-          <div className="text-left">
-            <p className="text-sm font-semibold text-foreground">My Moment</p>
-            <p className="text-xs text-muted-foreground">
-              {myMoments.length > 0 ? `${myMoments.length} active · Tap to add` : "Tap to add · Disappears in 24h"}
+          <div>
+            <p className="text-xs font-black text-[#0a0a0a]">My Moment</p>
+            <p className="text-[11px] font-medium text-[#5b5b55]">
+              {myMoments.length > 0 ? `${myMoments.length} active · Tap to add` : "Disappears in 24h · Tap to add"}
             </p>
           </div>
-        </button>
+        </div>
 
-        {/* My active moments thumbnails */}
+        {/* My Active Moments Carousel */}
         {myMoments.length > 0 && (
-          <div className="flex gap-2 px-3 mt-2 overflow-x-auto scrollbar-thin">
+          <div className="flex gap-2 overflow-x-auto py-1">
             {myMoments.map((m) => (
-              <button key={m.id} onClick={() => setViewingMoment(m)} className="flex-shrink-0 w-16 h-20 rounded-xl overflow-hidden border-2 border-primary relative hover:scale-105 transition-transform">
-                {m.image_url ? <img src={m.image_url} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center bg-primary/15 text-[10px] text-center px-1 text-foreground">{m.text?.slice(0, 20)}</div>}
+              <button
+                key={m.id}
+                onClick={() => setViewingMoment(m)}
+                className="w-16 h-20 rounded-xl overflow-hidden border-2 border-[#0a0a0a] relative shrink-0 shadow-[0_2px_0_0_#0a0a0a] hover:scale-105 transition-transform"
+              >
+                {m.image_url ? (
+                  <img src={m.image_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center bg-[#FCE314] text-[10px] font-bold text-center px-1 text-[#0a0a0a]">
+                    {m.text?.slice(0, 18)}
+                  </div>
+                )}
               </button>
             ))}
           </div>
         )}
 
-        {/* Other users' moments */}
+        {/* Other Users' Moments */}
         {groupedByUser.size > 0 && (
-          <>
-            <p className="mt-5 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Recent</p>
+          <div>
+            <p className="bz-label mb-2 px-1">Recent Updates</p>
             {Array.from(groupedByUser.entries()).map(([userId, userMoments]) => {
               const latest = userMoments[0];
               const profile = latest.profile;
               return (
-                <button key={userId} onClick={() => setViewingMoment(latest)} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60 mt-1">
-                  <div className="h-14 w-14 rounded-full ring-2 ring-primary overflow-hidden flex-shrink-0">
+                <div
+                  key={userId}
+                  onClick={() => setViewingMoment(latest)}
+                  className="bz-card p-3 flex items-center gap-3 cursor-pointer hover:bg-white mb-2"
+                >
+                  <div className="h-11 w-11 rounded-xl border-2 border-[#0a0a0a] overflow-hidden shrink-0 shadow-[0_2px_0_0_#0a0a0a]">
                     {profile?.avatar_url ? (
                       <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="h-full w-full flex items-center justify-center bg-primary/15 text-primary font-bold text-lg">
-                        {(profile?.display_name || profile?.username || "U")[0]?.toUpperCase()}
+                      <div className="h-full w-full grid place-items-center bg-[#E2ECFF] font-black text-[#0a0a0a]">
+                        {profile?.display_name?.[0]?.toUpperCase() || "U"}
                       </div>
                     )}
                   </div>
-                  <div className="text-left">
-                    <p className="text-sm font-semibold text-foreground">{profile?.display_name || profile?.username}</p>
-                    <p className="text-xs text-muted-foreground">{timeAgo(latest.created_at)}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-black text-[#0a0a0a] truncate">
+                      {profile?.display_name || profile?.username}
+                    </p>
+                    <p className="text-[10px] font-mono text-[#5b5b55]">
+                      {new Date(latest.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </p>
                   </div>
-                </button>
+                </div>
               );
             })}
-          </>
-        )}
-
-        {otherMoments.length === 0 && myMoments.length === 0 && (
-          <div className="flex flex-col items-center py-12 text-muted-foreground">
-            <Camera className="h-12 w-12 mb-3 opacity-20" />
-            <p className="text-sm font-medium">No moments yet</p>
-            <p className="text-xs mt-1">Be the first to share! ✨</p>
           </div>
         )}
       </div>
+
+      {/* Compose Moment Modal */}
+      {showCompose && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bz-card max-w-sm w-full p-5 bg-white shadow-[0_10px_0_0_#0a0a0a]">
+            <div className="flex items-center justify-between border-b-2 border-[#0a0a0a] pb-3 mb-4">
+              <h2 className="text-sm font-black text-[#0a0a0a]">Create 24h Moment</h2>
+              <button
+                onClick={() => setShowCompose(false)}
+                className="grid h-6 w-6 place-items-center rounded-lg border border-[#0a0a0a] bg-white text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <textarea
+              value={momentText}
+              onChange={(e) => setMomentText(e.target.value)}
+              placeholder="What's happening? Share with friends..."
+              maxLength={280}
+              className="w-full h-24 p-3 rounded-xl border-2 border-[#0a0a0a] bg-[#fffbec] text-xs font-bold outline-none resize-none"
+            />
+
+            <input ref={fileRef} type="file" accept="image/*,video/*" onChange={handleImageSelect} className="hidden" />
+
+            {imagePreview && (
+              <div className="relative mt-2 rounded-xl border-2 border-[#0a0a0a] overflow-hidden h-28">
+                <img src={imagePreview} alt="" className="h-full w-full object-cover" />
+                <button
+                  onClick={() => {
+                    setMomentImage(null);
+                    setImagePreview(null);
+                  }}
+                  className="absolute top-1 right-1 grid h-5 w-5 place-items-center rounded-full bg-red-500 text-white text-[10px]"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="bz-btn bz-btn-white py-2 px-3 text-xs font-bold"
+              >
+                <Image className="h-3.5 w-3.5" /> Media
+              </button>
+              <button
+                onClick={handlePost}
+                className="bz-btn bz-btn-yellow flex-1 py-2 text-xs font-black uppercase"
+              >
+                Post Moment 🚀
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Viewing Moment Modal */}
+      {viewingMoment && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setViewingMoment(null)}
+        >
+          <div
+            className="bz-card max-w-sm w-full overflow-hidden bg-black text-white border-4 border-white shadow-[0_8px_0_0_#ffffff]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 flex items-center justify-between border-b border-white/20">
+              <span className="text-xs font-black">@{viewingMoment.profile?.username}</span>
+              <button onClick={() => setViewingMoment(null)} className="text-sm font-bold">✕</button>
+            </div>
+            {viewingMoment.image_url ? (
+              <img src={viewingMoment.image_url} alt="" className="w-full max-h-[350px] object-cover" />
+            ) : (
+              <div className="p-8 text-center text-sm font-bold bg-[#FCE314] text-[#0a0a0a] min-h-[220px] flex items-center justify-center">
+                {viewingMoment.text}
+              </div>
+            )}
+            {viewingMoment.text && viewingMoment.image_url && (
+              <p className="p-3 text-xs bg-black/80 text-white font-medium">{viewingMoment.text}</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-/* ─── Connect (Calls + History) ─── */
-interface CallHistoryItem {
-  id: string;
-  caller_id: string;
-  callee_id: string;
-  call_type: string;
-  status: string;
-  duration: number;
-  started_at: string;
-  ended_at: string | null;
-  profile?: DbProfile;
-}
-
-const ConnectPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => void; onStartChat?: (userId: string) => void; onStartCall?: (userId: string, type: "voice" | "video") => void }) => {
-  const [allUsers, setAllUsers] = useState<DbProfile[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+/* ─── Connect ─── */
+const ConnectPanel = ({
+  onBack,
+  onStartChat,
+  onStartCall,
+}: {
+  onBack?: () => void;
+  onStartChat?: (userId: string) => void;
+  onStartCall?: (userId: string, type: "voice" | "video") => void;
+}) => {
   const [tab, setTab] = useState<"contacts" | "history">("contacts");
-  const [historyFilter, setHistoryFilter] = useState<"all" | "missed" | "incoming" | "outgoing">("all");
-  const [callHistory, setCallHistory] = useState<CallHistoryItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [contacts, setContacts] = useState<DbProfile[]>([]);
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) setCurrentUserId(user.id);
-      const { data } = await supabase.from("profiles").select("*");
-      if (data) setAllUsers(data);
+      const { data } = await supabase.from("profiles").select("*").limit(30);
+      if (data) setContacts(data);
     })();
   }, []);
 
-  useEffect(() => {
-    if (!currentUserId) return;
-    (async () => {
-      const { data } = await supabase
-        .from("call_history")
-        .select("*")
-        .or(`caller_id.eq.${currentUserId},callee_id.eq.${currentUserId}`)
-        .order("started_at", { ascending: false })
-        .limit(50);
-      if (data) {
-        const enriched = data.map((c: any) => {
-          const otherId = c.caller_id === currentUserId ? c.callee_id : c.caller_id;
-          const profile = allUsers.find((u) => u.user_id === otherId);
-          return { ...c, profile };
-        });
-        setCallHistory(enriched);
-      }
-    })();
-  }, [currentUserId, allUsers]);
-
-  const filtered = allUsers
-    .filter((p) => p.user_id !== currentUserId)
-    .filter((p) => !searchQuery || p.username.toLowerCase().includes(searchQuery.toLowerCase()) || (p.display_name || "").toLowerCase().includes(searchQuery.toLowerCase()));
-
-  const colors = ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500", "bg-indigo-500", "bg-fuchsia-500"];
-
-  const formatCallDuration = (s: number) => {
-    if (s === 0) return "";
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
-  };
-
-  const getStatusIcon = (item: CallHistoryItem) => {
-    const isCaller = item.caller_id === currentUserId;
-    if (item.status === "missed") return { icon: "↗", color: "text-red-500", label: isCaller ? "Not answered" : "Missed" };
-    if (item.status === "rejected") return { icon: "↗", color: "text-red-500", label: "Declined" };
-    return { icon: isCaller ? "↗" : "↙", color: "text-online", label: formatCallDuration(item.duration) || "Answered" };
-  };
+  const filtered = contacts.filter((c) =>
+    (c.display_name || c.username).toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
-      <div className="border-b gradient-brand px-5 py-3.5">
+    <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
+      <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-5 py-3.5 shadow-sm text-[#0a0a0a]">
         <div className="flex items-center gap-2">
-          {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-white/20 lg:hidden transition-colors"><ArrowLeft className="h-5 w-5 text-white" /></button>}
-          <h1 className="text-lg font-bold text-white">Connect</h1>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] lg:hidden"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          )}
+          <h1 className="text-lg font-black text-[#0a0a0a]">Connect & Calls 📞</h1>
         </div>
       </div>
+
       {/* Tabs */}
-      <div className="flex border-b border-border">
-        <button onClick={() => setTab("contacts")} className={`flex-1 py-2.5 text-sm font-medium transition-colors ${tab === "contacts" ? "text-primary border-b-2 border-primary" : "text-muted-foreground"}`}>Contacts</button>
-        <button onClick={() => setTab("history")} className={`flex-1 py-2.5 text-sm font-medium transition-colors ${tab === "history" ? "text-primary border-b-2 border-primary" : "text-muted-foreground"}`}>Call History</button>
+      <div className="flex border-b-2 border-[#0a0a0a] bg-white p-1 gap-1">
+        <button
+          onClick={() => setTab("contacts")}
+          className={`flex-1 py-1.5 text-xs font-black rounded-lg border-2 transition-all ${
+            tab === "contacts"
+              ? "border-[#0a0a0a] bg-[#FCE314] text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]"
+              : "border-transparent text-[#5b5b55]"
+          }`}
+        >
+          Contacts
+        </button>
+        <button
+          onClick={() => setTab("history")}
+          className={`flex-1 py-1.5 text-xs font-black rounded-lg border-2 transition-all ${
+            tab === "history"
+              ? "border-[#0a0a0a] bg-[#FCE314] text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]"
+              : "border-transparent text-[#5b5b55]"
+          }`}
+        >
+          Call History
+        </button>
       </div>
-      <div className="px-4 py-3">
-        <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <input type="text" placeholder={tab === "contacts" ? "Search contacts..." : "Search call history..."} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
+
+      {/* Search */}
+      <div className="p-3 border-b-2 border-[#0a0a0a]/15 bg-white">
+        <div className="flex items-center gap-2 rounded-xl border-2 border-[#0a0a0a] bg-[#fffbec] px-3 py-2 shadow-[0_2px_0_0_#0a0a0a]">
+          <Search className="h-4 w-4 text-[#0a0a0a]/60" />
+          <input
+            type="text"
+            placeholder="Search contacts..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-transparent text-xs font-semibold outline-none placeholder:text-[#0a0a0a]/40"
+          />
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto scrollbar-thin px-2">
-        {tab === "contacts" ? (
-          <>
-            {filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                <Phone className="h-10 w-10 mb-2 opacity-20" />
-                <p className="text-sm">No contacts found</p>
+
+      {/* Contacts List */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 bz-grid-paper">
+        {filtered.map((user) => (
+          <div
+            key={user.user_id}
+            className="bz-card p-3 flex items-center justify-between hover:bg-[#FFF6B8]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] gradient-brand text-xs font-black text-white shadow-[0_2px_0_0_#0a0a0a]">
+                {(user.display_name || user.username).slice(0, 2).toUpperCase()}
               </div>
-            ) : (
-              filtered.map((user) => {
-                const ci = user.username.charCodeAt(0) % colors.length;
-                const name = user.display_name || user.username;
-                return (
-                  <div key={user.user_id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-accent/60 transition-colors">
-                    {user.avatar_url ? (
-                      <img src={user.avatar_url} alt={name} className="h-11 w-11 rounded-full object-cover flex-shrink-0" />
-                    ) : (
-                      <div className={`flex h-11 w-11 items-center justify-center rounded-full ${colors[ci]} text-xs font-semibold text-white flex-shrink-0`}>
-                        {name[0]?.toUpperCase()}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{name}</p>
-                      <p className="text-xs text-muted-foreground">@{user.username}</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => onStartCall?.(user.user_id, "voice")} className="rounded-full p-2 hover:bg-accent transition-colors" title="Voice call">
-                        <Phone className="h-4 w-4 text-online" />
-                      </button>
-                      <button onClick={() => onStartCall?.(user.user_id, "video")} className="rounded-full p-2 hover:bg-accent transition-colors" title="Video call">
-                        <Video className="h-4 w-4 text-primary" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </>
-        ) : (
-          <>
-            <div className="flex gap-1.5 px-2 pb-2 overflow-x-auto scrollbar-thin">
-              {(["all", "missed", "incoming", "outgoing"] as const).map((f) => (
-                <button key={f} onClick={() => setHistoryFilter(f)} className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${historyFilter === f ? "gradient-brand text-white" : "bg-secondary text-muted-foreground hover:bg-accent"}`}>
-                  {f}
-                </button>
-              ))}
+              <div>
+                <p className="text-xs font-black text-[#0a0a0a]">{user.display_name || user.username}</p>
+                <p className="text-[10px] font-mono text-[#5b5b55]">@{user.username}</p>
+              </div>
             </div>
-            {callHistory.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                <Phone className="h-10 w-10 mb-2 opacity-20" />
-                <p className="text-sm">No call history yet</p>
-              </div>
-            ) : (
-              callHistory
-                .filter((c) => {
-                  if (historyFilter === "missed" && c.status !== "missed") return false;
-                  if (historyFilter === "incoming" && c.callee_id !== currentUserId) return false;
-                  if (historyFilter === "outgoing" && c.caller_id !== currentUserId) return false;
-                  if (!searchQuery) return true;
-                  const name = c.profile?.display_name || c.profile?.username || "";
-                  return name.toLowerCase().includes(searchQuery.toLowerCase());
-                })
-                .map((item) => {
-                  const name = item.profile?.display_name || item.profile?.username || "Unknown";
-                  const statusInfo = getStatusIcon(item);
-                  const ci = (name.charCodeAt(0) || 0) % colors.length;
-                  const otherId = item.caller_id === currentUserId ? item.callee_id : item.caller_id;
-                  const callDate = new Date(item.started_at);
-                  const now = new Date();
-                  const isToday = callDate.toDateString() === now.toDateString();
-                  const timeStr = isToday
-                    ? callDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                    : callDate.toLocaleDateString([], { day: "numeric", month: "short" });
-                  return (
-                    <div key={item.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-accent/60 transition-colors">
-                      {item.profile?.avatar_url ? (
-                        <img src={item.profile.avatar_url} alt={name} className="h-11 w-11 rounded-full object-cover flex-shrink-0" />
-                      ) : (
-                        <div className={`flex h-11 w-11 items-center justify-center rounded-full ${colors[ci]} text-xs font-semibold text-white flex-shrink-0`}>
-                          {name[0]?.toUpperCase()}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate ${item.status === "missed" && item.callee_id === currentUserId ? "text-red-500" : "text-foreground"}`}>{name}</p>
-                        <div className="flex items-center gap-1.5 text-xs">
-                          <span className={statusInfo.color}>{statusInfo.icon}</span>
-                          <span className="text-muted-foreground">{item.call_type === "video" ? "Video" : "Voice"}</span>
-                          {statusInfo.label && <span className="text-muted-foreground">· {statusInfo.label}</span>}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-muted-foreground mr-1">{timeStr}</span>
-                        <button onClick={() => onStartCall?.(otherId, item.call_type as "voice" | "video")} className="rounded-full p-2 hover:bg-accent transition-colors">
-                          {item.call_type === "video" ? <Video className="h-4 w-4 text-primary" /> : <Phone className="h-4 w-4 text-online" />}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-            )}
-          </>
-        )}
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => onStartCall?.(user.user_id, "voice")}
+                className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white hover:bg-[#FCE314] shadow-[0_2px_0_0_#0a0a0a]"
+                title="Voice Call"
+              >
+                <Phone className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => onStartCall?.(user.user_id, "video")}
+                className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white hover:bg-[#FCE314] shadow-[0_2px_0_0_#0a0a0a]"
+                title="Video Call"
+              >
+                <Video className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
 };
 
 /* ─── Discover ─── */
-const DiscoverPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => void; onStartChat?: (userId: string) => void; onStartCall?: (userId: string, type: "voice" | "video") => void }) => {
+const DiscoverPanel = ({
+  onBack,
+  onStartChat,
+  onStartCall,
+}: {
+  onBack?: () => void;
+  onStartChat?: (userId: string) => void;
+  onStartCall?: (userId: string, type: "voice" | "video") => void;
+}) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<DbProfile[]>([]);
   const [me, setMe] = useState<DbProfile | null>(null);
   const [showQR, setShowQR] = useState(false);
-  const [scanning, setScanning] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [viewing, setViewing] = useState<DbProfile | null>(null);
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
       if (data) setMe(data);
@@ -641,436 +517,192 @@ const DiscoverPanel = ({ onBack, onStartChat, onStartCall }: { onBack?: () => vo
 
   useEffect(() => {
     const q = searchQuery.trim().replace(/^@/, "").replace(/[%_,()]/g, "");
-    if (q.length < 2) { setResults([]); return; }
+    if (q.length < 2) {
+      setResults([]);
+      return;
+    }
     const t = setTimeout(async () => {
-      const { data } = await supabase.from("profiles").select("*")
-        .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`).limit(20);
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`)
+        .limit(20);
       setResults((data || []).filter((p) => p.user_id !== me?.user_id));
     }, 300);
     return () => clearTimeout(t);
   }, [searchQuery, me?.user_id]);
 
-  const [viewing, setViewing] = useState<DbProfile | null>(null);
-  const openByUsername = async (raw: string) => {
-    const username = raw.replace(/^buzz:/i, "").replace(/^@/, "").trim();
-    const { data } = await supabase.from("profiles").select("*").eq("username", username).maybeSingle();
-    if (data && data.user_id !== me?.user_id) setViewing(data);
-    else toast.error("Buzz user nahi mila");
-  };
-
-  useEffect(() => {
-    if (!scanning) return;
-    let stream: MediaStream | null = null; let stop = false;
-    (async () => {
-      const BD = (window as any).BarcodeDetector;
-      if (!BD) { toast.error("Is browser mein QR scan support nahi hai"); setScanning(false); return; }
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        if (!videoRef.current) return;
-        videoRef.current.srcObject = stream; await videoRef.current.play();
-        const det = new BD({ formats: ["qr_code"] });
-        while (!stop) {
-          const codes = await det.detect(videoRef.current).catch(() => []);
-          if (codes[0]?.rawValue) { stop = true; setScanning(false); openByUsername(codes[0].rawValue); break; }
-          await new Promise((r) => setTimeout(r, 300));
-        }
-      } catch { toast.error("Camera permission chahiye"); setScanning(false); }
-    })();
-    return () => { stop = true; stream?.getTracks().forEach((t) => t.stop()); };
-  }, [scanning]);
-
-  const colors = ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-violet-500", "bg-indigo-500", "bg-fuchsia-500", "bg-cyan-500", "bg-blue-600"];
-  const hasQuery = searchQuery.trim().replace(/^@/, "").length >= 2;
-
   return (
-    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
-      <div className="border-b gradient-brand px-5 py-3.5">
+    <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
+      <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-5 py-3.5 shadow-sm text-[#0a0a0a]">
         <div className="flex items-center gap-2">
-          {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-white/20 lg:hidden transition-colors"><ArrowLeft className="h-5 w-5 text-white" /></button>}
-          <h1 className="text-lg font-bold text-white">Find people</h1>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] lg:hidden"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          )}
+          <h1 className="text-lg font-black text-[#0a0a0a]">Discover People 🔍</h1>
         </div>
       </div>
-      <div className="px-4 py-3 space-y-3">
-        <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-primary/20">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <input type="text" placeholder="Search @username or name..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
+
+      <div className="p-3 border-b-2 border-[#0a0a0a]/15 bg-white space-y-2">
+        <div className="flex items-center gap-2 rounded-xl border-2 border-[#0a0a0a] bg-[#fffbec] px-3 py-2 shadow-[0_2px_0_0_#0a0a0a]">
+          <Search className="h-4 w-4 text-[#0a0a0a]/60" />
+          <input
+            type="text"
+            placeholder="Search unique @username..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-transparent text-xs font-semibold outline-none"
+          />
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" onClick={() => setShowQR((v) => !v)}>My QR</Button>
-          <Button onClick={() => setScanning(true)}><Camera className="mr-1 h-4 w-4" />Scan QR</Button>
-        </div>
-        {showQR && me && (
-          <div className="flex flex-col items-center gap-2 rounded-xl border bg-card p-4">
-            <div className="rounded-lg bg-background p-3"><QRCodeSVG value={`buzz:@${me.username}`} size={168} /></div>
-            <p className="text-sm font-semibold text-foreground">@{me.username}</p>
-            <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard?.writeText(`@${me.username}`); toast.success("Username copied"); }}>Copy username</Button>
-          </div>
-        )}
-        {scanning && (
-          <div className="relative overflow-hidden rounded-xl border bg-card">
-            <video ref={videoRef} className="aspect-square w-full object-cover" muted playsInline />
-            <button onClick={() => setScanning(false)} className="absolute right-2 top-2 rounded-full bg-background/80 p-1.5"><X className="h-4 w-4" /></button>
-          </div>
-        )}
+
+        <button
+          onClick={() => setShowQR(!showQR)}
+          className="bz-btn bz-btn-white w-full py-1.5 text-xs font-bold"
+        >
+          <QrCode className="h-3.5 w-3.5" /> {showQR ? "Hide My QR" : "Show My Personal QR"}
+        </button>
       </div>
-      <div className="flex-1 overflow-y-auto scrollbar-thin">
-        {!hasQuery ? (
-          <div className="flex flex-col items-center justify-center px-8 py-12 text-center text-muted-foreground">
-            <Users className="h-10 w-10 mb-2 opacity-20" />
-            <p className="text-sm font-medium">Kisi ka @username search karein ya unka QR scan karein</p>
+
+      {showQR && me && (
+        <div className="p-4 border-b-2 border-[#0a0a0a] bg-[#E2ECFF] flex flex-col items-center">
+          <div className="rounded-2xl border-3 border-[#0a0a0a] bg-white p-4 shadow-[0_4px_0_0_#0a0a0a]">
+            <QRCodeSVG value={`https://chat-without-digits.lovable.app/c/${me.username}`} size={140} level="H" />
           </div>
-        ) : results.length === 0 ? (
-          <div className="py-12 text-center text-sm text-muted-foreground">No users found</div>
+          <p className="mt-2 font-mono text-xs font-black text-[#0a0a0a]">@{me.username}</p>
+        </div>
+      )}
+
+      {/* Results */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 bz-grid-paper">
+        {results.length === 0 ? (
+          <div className="p-8 text-center text-xs font-bold text-[#5b5b55]">
+            Search by typing at least 2 characters of a friend's @username.
+          </div>
         ) : (
-          <div className="px-2">
-            {results.map((user) => {
-              const ci = user.username.charCodeAt(0) % colors.length;
-              const initials = (user.display_name || user.username).split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
-              return (
-                <button key={user.user_id} onClick={() => setViewing(user)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-accent">
-                  {user.avatar_url ? <img src={user.avatar_url} alt={user.username} className="h-12 w-12 rounded-full object-cover" /> : <div className={`flex h-12 w-12 items-center justify-center rounded-full ${colors[ci]} text-sm font-semibold text-white`}>{initials}</div>}
-                  <div className="text-left flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{user.display_name || user.username}</p>
-                    <p className="text-xs text-muted-foreground">@{user.username}</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          results.map((profile) => (
+            <div
+              key={profile.user_id}
+              onClick={() => setViewing(profile)}
+              className="bz-card p-3 flex items-center justify-between cursor-pointer hover:bg-[#FFF6B8]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] gradient-brand text-xs font-black text-white shadow-[0_2px_0_0_#0a0a0a]">
+                  {(profile.display_name || profile.username).slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-xs font-black text-[#0a0a0a]">{profile.display_name || profile.username}</p>
+                  <p className="text-[10px] font-mono text-[#5b5b55]">@{profile.username}</p>
+                </div>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStartChat?.(profile.user_id);
+                }}
+                className="bz-btn bz-btn-yellow px-3 py-1 text-xs font-black"
+              >
+                Chat
+              </button>
+            </div>
+          ))
         )}
       </div>
-      <UserProfileDialog profile={viewing} onClose={() => setViewing(null)} onMessage={(id) => onStartChat?.(id)} onCall={onStartCall} />
+
+      {viewing && (
+        <UserProfileDialog
+          profile={viewing}
+          onClose={() => setViewing(null)}
+          onMessage={(uid) => onStartChat?.(uid)}
+          onCall={onStartCall}
+        />
+      )}
     </div>
   );
 };
 
 /* ─── Settings ─── */
-type SettingsView = "main" | "account" | "privacy" | "security" | "notifications" | "language" | "help" | "chat-themes";
-
-const useLocalToggle = (key: string, def = true) => {
-  const [v, setV] = useState<boolean>(() => {
-    const s = localStorage.getItem(key);
-    return s === null ? def : s === "1";
-  });
-  useEffect(() => { localStorage.setItem(key, v ? "1" : "0"); }, [key, v]);
-  return [v, setV] as const;
-};
-
-const useLocalString = (key: string, def: string) => {
-  const [v, setV] = useState<string>(() => localStorage.getItem(key) || def);
-  useEffect(() => { localStorage.setItem(key, v); }, [key, v]);
-  return [v, setV] as const;
-};
-
-const ToggleRow = ({ label, desc, checked, onChange }: { label: string; desc?: string; checked: boolean; onChange: (v: boolean) => void }) => (
-  <div className="flex items-center justify-between rounded-xl p-3 hover:bg-accent/60 transition-colors">
-    <div className="text-left flex-1 pr-3">
-      <p className="text-sm font-medium text-foreground">{label}</p>
-      {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
-    </div>
-    <button
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative h-6 w-11 rounded-full transition-colors ${checked ? "gradient-brand" : "bg-secondary border border-border"}`}
-    >
-      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-[22px]" : "translate-x-0.5"}`} />
-    </button>
-  </div>
-);
-
-const SubHeader = ({ title, onBack }: { title: string; onBack: () => void }) => (
-  <div className="border-b gradient-brand px-5 py-3.5 flex items-center gap-2">
-    <button onClick={onBack} className="rounded-lg p-1 hover:bg-white/20 transition-colors"><ArrowLeft className="h-5 w-5 text-white" /></button>
-    <h1 className="text-lg font-bold text-white">{title}</h1>
-  </div>
-);
-
-const AccountView = ({ onBack }: { onBack: () => void }) => {
-  const [profile, setProfile] = useState<{ username: string; display_name: string; about: string } | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase.from("profiles").select("username, display_name, about").eq("user_id", user.id).single();
-      if (data) setProfile({ username: data.username || "", display_name: data.display_name || "", about: data.about || "" });
-    })();
-  }, []);
-
-  const save = async () => {
-    if (!profile) return;
-    setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { error } = await supabase.from("profiles").update({ display_name: profile.display_name, about: profile.about }).eq("user_id", user.id);
-      if (error) toast.error(error.message); else toast.success("Account updated");
-    }
-    setSaving(false);
-  };
-
-  return (
-    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
-      <SubHeader title="Account info" onBack={onBack} />
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {!profile ? <p className="text-sm text-muted-foreground">Loading...</p> : (
-          <>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Username</label>
-              <input value={profile.username} disabled className="mt-1 w-full rounded-xl bg-secondary/60 px-3 py-2.5 text-sm text-muted-foreground" />
-              <p className="text-[10px] text-muted-foreground mt-1">Username cannot be changed</p>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Display name</label>
-              <input value={profile.display_name} onChange={(e) => setProfile({ ...profile, display_name: e.target.value })} className="mt-1 w-full rounded-xl bg-secondary px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">About</label>
-              <textarea value={profile.about} onChange={(e) => setProfile({ ...profile, about: e.target.value })} rows={3} className="mt-1 w-full rounded-xl bg-secondary px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
-            </div>
-            <button onClick={save} disabled={saving} className="w-full rounded-xl gradient-brand py-3 text-sm font-semibold text-white disabled:opacity-50">
-              {saving ? "Saving..." : "Save changes"}
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const PrivacyView = ({ onBack }: { onBack: () => void }) => {
-  const [lastSeen, setLastSeen] = useLocalToggle("buzz-privacy-last-seen", true);
-  const [readReceipts, setReadReceipts] = useLocalToggle("buzz-privacy-read-receipts", true);
-  const [typing, setTyping] = useLocalToggle("buzz-privacy-typing", true);
-  const [profilePhoto, setProfilePhoto] = useLocalToggle("buzz-privacy-profile-photo", true);
-  return (
-    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
-      <SubHeader title="Privacy" onBack={onBack} />
-      <div className="flex-1 overflow-y-auto p-3 space-y-1">
-        <ToggleRow label="Show last seen" desc="Let others see when you were last active" checked={lastSeen} onChange={setLastSeen} />
-        <ToggleRow label="Read receipts" desc="Show blue checks when you read messages" checked={readReceipts} onChange={setReadReceipts} />
-        <ToggleRow label="Typing indicator" desc="Show when you're typing" checked={typing} onChange={setTyping} />
-        <ToggleRow label="Profile photo visible" desc="Everyone can see your profile photo" checked={profilePhoto} onChange={setProfilePhoto} />
-      </div>
-    </div>
-  );
-};
-
-const SecurityView = ({ onBack }: { onBack: () => void }) => {
-  const [pwd, setPwd] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [appLock, setAppLock] = useLocalToggle("buzz-app-lock", false);
-  const [twoStep, setTwoStep] = useLocalToggle("buzz-two-step", false);
-
-  const changePassword = async () => {
-    if (pwd.length < 6) { toast.error("Password must be at least 6 characters"); return; }
-    if (pwd !== confirm) { toast.error("Passwords don't match"); return; }
-    setSaving(true);
-    const { error } = await supabase.auth.updateUser({ password: pwd });
-    if (error) toast.error(error.message); else { toast.success("Password updated"); setPwd(""); setConfirm(""); }
-    setSaving(false);
-  };
-
-  return (
-    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
-      <SubHeader title="Security" onBack={onBack} />
-      <div className="flex-1 overflow-y-auto p-3 space-y-4">
-        <div className="space-y-1">
-          <ToggleRow label="App lock" desc="Require PIN/biometric to open Buzz" checked={appLock} onChange={setAppLock} />
-          <ToggleRow label="Two-step verification" desc="Extra security on sign-in" checked={twoStep} onChange={setTwoStep} />
-        </div>
-        <div className="rounded-2xl bg-accent/40 p-4 space-y-3">
-          <p className="text-sm font-semibold text-foreground">Change password</p>
-          <input type="password" placeholder="New password" value={pwd} onChange={(e) => setPwd(e.target.value)} className="w-full rounded-xl bg-secondary px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
-          <input type="password" placeholder="Confirm password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="w-full rounded-xl bg-secondary px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
-          <button onClick={changePassword} disabled={saving} className="w-full rounded-xl gradient-brand py-2.5 text-sm font-semibold text-white disabled:opacity-50">
-            {saving ? "Updating..." : "Update password"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const NotificationsView = ({ onBack }: { onBack: () => void }) => {
-  const [messages, setMessages] = useLocalToggle("buzz-notif-messages", true);
-  const [groups, setGroups] = useLocalToggle("buzz-notif-groups", true);
-  const [calls, setCalls] = useLocalToggle("buzz-notif-calls", true);
-  const [sound, setSound] = useLocalToggle("buzz-notif-sound", true);
-  const [vibrate, setVibrate] = useLocalToggle("buzz-notif-vibrate", true);
-  const [preview, setPreview] = useLocalToggle("buzz-notif-preview", true);
-
-  const requestBrowser = async () => {
-    if (!pushSupported()) { toast.error("Not supported on this device — iPhone par pehle Buzz ko Home Screen par install karein"); return; }
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) return;
-    const ok = await enablePush(data.user.id);
-    if (ok) toast.success("Notifications on — app band hone par bhi messages aur calls ki ring aayegi");
-    else toast.error("Permission denied");
-  };
-
-  return (
-    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
-      <SubHeader title="Notifications" onBack={onBack} />
-      <div className="flex-1 overflow-y-auto p-3 space-y-1">
-        <button onClick={requestBrowser} className="w-full rounded-xl gradient-brand py-2.5 text-sm font-semibold text-white mb-3">
-          Enable browser notifications
-        </button>
-        <ToggleRow label="Message notifications" checked={messages} onChange={setMessages} />
-        <ToggleRow label="Group notifications" checked={groups} onChange={setGroups} />
-        <ToggleRow label="Call notifications" checked={calls} onChange={setCalls} />
-        <ToggleRow label="Sound" checked={sound} onChange={setSound} />
-        <ToggleRow label="Vibrate" checked={vibrate} onChange={setVibrate} />
-        <ToggleRow label="Show message preview" checked={preview} onChange={setPreview} />
-      </div>
-    </div>
-  );
-};
-
-const LANGUAGES = [
-  { code: "en", label: "English" }, { code: "hi", label: "हिन्दी (Hindi)" },
-  { code: "es", label: "Español" }, { code: "fr", label: "Français" },
-  { code: "de", label: "Deutsch" }, { code: "ar", label: "العربية" },
-  { code: "pt", label: "Português" }, { code: "zh", label: "中文" }, { code: "ja", label: "日本語" },
-];
-
-const LanguageView = ({ onBack }: { onBack: () => void }) => {
-  const [lang, setLang] = useLocalString("buzz-language", "en");
-  return (
-    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
-      <SubHeader title="Language" onBack={onBack} />
-      <div className="flex-1 overflow-y-auto p-3">
-        {LANGUAGES.map((l) => (
-          <button key={l.code} onClick={() => { setLang(l.code); toast.success(`Language: ${l.label}`); }} className={`flex w-full items-center justify-between rounded-xl p-3 transition-colors ${lang === l.code ? "bg-primary/10" : "hover:bg-accent/60"}`}>
-            <span className="text-sm text-foreground">{l.label}</span>
-            {lang === l.code && <span className="text-primary text-lg">✓</span>}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const HelpView = ({ onBack }: { onBack: () => void }) => {
-  const [open, setOpen] = useState<number | null>(null);
-  const faqs = [
-    { q: "How do I add a contact?", a: "Open the Discover tab and search by username. Tap any user to start chatting instantly." },
-    { q: "Are my messages encrypted?", a: "Yes. Buzz uses end-to-end encryption for all 1-on-1 chats. Only you and the recipient can read messages." },
-    { q: "How do Moments work?", a: "Moments are short posts that disappear after 24 hours. Only your contacts can see them." },
-    { q: "How do I make a group call?", a: "Open any group chat and tap the phone or video icon in the header. Buzz supports up to 50 people." },
-    { q: "How do I change my username?", a: "Usernames are permanent to protect your identity. You can change your display name in Account info." },
-    { q: "How do I delete my account?", a: "Contact support@buzz.app and we'll process your request within 24 hours." },
-  ];
-  return (
-    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
-      <SubHeader title="Help" onBack={onBack} />
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
-        {faqs.map((f, i) => (
-          <div key={i} className="rounded-xl bg-accent/40 overflow-hidden">
-            <button onClick={() => setOpen(open === i ? null : i)} className="flex w-full items-center justify-between p-3 text-left">
-              <span className="text-sm font-medium text-foreground">{f.q}</span>
-              <span className="text-muted-foreground">{open === i ? "−" : "+"}</span>
-            </button>
-            {open === i && <p className="px-3 pb-3 text-sm text-muted-foreground">{f.a}</p>}
-          </div>
-        ))}
-        <div className="rounded-xl gradient-brand p-4 text-white mt-4">
-          <p className="text-sm font-semibold mb-1">Need more help?</p>
-          <p className="text-xs opacity-90 mb-3">We reply within 24 hours</p>
-          <a href="mailto:support@buzz.app" className="inline-block rounded-lg bg-white/20 px-3 py-1.5 text-xs font-medium hover:bg-white/30 transition-colors">Contact support</a>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
   const { theme, setTheme } = useTheme();
-  const [view, setView] = useState<SettingsView>("main");
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     toast.success("Logged out successfully");
   };
 
-  if (view === "account") return <AccountView onBack={() => setView("main")} />;
-  if (view === "privacy") return <PrivacyView onBack={() => setView("main")} />;
-  if (view === "security") return <SecurityView onBack={() => setView("main")} />;
-  if (view === "notifications") return <NotificationsView onBack={() => setView("main")} />;
-  if (view === "language") return <LanguageView onBack={() => setView("main")} />;
-  if (view === "help") return <HelpView onBack={() => setView("main")} />;
-  if (view === "chat-themes") return <ChatThemesPanel onBack={() => setView("main")} />;
-
-  const settingGroups: { title: string; items: { icon: typeof User; label: string; desc: string; view: SettingsView }[] }[] = [
-    { title: "Account", items: [
-      { icon: User, label: "Account info", desc: "Username, display name, about", view: "account" },
-      { icon: Lock, label: "Privacy", desc: "Last seen, read receipts, typing", view: "privacy" },
-      { icon: Shield, label: "Security", desc: "Password, app lock, 2-step", view: "security" },
-    ]},
-    { title: "Preferences", items: [
-      { icon: Palette, label: "Chat Themes", desc: "Buzz Theme + 15 wallpapers", view: "chat-themes" },
-      { icon: Bell, label: "Notifications", desc: "Message, group, call tones", view: "notifications" },
-      { icon: Globe, label: "Language", desc: "Choose your language", view: "language" },
-      { icon: HelpCircle, label: "Help", desc: "FAQs, contact us", view: "help" },
-    ]},
-  ];
-
   return (
-    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
-      <div className="border-b gradient-brand px-5 py-3.5">
+    <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
+      <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-5 py-3.5 shadow-sm text-[#0a0a0a]">
         <div className="flex items-center gap-2">
-          {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-white/20 lg:hidden transition-colors"><ArrowLeft className="h-5 w-5 text-white" /></button>}
-          <h1 className="text-lg font-bold text-white">Settings</h1>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] lg:hidden"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          )}
+          <h1 className="text-lg font-black text-[#0a0a0a]">Settings ⚙️</h1>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto scrollbar-thin">
-        <div className="border-b px-4 py-3">
-          <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60">
-            {theme === "dark" ? <Sun className="h-5 w-5 text-amber-400" /> : <Moon className="h-5 w-5 text-primary" />}
-            <div className="text-left">
-              <p className="text-sm font-semibold text-foreground">App appearance</p>
-              <p className="text-xs text-muted-foreground">{theme === "dark" ? "Switch to light" : "Switch to dark"}</p>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bz-grid-paper">
+        {/* Appearance Card */}
+        <div
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="bz-card p-4 flex items-center justify-between cursor-pointer hover:bg-white"
+        >
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#FCE314] shadow-[0_2px_0_0_#0a0a0a]">
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </div>
-          </button>
-          <a href="/guests" className="mt-1 flex w-full items-center gap-3 rounded-xl p-3 transition-colors hover:bg-accent/60">
-            <Globe className="h-5 w-5 text-primary" />
-            <div className="text-left">
-              <p className="text-sm font-semibold text-foreground">Guest chat link</p>
-              <p className="text-xs text-muted-foreground">Anyone can message you without login</p>
+            <div>
+              <p className="text-xs font-black text-[#0a0a0a]">Theme Mode</p>
+              <p className="text-[11px] text-[#5b5b55]">{theme === "dark" ? "Dark Active" : "Light Active"}</p>
             </div>
-          </a>
-        </div>
-        {settingGroups.map((group) => (
-          <div key={group.title} className="border-b px-4 py-2">
-            <p className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">{group.title}</p>
-            {group.items.map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <Button variant="ghost" key={i} onClick={() => setView(item.view)} className="flex h-auto w-full items-center justify-start gap-3 whitespace-normal rounded-lg p-3 transition-colors hover:bg-accent/60">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                    <Icon className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="text-left flex-1">
-                    <p className="text-sm font-medium text-foreground">{item.label}</p>
-                    <p className="text-xs text-muted-foreground">{item.desc}</p>
-                  </div>
-                  <span className="text-muted-foreground">›</span>
-                </Button>
-              );
-            })}
           </div>
-        ))}
-        <div className="px-4 py-3">
-          <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl p-3 text-destructive transition-colors hover:bg-destructive/10">
-            <LogOut className="h-5 w-5" />
-            <span className="text-sm font-semibold">Log Out</span>
-          </button>
+          <span className="bz-btn bz-btn-white px-3 py-1 text-xs font-bold">Toggle</span>
         </div>
-        <div className="flex flex-col items-center py-6 text-muted-foreground/50">
-          <img src={buzzLogo} alt="Buzz" className="h-8 w-8 rounded-lg object-cover opacity-40 mb-1" />
-          <p className="text-[10px]">Buzz v1.0 · 2026</p>
+
+        {/* Guest Chat shortcut */}
+        <a href="/guests" className="bz-card p-4 flex items-center justify-between hover:bg-white block">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#E2ECFF] shadow-[0_2px_0_0_#0a0a0a]">
+              <Globe className="h-5 w-5 text-blue-700" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-[#0a0a0a]">Guest Inbox</p>
+              <p className="text-[11px] text-[#5b5b55]">Secret confessions & anonymous chats</p>
+            </div>
+          </div>
+          <span className="text-lg font-black">›</span>
+        </a>
+
+        {/* Privacy Note */}
+        <div className="rounded-2xl border-2 border-[#0a0a0a] bg-[#DCF4E4] p-4 shadow-[0_3px_0_0_#0a0a0a]">
+          <div className="flex items-center gap-2 mb-1">
+            <Shield className="h-4 w-4 text-emerald-800" />
+            <p className="text-xs font-black text-emerald-900">Zero Phone Number Guarantee</p>
+          </div>
+          <p className="text-[11px] text-[#2d5a3e] leading-relaxed">
+            Buzz never collects, shares, or asks for your phone number. Your chats belong exclusively to you.
+          </p>
+        </div>
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="bz-btn bz-btn-ink w-full py-3 text-xs font-black uppercase text-red-300 hover:text-red-100"
+        >
+          <LogOut className="h-4 w-4" /> Log Out of Buzz
+        </button>
+
+        <div className="pt-6 text-center text-[10px] font-mono text-[#5b5b55] font-bold">
+          Buzz Messaging · Made in India 🇮🇳
         </div>
       </div>
     </div>
@@ -1090,13 +722,17 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
     if (!file) return;
     setUploading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
       const fileExt = file.name.split(".").pop();
       const filePath = `${user.id}/avatar.${fileExt}`;
       const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(filePath);
       const urlWithCache = `${publicUrl}?t=${Date.now()}`;
       await supabase.from("profiles").update({ avatar_url: urlWithCache }).eq("user_id", user.id);
       setAvatarUrl(urlWithCache);
@@ -1106,11 +742,12 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
     } finally {
       setUploading(false);
     }
-    e.target.value = "";
   };
 
   const handleSaveAbout = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (user) {
       await supabase.from("profiles").update({ about }).eq("user_id", user.id);
       toast.success("About updated!");
@@ -1120,7 +757,9 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase.from("profiles").select("avatar_url, about").eq("user_id", user.id).single();
         if (data?.avatar_url) setAvatarUrl(data.avatar_url);
@@ -1130,50 +769,74 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
   }, []);
 
   return (
-    <div className="flex h-full flex-col bg-chat-sidebar pb-16 lg:pb-0 animate-fade-in">
-      <div className="border-b gradient-brand px-5 py-3.5">
+    <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
+      <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-5 py-3.5 shadow-sm text-[#0a0a0a]">
         <div className="flex items-center gap-2">
-          {onBack && <button onClick={onBack} className="rounded-lg p-1 hover:bg-white/20 lg:hidden transition-colors"><ArrowLeft className="h-5 w-5 text-white" /></button>}
-          <h1 className="text-lg font-bold text-white">Profile</h1>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] lg:hidden"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          )}
+          <h1 className="text-lg font-black text-[#0a0a0a]">My Profile 👤</h1>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto scrollbar-thin">
-        <div className="flex flex-col items-center py-8 px-4">
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bz-grid-paper">
+        {/* Avatar Card */}
+        <div className="bz-card p-6 flex flex-col items-center text-center shadow-[0_6px_0_0_#0a0a0a]">
           <div className="relative">
             {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" className="h-28 w-28 rounded-full object-cover shadow-lg ring-4 ring-primary/20" />
+              <img
+                src={avatarUrl}
+                alt="Avatar"
+                className="h-24 w-24 rounded-2xl border-3 border-[#0a0a0a] object-cover shadow-[0_4px_0_0_#0a0a0a]"
+              />
             ) : (
-              <div className="flex h-28 w-28 items-center justify-center rounded-full gradient-brand text-4xl font-bold text-white shadow-lg glow-purple">
+              <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-3 border-[#0a0a0a] gradient-brand text-3xl font-black text-white shadow-[0_4px_0_0_#0a0a0a]">
                 {username?.[0]?.toUpperCase() || "U"}
               </div>
             )}
-            <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="absolute bottom-1 right-1 flex h-9 w-9 items-center justify-center rounded-full gradient-brand text-white shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-[#FCE314] text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]"
+            >
               <Camera className="h-4 w-4" />
             </button>
             <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} />
           </div>
-          {uploading && <p className="mt-2 text-xs text-primary animate-pulse">Uploading...</p>}
-          <h2 className="mt-4 text-xl font-bold text-foreground">{username || "User"}</h2>
-          <p className="text-sm text-muted-foreground">@{username || "user"}</p>
+
+          <h2 className="mt-4 text-lg font-black text-[#0a0a0a]">@{username || "user"}</h2>
+          <span className="mt-1 inline-block rounded-full border border-[#0a0a0a] bg-[#DCF4E4] px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
+            Verified Buzz Handle 🇮🇳
+          </span>
         </div>
-        <div className="px-5 space-y-4">
-          <div className="rounded-2xl bg-accent/40 p-4">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-xs font-medium text-muted-foreground">About</p>
-              <button onClick={() => editingAbout ? handleSaveAbout() : setEditingAbout(true)} className="text-xs text-primary font-medium hover:underline">
-                {editingAbout ? "Save" : "Edit"}
-              </button>
-            </div>
-            {editingAbout ? (
-              <input value={about} onChange={(e) => setAbout(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSaveAbout()} className="w-full bg-transparent text-sm text-foreground outline-none border-b border-primary pb-1" autoFocus />
-            ) : (
-              <p className="text-sm text-foreground">{about}</p>
-            )}
+
+        {/* Bio Card */}
+        <div className="bz-card p-4 shadow-[0_3px_0_0_#0a0a0a]">
+          <div className="flex items-center justify-between mb-2">
+            <span className="bz-label">About / Bio</span>
+            <button
+              onClick={() => (editingAbout ? handleSaveAbout() : setEditingAbout(true))}
+              className="text-xs font-extrabold text-[#0a0a0a] underline"
+            >
+              {editingAbout ? "Save" : "Edit"}
+            </button>
           </div>
-          <div className="rounded-2xl bg-accent/40 p-4">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Username</p>
-            <p className="text-sm font-medium text-foreground">@{username || "user"}</p>
-          </div>
+          {editingAbout ? (
+            <input
+              value={about}
+              onChange={(e) => setAbout(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveAbout()}
+              className="w-full rounded-lg border-2 border-[#0a0a0a] bg-[#fffbec] p-2 text-xs font-bold outline-none"
+              autoFocus
+            />
+          ) : (
+            <p className="text-xs font-semibold text-[#0a0a0a]">{about}</p>
+          )}
         </div>
       </div>
     </div>
