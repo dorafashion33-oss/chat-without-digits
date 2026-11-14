@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Download, Smartphone, Sparkles, Image as ImageIcon, Share, PlusSquare, ArrowLeft } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
@@ -22,7 +21,6 @@ const InstallAppDialog = ({ trigger }: InstallAppDialogProps) => {
   const [installHint, setInstallHint] = useState("");
   const qrWrapRef = useRef<HTMLDivElement>(null);
 
-  // Auto-open when scanned via QR (?install=1)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -89,15 +87,9 @@ const InstallAppDialog = ({ trigger }: InstallAppDialogProps) => {
         const ctx = canvas.getContext("2d");
         if (!ctx) { resolve(null); return; }
 
-        // Buzz-styled gradient background
-        const grad = ctx.createLinearGradient(0, 0, size, size + 140);
-        grad.addColorStop(0, "#7c3aed");
-        grad.addColorStop(0.5, "#a855f7");
-        grad.addColorStop(1, "#ec4899");
-        ctx.fillStyle = grad;
+        ctx.fillStyle = "#FFFDF6";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // White rounded card for QR
         const pad = 60;
         const cardSize = size - pad * 2;
         const r = 40;
@@ -111,34 +103,16 @@ const InstallAppDialog = ({ trigger }: InstallAppDialogProps) => {
         ctx.closePath();
         ctx.fill();
 
-        // Draw QR centered in card
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = "#0A0A0A";
+        ctx.stroke();
+
         ctx.drawImage(img, pad + 30, pad + 30, cardSize - 60, cardSize - 60);
 
-        // Draw embedded logo at center
-        try {
-          const logoImg = new Image();
-          logoImg.crossOrigin = "anonymous";
-          logoImg.src = buzzLogo;
-          await new Promise((res) => { logoImg.onload = res; logoImg.onerror = res; });
-          const logoSize = cardSize * 0.18;
-          const lx = size / 2 - logoSize / 2;
-          const ly = size / 2 - logoSize / 2;
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(lx - 8, ly - 8, logoSize + 16, logoSize + 16);
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(lx + logoSize / 2, ly + logoSize / 2, logoSize / 2, 0, Math.PI * 2);
-          ctx.closePath();
-          ctx.clip();
-          ctx.drawImage(logoImg, lx, ly, logoSize, logoSize);
-          ctx.restore();
-        } catch { /* ignore */ }
-
-        // Footer text
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 56px system-ui, -apple-system, sans-serif";
+        ctx.fillStyle = "#0A0A0A";
+        ctx.font = "bold 56px system-ui, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("Scan to install Buzz", size / 2, size + 90);
+        ctx.fillText("Scan to install Buzz 🇮🇳", size / 2, size + 90);
 
         resolve(canvas);
       };
@@ -161,98 +135,83 @@ const InstallAppDialog = ({ trigger }: InstallAppDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger || <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 text-muted-foreground hover:text-foreground h-auto py-1.5 px-2"
-        >
-          <Download className="h-4 w-4" />
-          <span className="text-[10px] font-medium hidden md:inline">Install</span>
-        </Button>}
+        {trigger || (
+          <button className="bz-btn bz-btn-yellow px-3 py-1.5 text-xs font-bold">
+            <Download className="h-3.5 w-3.5" />
+            <span>Install</span>
+          </button>
+        )}
       </DialogTrigger>
-      <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2.5 text-lg">
-            <img src={buzzLogo} alt="Buzz" className="h-7 w-7 rounded-lg object-cover" />
-            Install <span className="gradient-brand-text">Buzz</span>
+      <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-md rounded-3xl border-4 border-[#0a0a0a] bg-white p-0 shadow-[0_12px_0_0_#0a0a0a]">
+        <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-5 py-4">
+          <DialogTitle className="flex items-center gap-2.5 text-lg font-black text-[#0a0a0a]">
+            <img src={buzzLogo} alt="Buzz" className="h-8 w-8 rounded-lg border-2 border-[#0a0a0a] object-cover" />
+            Install <span className="bz-squig">Buzz</span> 🇮🇳
           </DialogTitle>
-        </DialogHeader>
+        </div>
 
-        <div className="flex flex-col items-center gap-5 py-4">
-          <div className="relative low-fade">
-            <img src={buzzLogo} alt="Buzz app logo" className="h-24 w-24 rounded-[24px] object-cover shadow-xl" />
-            <span className="absolute -bottom-2 -right-2 rounded-full bg-card px-2 py-1 text-base shadow">🇮🇳</span>
+        <div className="flex flex-col items-center gap-5 p-6 bz-grid-paper">
+          <div className="relative">
+            <img src={buzzLogo} alt="Buzz" className="h-20 w-20 rounded-2xl border-3 border-[#0a0a0a] object-cover shadow-[0_4px_0_0_#0a0a0a]" />
+            <span className="absolute -bottom-1 -right-1 text-sm">🇮🇳</span>
           </div>
+
           <div className="text-center">
-            <p className="text-lg font-semibold text-foreground">Buzz for your device</p>
-            <p className="mt-1 text-sm text-muted-foreground">Fast access from your home screen.</p>
+            <p className="text-lg font-black text-[#0a0a0a]">Buzz for your device</p>
+            <p className="mt-1 text-xs font-medium text-[#5b5b55]">Fast access directly from your phone's home screen.</p>
           </div>
-          <Button
+
+          <button
             onClick={handleInstall}
             disabled={installing || isInstalled}
-            className="gradient-brand h-12 w-full rounded-xl px-6 text-primary-foreground shadow-md transition-opacity hover:opacity-90"
+            className="bz-btn bz-btn-yellow h-12 w-full text-sm font-black uppercase tracking-wider"
           >
             <Smartphone className="h-4 w-4" />
-            {isInstalled ? "Installed" : installing ? "Installing..." : "Install Buzz"}
-          </Button>
-          <Button variant="outline" onClick={() => setOpen(false)} className="h-10 w-full">
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Button>
+            {isInstalled ? "Installed" : installing ? "Installing..." : "Install Buzz PWA"}
+          </button>
+
           {installHint && (
-            <div className="flex w-full items-start gap-2 rounded-md bg-secondary p-3 text-sm text-secondary-foreground">
-              {/iphone|ipad|ipod/i.test(navigator.userAgent) ? <Share className="mt-0.5 h-4 w-4" /> : <PlusSquare className="mt-0.5 h-4 w-4" />}
+            <div className="flex w-full items-start gap-2 rounded-xl border-2 border-[#0a0a0a] bg-[#DCF4E4] p-3 text-xs font-bold text-[#2d5a3e] shadow-[0_2px_0_0_#0a0a0a]">
+              {/iphone|ipad|ipod/i.test(navigator.userAgent) ? <Share className="mt-0.5 h-4 w-4 shrink-0" /> : <PlusSquare className="mt-0.5 h-4 w-4 shrink-0" />}
               <span>{installHint}</span>
             </div>
           )}
 
           <div className="flex items-center gap-3 w-full">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-              Or scan with phone
+            <div className="h-0.5 flex-1 bg-[#0a0a0a]/20" />
+            <span className="text-[10px] uppercase font-mono tracking-wider text-[#5b5b55] font-black">
+              Or scan with phone camera
             </span>
-            <div className="h-px flex-1 bg-border" />
+            <div className="h-0.5 flex-1 bg-[#0a0a0a]/20" />
           </div>
 
-          {/* Buzz-styled QR card */}
+          {/* Neo-brutalist QR card */}
           <div
             ref={qrWrapRef}
-            className="relative rounded-[24px] p-1 shadow-xl glow-purple gradient-brand"
+            className="rounded-2xl border-3 border-[#0a0a0a] bg-white p-4 shadow-[0_5px_0_0_#0a0a0a]"
           >
-            <div className="relative rounded-[20px] bg-card p-4">
-              <QRCodeSVG
-                value={appUrl}
-                size={200}
-                level="H"
-                fgColor="#1a0938"
-                bgColor="#ffffff"
-                imageSettings={{
-                  src: buzzLogo,
-                  height: 44,
-                  width: 44,
-                  excavate: true,
-                }}
-              />
-            </div>
+            <QRCodeSVG
+              value={appUrl}
+              size={180}
+              level="H"
+              fgColor="#0a0a0a"
+              bgColor="#ffffff"
+            />
           </div>
 
-          <div className="text-center space-y-1">
-            <p className="text-sm font-semibold text-foreground flex items-center justify-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-              Scan with your phone camera
-            </p>
-            <p className="text-xs text-muted-foreground max-w-[280px]">
-              Open in browser, then tap <span className="font-medium">"Add to Home Screen"</span> to install Buzz
-            </p>
-          </div>
-
-          <Button
+          <button
             onClick={handleDownloadQR}
-            variant="outline"
-            className="w-full rounded-2xl h-auto py-2.5 border-2 hover:border-primary"
+            className="bz-btn bz-btn-white w-full py-2.5 text-xs font-bold"
           >
-            <ImageIcon className="h-4 w-4 mr-2" />
-            Download QR Code
-          </Button>
+            <ImageIcon className="h-4 w-4" /> Download QR Code Card
+          </button>
+
+          <button
+            onClick={() => setOpen(false)}
+            className="bz-btn bz-btn-ink w-full py-2 text-xs font-bold"
+          >
+            Close
+          </button>
         </div>
       </DialogContent>
     </Dialog>
