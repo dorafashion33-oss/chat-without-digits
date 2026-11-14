@@ -1,23 +1,22 @@
 import { useEffect, useState, useRef } from "react";
-import { Sparkles, Copy, Check, Link2, MessageCircle, Inbox, QrCode, Shield, Send, Users, Download } from "lucide-react";
+import { Sparkles, Copy, Check, Link2, MessageCircle, Inbox, QrCode, Shield, Send, Users, Download, X } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 
 const STEPS = [
   {
     icon: Link2,
     num: "1",
     title: "Apna link share karein",
-    desc: "Instagram bio, WhatsApp status ya story par apna link daalein.",
+    desc: "Instagram bio, WhatsApp status ya story par apna personal link daalein.",
   },
   {
     icon: Users,
     num: "2",
     title: "Dost secret message bhejein",
-    desc: "Unhe koi app ya account nahi chahiye — bas link khol kar text ya aawaz badal kar audio note bhej sakte hain.",
+    desc: "Unhe koi app ya account nahi chahiye — bas link khol kar text ya Ghost Voice note bhej sakte hain.",
   },
   {
     icon: Send,
@@ -92,52 +91,54 @@ export default function NewFeatureSpotlight({ userId }: { userId: string }) {
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
-        // Card Size: 360 x 440 (Crisp high-res card)
         canvas.width = 720;
         canvas.height = 880;
 
-        // Clean white/cream background
-        ctx.fillStyle = "#FAF8F5";
+        // Clean cream paper background
+        ctx.fillStyle = "#FFFDF6";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Header gradient pill
-        const grad = ctx.createLinearGradient(0, 0, canvas.width, 0);
-        grad.addColorStop(0, "#8B5CF6");
-        grad.addColorStop(0.5, "#6366F1");
-        grad.addColorStop(1, "#EC4899");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, canvas.width, 140);
+        // Header yellow pill
+        ctx.fillStyle = "#FCE314";
+        ctx.fillRect(0, 0, canvas.width, 150);
+
+        // Solid bottom border on header
+        ctx.fillStyle = "#0A0A0A";
+        ctx.fillRect(0, 146, canvas.width, 4);
 
         // Header Text
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 38px sans-serif";
+        ctx.fillStyle = "#0A0A0A";
+        ctx.font = "900 38px monospace";
         ctx.textAlign = "center";
-        ctx.fillText("BUZZ GUEST CHAT", canvas.width / 2, 85);
+        ctx.fillText("BUZZ GUEST CHAT", canvas.width / 2, 75);
 
-        // Subtitle pill
-        ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-        ctx.font = "24px sans-serif";
+        ctx.fillStyle = "#5B5B55";
+        ctx.font = "bold 22px sans-serif";
         ctx.fillText("Scan to chat without app or login", canvas.width / 2, 120);
 
-        // QR Code Box (white card shadow look)
+        // QR Code Box
         ctx.fillStyle = "#FFFFFF";
         ctx.roundRect?.(110, 200, 500, 500, 24) || ctx.fillRect(110, 200, 500, 500);
         ctx.fill();
+
+        // Ink border around QR box
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#0A0A0A";
+        ctx.strokeRect(110, 200, 500, 500);
 
         // Draw QR
         ctx.drawImage(img, 150, 240, 420, 420);
 
         // Username Footer
-        ctx.fillStyle = "#1E1B4B";
-        ctx.font = "bold 34px monospace";
+        ctx.fillStyle = "#0A0A0A";
+        ctx.font = "900 34px monospace";
         ctx.textAlign = "center";
         ctx.fillText(`@${username || "user"}`, canvas.width / 2, 770);
 
-        ctx.fillStyle = "#6B7280";
-        ctx.font = "22px sans-serif";
+        ctx.fillStyle = "#5B5B55";
+        ctx.font = "bold 20px sans-serif";
         ctx.fillText("chat-without-digits.lovable.app", canvas.width / 2, 815);
 
-        // Download trigger
         const pngUrl = canvas.toDataURL("image/png");
         const a = document.createElement("a");
         a.href = pngUrl;
@@ -156,56 +157,56 @@ export default function NewFeatureSpotlight({ userId }: { userId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="w-[94vw] max-w-md md:max-w-2xl lg:max-w-3xl max-h-[92vh] overflow-y-auto rounded-3xl p-0 border border-border shadow-2xl scrollbar-thin">
+      <DialogContent className="w-[94vw] max-w-md md:max-w-2xl lg:max-w-3xl max-h-[92vh] overflow-y-auto rounded-3xl p-0 border-4 border-[#0a0a0a] bg-white shadow-[0_12px_0_0_#0a0a0a]">
         
         {/* Header Bar */}
-        <div className="gradient-brand px-6 py-5 text-primary-foreground">
+        <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-6 py-5 text-[#0a0a0a]">
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-md">
-              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-white px-3 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a]">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
               Naya Feature
             </span>
             {username && (
-              <span className="rounded-full bg-black/20 px-3 py-0.5 font-mono text-xs font-medium text-white/90">
+              <span className="rounded-full border-2 border-[#0a0a0a] bg-white px-3 py-0.5 font-mono text-xs font-bold text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]">
                 @{username}
               </span>
             )}
           </div>
-          <DialogTitle className="mt-2 text-xl md:text-2xl font-bold text-white">
+          <DialogTitle className="mt-2.5 text-xl md:text-2xl font-black text-[#0a0a0a] tracking-tight">
             Buzz Guest Chat Link
           </DialogTitle>
-          <DialogDescription className="mt-1 text-xs md:text-sm text-white/90">
+          <DialogDescription className="mt-1 text-xs md:text-sm font-medium text-[#5b5b55]">
             Dosto se secret messages aur voice notes paayein — samne wale ko bina kisi login ya app ke!
           </DialogDescription>
         </div>
 
-        {/* Content Body: Desktop par 2 Columns, Mobile par Single Column */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+        {/* Content Body */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bz-grid-paper">
           
-          {/* Left Side: 3 Seedhe Steps */}
+          {/* Left Side: 3 Steps */}
           <div className="flex flex-col justify-between space-y-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+              <p className="bz-label mb-3">
                 Ye kaise kaam karta hai?
               </p>
               <div className="space-y-3">
                 {STEPS.map((s) => (
-                  <div key={s.num} className="flex items-start gap-3 rounded-2xl border border-border bg-card p-3.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-sm">
+                  <div key={s.num} className="flex items-start gap-3 rounded-2xl border-2 border-[#0a0a0a] bg-white p-3.5 shadow-[0_3px_0_0_#0a0a0a]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 border-[#0a0a0a] bg-[#FCE314] text-[#0a0a0a] font-black text-sm shadow-[0_2px_0_0_#0a0a0a]">
                       {s.num}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-foreground">{s.title}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{s.desc}</p>
+                      <p className="text-sm font-extrabold text-[#0a0a0a]">{s.title}</p>
+                      <p className="text-xs text-[#5b5b55] leading-relaxed mt-0.5">{s.desc}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border/80 bg-accent/30 p-3 text-xs text-muted-foreground flex items-center gap-2">
-              <Shield className="h-4 w-4 text-primary shrink-0" />
-              <span>100% safe & anonymous — unka number ya naam store nahi hota.</span>
+            <div className="rounded-xl border-2 border-[#0a0a0a] bg-[#DCF4E4] p-3 text-xs font-bold text-[#2d5a3e] flex items-center gap-2 shadow-[0_2px_0_0_#0a0a0a]">
+              <Shield className="h-4 w-4 text-emerald-800 shrink-0" />
+              <span>100% safe & anonymous — phone number ya naam store nahi hota.</span>
             </div>
           </div>
 
@@ -213,50 +214,47 @@ export default function NewFeatureSpotlight({ userId }: { userId: string }) {
           <div className="flex flex-col justify-between space-y-4">
             
             {/* Personal Link Box */}
-            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-              <p className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5">
-                <Link2 className="h-3.5 w-3.5 text-primary" />
+            <div className="rounded-2xl border-2 border-[#0a0a0a] bg-[#E2ECFF] p-4 shadow-[0_4px_0_0_#0a0a0a]">
+              <p className="text-xs font-black text-[#0a0a0a] mb-2 flex items-center gap-1.5 uppercase tracking-wide">
+                <Link2 className="h-3.5 w-3.5 text-[#0a0a0a]" />
                 Aapka Direct Chat Link:
               </p>
               
-              <div className="flex items-center justify-between gap-2 rounded-xl bg-background border border-border p-2.5">
-                <span className="truncate font-mono text-xs text-muted-foreground select-all">
+              <div className="flex items-center justify-between gap-2 rounded-xl bg-white border-2 border-[#0a0a0a] p-2 shadow-[0_2px_0_0_#0a0a0a]">
+                <span className="truncate font-mono text-xs font-bold text-[#0a0a0a] select-all">
                   {link}
                 </span>
-                <Button
-                  size="sm"
+                <button
                   onClick={() => copyText(link, "link")}
-                  className="h-8 shrink-0 text-xs gradient-brand"
+                  className="bz-btn bz-btn-ink px-3 py-1.5 text-xs font-bold shrink-0"
                 >
                   {copiedLink ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                  <span className="ml-1.5">{copiedLink ? "Copied!" : "Copy Link"}</span>
-                </Button>
+                  <span>{copiedLink ? "Copied!" : "Copy"}</span>
+                </button>
               </div>
 
               {/* QR Code Toggle */}
               <button
                 onClick={() => setShowQR(!showQR)}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                className="mt-3 flex w-full items-center justify-center gap-1.5 text-xs font-black text-[#0a0a0a] hover:underline"
               >
                 <QrCode className="h-3.5 w-3.5" />
                 <span>{showQR ? "QR Code chhupayein" : "Scan ke liye QR Code dekhein"}</span>
               </button>
 
               {showQR && (
-                <div ref={qrRef} className="mt-3 flex flex-col items-center justify-center rounded-xl bg-white p-4 shadow-sm border border-border">
+                <div ref={qrRef} className="mt-3 flex flex-col items-center justify-center rounded-2xl bg-white p-4 border-2 border-[#0a0a0a] shadow-[0_4px_0_0_#0a0a0a]">
                   <QRCodeSVG value={link} size={150} level="H" />
-                  <p className="mt-2 font-mono text-xs font-bold text-gray-800">@{username}</p>
-                  <p className="text-[11px] text-gray-500 mb-3">Camera se scan karke direct chat khulegi</p>
+                  <p className="mt-2 font-mono text-xs font-black text-[#0a0a0a]">@{username}</p>
+                  <p className="text-[11px] text-[#5b5b55] mb-3">Camera se scan karke direct chat khulegi</p>
                   
                   {/* Download QR Card Button */}
-                  <Button
-                    size="sm"
-                    variant="outline"
+                  <button
                     onClick={downloadQR}
-                    className="h-8 text-xs font-semibold border-primary/30 text-primary hover:bg-primary/10 w-full"
+                    className="bz-btn bz-btn-yellow w-full py-2 text-xs font-black uppercase tracking-wider"
                   >
-                    <Download className="mr-1.5 h-3.5 w-3.5" /> Download QR Card (PNG)
-                  </Button>
+                    <Download className="h-3.5 w-3.5" /> Download QR Card (PNG)
+                  </button>
                 </div>
               )}
             </div>
@@ -264,27 +262,30 @@ export default function NewFeatureSpotlight({ userId }: { userId: string }) {
             {/* Share Buttons */}
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
-                <Button asChild className="gradient-brand h-10 text-xs font-semibold">
-                  <a href={`https://wa.me/?text=${encodeURIComponent(statusCaption)}`} target="_blank" rel="noreferrer">
-                    <MessageCircle className="mr-1.5 h-4 w-4" /> WhatsApp Status
-                  </a>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onClick={() => copyText(statusCaption, "status")}
-                  className="h-10 text-xs font-semibold border-border"
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(statusCaption)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bz-btn bz-btn-yellow py-2.5 text-xs font-bold"
                 >
-                  {copiedStatus ? <Check className="mr-1.5 h-4 w-4 text-emerald-500" /> : <Copy className="mr-1.5 h-4 w-4" />}
-                  {copiedStatus ? "Copied!" : "Copy Caption"}
-                </Button>
+                  <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                </a>
+
+                <button
+                  onClick={() => copyText(statusCaption, "status")}
+                  className="bz-btn bz-btn-white py-2.5 text-xs font-bold"
+                >
+                  {copiedStatus ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                  <span>{copiedStatus ? "Copied!" : "Copy Caption"}</span>
+                </button>
               </div>
 
-              <Button variant="ghost" asChild className="w-full h-10 text-xs font-semibold text-primary hover:bg-primary/10">
-                <a href="/guests">
-                  <Inbox className="mr-1.5 h-4 w-4" /> Guest Inbox Kholein
-                </a>
-              </Button>
+              <a
+                href="/guests"
+                className="bz-btn bz-btn-ink w-full py-2.5 text-xs font-bold"
+              >
+                <Inbox className="h-3.5 w-3.5" /> Guest Inbox Kholein
+              </a>
             </div>
 
           </div>
