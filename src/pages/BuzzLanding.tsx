@@ -4,19 +4,16 @@ import {
   ArrowDownToLine,
   ArrowRight,
   Check,
-  ChevronDown,
   Globe,
   Lock,
   Menu,
   MessageCircle,
   Phone,
-  QrCode,
   Shield,
   Smartphone,
   Sparkles,
   Users,
   Video,
-  Volume2,
   X,
   Zap,
 } from "lucide-react";
@@ -26,7 +23,6 @@ import InstallAppDialog from "@/components/chat/InstallAppDialog";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
 import BuzzPublicPage, { publicPages } from "./BuzzPublicPage";
 
-/* ─── Sticky Countdown Bar Targeting Launch ─── */
 const TARGET_LAUNCH_TIMESTAMP = new Date("2027-03-25T10:30:00+05:30").getTime();
 
 const LaunchCountdownBar = ({ onClaim }: { onClaim: () => void }) => {
@@ -90,7 +86,6 @@ const LaunchCountdownBar = ({ onClaim }: { onClaim: () => void }) => {
   );
 };
 
-/* ─── Buzz Brand Logo ─── */
 const Logo = () => (
   <a href="#top" className="flex items-center gap-2.5 group">
     <div className="relative">
@@ -121,30 +116,29 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
 
   return (
     <div id="top" className="min-h-screen bz-grid-paper text-[#0a0a0a]">
-      {/* Sticky Top Header */}
       <header className="sticky top-0 z-50 border-b-2 border-[#0a0a0a] bg-[#fffbec]/95 backdrop-blur">
         <LaunchCountdownBar onClaim={openAuth} />
 
         <div className="mx-auto flex h-[68px] sm:h-[72px] max-w-[1160px] items-center justify-between px-4 sm:px-6">
           <Logo />
 
-          {/* Desktop Nav */}
+          {/* Desktop Nav: No duplicate Features link! Features is 1 link, plus Made in India */}
           <nav className="hidden items-center gap-6 lg:flex" aria-label="Main navigation">
-            <a href="#modes" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
+            <Link to="/features" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
               Features
+            </Link>
+            <a href="#india" className="text-[13px] font-bold text-[#0a0a0a] hover:underline flex items-center gap-1">
+              Made in India 🇮🇳
             </a>
-            <a href="#beliefs" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
-              Philosophy
-            </a>
-            {[...publicPages].slice(0, 4).map((p) => (
-              <Link
-                key={p}
-                to={`/${p}`}
-                className="text-[13px] font-bold capitalize text-[#0a0a0a] hover:underline"
-              >
-                {p === "buzz-web" ? "Buzz Web" : p}
-              </Link>
-            ))}
+            <Link to="/privacy" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
+              Privacy
+            </Link>
+            <Link to="/buzz-web" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
+              Buzz Web
+            </Link>
+            <Link to="/download" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
+              Download
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -173,7 +167,7 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer with Smooth Animation */}
+        {/* Mobile Navigation Drawer */}
         <AnimatePresence>
           {menuOpen && (
             <motion.div
@@ -184,30 +178,21 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
               className="border-t-2 border-[#0a0a0a] bg-[#fffbec] p-5 lg:hidden overflow-hidden"
             >
               <nav className="grid gap-2 text-sm" aria-label="Mobile navigation">
-                <a
-                  href="#modes"
-                  onClick={() => setMenuOpen(false)}
-                  className="font-bold py-1.5 border-b border-[#0a0a0a]/10"
-                >
-                  Features & Tools
+                <Link to="/features" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
+                  Features & Capabilities
+                </Link>
+                <a href="#india" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10 flex items-center gap-1">
+                  Made in India Story 🇮🇳
                 </a>
-                <a
-                  href="#beliefs"
-                  onClick={() => setMenuOpen(false)}
-                  className="font-bold py-1.5 border-b border-[#0a0a0a]/10"
-                >
-                  Privacy Philosophy
-                </a>
-                {publicPages.map((p) => (
-                  <Link
-                    key={p}
-                    to={`/${p}`}
-                    onClick={() => setMenuOpen(false)}
-                    className="font-bold capitalize py-1.5 border-b border-[#0a0a0a]/10"
-                  >
-                    {p === "buzz-web" ? "Buzz Web" : p}
-                  </Link>
-                ))}
+                <Link to="/privacy" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
+                  Privacy Guarantee
+                </Link>
+                <Link to="/buzz-web" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
+                  Buzz Web
+                </Link>
+                <Link to="/download" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
+                  Download & Install
+                </Link>
                 <div className="pt-3 flex gap-2">
                   <button onClick={openAuth} className="bz-btn bz-btn-white flex-1 py-2.5 text-xs font-black">
                     Log In / Sign Up
@@ -259,7 +244,6 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
                   Simple, reliable, private messaging and calling where your unique username is your identity. Share your personal link, record Ghost Voice notes, and talk freely.
                 </motion.p>
 
-                {/* Tactile Action Buttons */}
                 <motion.div
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -280,72 +264,49 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
               </div>
             </section>
 
-            {/* THREE WAYS SECTION */}
-            <section id="modes" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white">
+            {/* REPLACED DUPLICATE: NEW "MADE IN INDIA 🇮🇳" ATMANIRBHAR SECTION */}
+            <section id="india" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white">
               <div className="mx-auto max-w-[1160px]">
-                <div className="text-center max-w-xl mx-auto mb-12">
-                  <span className="bz-label">HOW BUZZ WORKS</span>
-                  <h2 className="mt-2 text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
-                    Three Ways to Connect
+                <div className="text-center max-w-2xl mx-auto mb-12">
+                  <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#DCF4E4] px-3 py-1 text-xs font-black text-emerald-900 shadow-[0_2px_0_0_#0a0a0a] mb-2">
+                    🇮🇳 DIGITAL ATMANIRBHAR BHARAT
+                  </div>
+                  <h2 className="text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
+                    Designed in India for Digital Freedom
                   </h2>
+                  <p className="mt-3 text-sm text-[#5b5b55] leading-relaxed">
+                    Why should 1.4 billion Indians share their mobile numbers with foreign Big Tech servers just to chat with friends and family?
+                  </p>
                 </div>
 
                 <div className="grid gap-6 sm:grid-cols-3">
-                  <motion.div whileHover={{ y: -3 }} className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
-                    <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#FFF6B8] mb-4">
-                      <MessageCircle className="h-6 w-6 text-[#0a0a0a]" />
+                  <div className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#FFF6B8] mb-4 text-2xl font-black">
+                      🇮🇳
                     </div>
-                    <h3 className="text-base font-black text-[#0a0a0a]">1. Direct & Group Chat</h3>
+                    <h3 className="text-base font-black text-[#0a0a0a]">100% Indian Data Sovereignty</h3>
                     <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
-                      Chat 1-on-1 or create groups by searching @usernames. End-to-end encrypted, with voice notes, file attachments, and reactions.
-                    </p>
-                  </motion.div>
-
-                  <motion.div whileHover={{ y: -3 }} className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
-                    <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#E2ECFF] mb-4">
-                      <Globe className="h-6 w-6 text-[#0a0a0a]" />
-                    </div>
-                    <h3 className="text-base font-black text-[#0a0a0a]">2. Anonymous Guest Links</h3>
-                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
-                      Put your personal link <code className="font-mono bg-[#FFF6B8] px-1 rounded">/c/@yourname</code> in your social bio. Anyone can message you without logging in.
-                    </p>
-                  </motion.div>
-
-                  <motion.div whileHover={{ y: -3 }} className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
-                    <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#DCF4E4] mb-4">
-                      <Phone className="h-6 w-6 text-emerald-800" />
-                    </div>
-                    <h3 className="text-base font-black text-[#0a0a0a]">3. WebRTC HD Calling</h3>
-                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
-                      Direct browser-to-browser voice and video calling. See real-time "Ringing" (Net ON) vs "Calling" (Net OFF) states.
-                    </p>
-                  </motion.div>
-                </div>
-              </div>
-            </section>
-
-            {/* PHILOSOPHY SECTION */}
-            <section id="beliefs" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bz-grid-paper">
-              <div className="mx-auto max-w-4xl text-center">
-                <span className="bz-label">BUZZ PHILOSOPHY</span>
-                <h2 className="mt-2 text-2xl sm:text-4xl font-black text-[#0a0a0a]">
-                  Digital Independence for India 🇮🇳
-                </h2>
-                <p className="mt-4 text-sm sm:text-base text-[#5b5b55] leading-relaxed">
-                  Your phone number is your bank identity, OTP key, and Aadhaar credential. Giving it away to every random contact is unsafe. Buzz isolates your personal communications from your phone number permanently.
-                </p>
-
-                <div className="mt-8 grid gap-4 sm:grid-cols-2 text-left">
-                  <div className="bz-card p-4">
-                    <h4 className="font-black text-xs text-[#0a0a0a]">✓ No Contact Book Uploads</h4>
-                    <p className="mt-1 text-[11px] text-[#5b5b55]">
-                      We never harvest or upload your address book to our servers.
+                      Your identity is safe. Built by Indian developers with zero contact-book scraping and zero advertising tracking.
                     </p>
                   </div>
-                  <div className="bz-card p-4">
-                    <h4 className="font-black text-xs text-[#0a0a0a]">✓ No SIM-Swap Risk</h4>
-                    <p className="mt-1 text-[11px] text-[#5b5b55]">
-                      Attackers cannot clone your SIM to take over your Buzz chats.
+
+                  <div className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#E2ECFF] mb-4 text-2xl font-black">
+                      🛡️
+                    </div>
+                    <h3 className="text-base font-black text-[#0a0a0a]">Shield Your Bank & Aadhaar</h3>
+                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
+                      Your phone number links to bank accounts and UPI. Buzz keeps your daily chatting identity completely isolated.
+                    </p>
+                  </div>
+
+                  <div className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#DCF4E4] mb-4 text-2xl font-black">
+                      ⚡
+                    </div>
+                    <h3 className="text-base font-black text-[#0a0a0a]">Fast, Lightweight PWA</h3>
+                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
+                      Runs fast on 4G and 5G networks across India with no bulky 100MB downloads. Installs in under 3 seconds.
                     </p>
                   </div>
                 </div>
@@ -355,7 +316,6 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="border-t-2 border-[#0a0a0a] bg-[#FFF6B8] py-8 px-4 text-center text-xs font-bold text-[#0a0a0a]">
         <div className="mx-auto max-w-[1160px] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© 2026–2027 Buzz Messaging · Made in India 🇮🇳 · Chat Without Digits</p>
