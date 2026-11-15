@@ -24,7 +24,9 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
     val.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
 
   const isEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
-  const toEmail = (val: string) => (isEmail(val) ? val.trim().toLowerCase() : `${normalizeUsername(val)}@buzz.local`);
+  
+  // Uses valid public domain to avoid RFC 2606 reserved domain (.local) rejection by Supabase Auth
+  const toEmail = (val: string) => (isEmail(val) ? val.trim().toLowerCase() : `${normalizeUsername(val)}@buzzofficial.app`);
 
   const handleSubmit = async () => {
     const raw = username.trim();
@@ -43,10 +45,22 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
 
     try {
       if (isLogin) {
-        const { error: loginErr } = await supabase.auth.signInWithPassword({
+        let { error: loginErr } = await supabase.auth.signInWithPassword({
           email: toEmail(raw),
           password,
         });
+
+        // Fallback for older accounts that registered with @buzz.local
+        if (loginErr && !isEmail(raw)) {
+          const fallback = await supabase.auth.signInWithPassword({
+            email: `${normalizeUsername(raw)}@buzz.local`,
+            password,
+          });
+          if (!fallback.error) {
+            loginErr = null;
+          }
+        }
+
         if (loginErr) throw loginErr;
         toast.success(`Welcome back, @${trimmedUsername}! 🎉`);
       } else {
@@ -80,7 +94,6 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
   return (
     <div className={`flex w-full items-center justify-center bz-grid-paper p-6 ${embedded ? "min-h-[580px] rounded-2xl" : "min-h-screen"}`}>
       <div className="w-full max-w-sm rounded-3xl border-4 border-[#0a0a0a] bg-white p-7 shadow-[0_10px_0_0_#0a0a0a] animate-fade-in">
-        {/* Logo & Header */}
         <div className="flex flex-col items-center text-center mb-7">
           <div className="relative">
             <img
@@ -102,7 +115,6 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
           </p>
         </div>
 
-        {/* Inputs */}
         <div className="space-y-3.5">
           <div className="flex items-center gap-3 rounded-xl border-2 border-[#0a0a0a] bg-white px-3.5 py-3 shadow-[0_2px_0_0_#0a0a0a] transition-all focus-within:shadow-[0_4px_0_0_#0a0a0a] focus-within:bg-[#fffdf6]">
             <User className="h-4 w-4 text-[#0a0a0a] flex-shrink-0" />
@@ -167,7 +179,6 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
           </button>
         </div>
 
-        {/* Toggle Mode */}
         <p className="mt-6 text-center text-xs font-bold text-[#5b5b55]">
           {isLogin ? "Don't have a Buzz handle?" : "Already have an account?"}{" "}
           <button
