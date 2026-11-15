@@ -1,4 +1,4 @@
-import { MessageCircle, CircleDot, Phone, Compass } from "lucide-react";
+import { MessageCircle, CircleDot, Phone, Compass, Settings, User } from "lucide-react";
 import type { NavSection } from "./NavIconBar";
 
 interface MobileBottomNavProps {
@@ -12,12 +12,14 @@ const tabs: { id: NavSection; icon: typeof MessageCircle; label: string }[] = [
   { id: "moments", icon: CircleDot, label: "Moments" },
   { id: "connect", icon: Phone, label: "Connect" },
   { id: "discover", icon: Compass, label: "Discover" },
+  { id: "settings", icon: Settings, label: "Settings" },
+  { id: "profile", icon: User, label: "Profile" },
 ];
 
 const MobileBottomNav = ({ active, onNavigate, unreadCount = 0 }: MobileBottomNavProps) => {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-[#0a0a0a] bg-[#fffbec] lg:hidden safe-area-bottom shadow-lg">
-      <div className="flex items-center justify-around px-2 py-1.5">
+      <div className="flex items-center justify-around px-1 py-1.5">
         {tabs.map((tab) => {
           const isActive = active === tab.id;
           const Icon = tab.icon;
@@ -25,10 +27,10 @@ const MobileBottomNav = ({ active, onNavigate, unreadCount = 0 }: MobileBottomNa
             <button
               key={tab.id}
               onClick={() => onNavigate(tab.id)}
-              className="relative flex flex-col items-center gap-0.5 rounded-xl px-3 py-1 transition-all"
+              className="relative flex flex-col items-center gap-0.5 rounded-xl px-2 py-0.5 transition-all"
             >
               <div
-                className={`relative flex h-9 w-9 items-center justify-center rounded-xl border-2 transition-all ${
+                className={`relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl border-2 transition-all ${
                   isActive
                     ? "border-[#0a0a0a] bg-[#FCE314] text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]"
                     : "border-transparent text-[#0a0a0a]/60 hover:text-[#0a0a0a]"
@@ -46,7 +48,7 @@ const MobileBottomNav = ({ active, onNavigate, unreadCount = 0 }: MobileBottomNa
                 )}
               </div>
               <span
-                className={`text-[10px] font-bold tracking-tight ${
+                className={`text-[9px] font-bold tracking-tight ${
                   isActive ? "text-[#0a0a0a]" : "text-[#0a0a0a]/60"
                 }`}
               >
