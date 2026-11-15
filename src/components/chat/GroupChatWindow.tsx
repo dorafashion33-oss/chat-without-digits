@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import MessageContent from "./MessageContent";
 import MessageForwardDialog, { type ForwardRecipient } from "./MessageForwardDialog";
 import { useChatTheme } from "./ChatThemeProvider";
-import { getChatWallpaperStyle, isPhotoTheme } from "./ChatThemesPanel";
+import { getChatWallpaperStyle } from "./ChatThemesPanel";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 interface GroupChatWindowProps {
   group: Group;
@@ -25,8 +26,18 @@ interface GroupChatWindowProps {
 }
 
 const GroupChatWindow = ({
-  group, currentUserId, onSendMessage, fetchMessages, fetchMembers,
-  onAddMember, onRemoveMember, onDeleteGroup, onStartCall, onStartGroupCall, onBack, profiles, onDeleteMessage,
+  group,
+  currentUserId,
+  onSendMessage,
+  fetchMessages,
+  fetchMembers,
+  onAddMember,
+  onRemoveMember,
+  onDeleteGroup,
+  onStartGroupCall,
+  onBack,
+  profiles,
+  onDeleteMessage,
 }: GroupChatWindowProps) => {
   const { theme } = useChatTheme();
   const [input, setInput] = useState("");
@@ -37,28 +48,26 @@ const GroupChatWindow = ({
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [forwardMessage, setForwardMessage] = useState<GroupMessage | null>(null);
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const prevGroupIdRef = useRef<string>(group.id);
 
-  // Load group messages & members
   const loadData = useCallback(async () => {
     const [msgs, mems] = await Promise.all([fetchMessages(group.id), fetchMembers(group.id)]);
     setMessages(msgs);
     setMembers(mems);
   }, [group.id, fetchMessages, fetchMembers]);
 
-  useEffect(() => { loadData(); }, [loadData]);
-
-  // Instant scroll on group change, smooth on new message
   useEffect(() => {
-    const isNewGroup = prevGroupIdRef.current !== group.id;
-    prevGroupIdRef.current = group.id;
+    loadData();
+  }, [loadData]);
 
-    if (isNewGroup) {
+  useEffect(() => {
+    const isNew = prevGroupIdRef.current !== group.id;
+    prevGroupIdRef.current = group.id;
+    if (isNew) {
       if (messagesContainerRef.current) {
         messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
       } else {
@@ -69,7 +78,7 @@ const GroupChatWindow = ({
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       });
     }
-  }, [group.id, messages]);
+  }, [group.id, messages.length]);
 
   const handleSend = async () => {
     let textToSend = input.trim();
@@ -131,48 +140,76 @@ const GroupChatWindow = ({
   const isCreator = group.created_by === currentUserId;
 
   return (
-    <div className="flex h-full flex-col bg-background relative overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-3 md:px-4 py-2.5 bg-card/60 backdrop-blur-xl z-10 shrink-0">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <button onClick={onBack} className="p-1.5 -ml-1 text-muted-foreground hover:text-foreground lg:hidden rounded-full hover:bg-muted/60 transition-colors">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full gradient-brand text-xs font-bold text-white shadow-sm shrink-0">
-            <Users className="h-4 w-4" />
-          </div>
-          <div className="min-w-0 cursor-pointer" onClick={() => setShowInfo(!showInfo)}>
-            <h2 className="text-sm font-semibold truncate leading-tight text-foreground">{group.name}</h2>
-            <p className="text-[11px] text-muted-foreground truncate leading-tight">{members.length} members</p>
+    <div className="flex h-full flex-col bg-white">
+      {/* Neo-Brutalist Group Header */}
+      <div className="flex items-center justify-between border-b-2 border-[#0a0a0a] bg-[#fffbec] px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-3 min-w-0">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] lg:hidden"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+          )}
+
+          <div
+            onClick={() => setShowInfo(true)}
+            className="flex items-center gap-2.5 cursor-pointer min-w-0 group"
+            title="Group Info"
+          >
+            <div className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#E2ECFF] text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] flex-shrink-0 group-hover:scale-105 transition-transform">
+              <Users className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-sm font-black text-[#0a0a0a] truncate leading-tight group-hover:underline">
+                {group.name}
+              </h2>
+              <p className="text-[10px] font-mono font-bold text-[#5b5b55]">
+                {members.length} members · Buzz Group
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {onStartGroupCall && (
             <>
-              <button onClick={() => onStartGroupCall("voice")} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-full transition-colors active:scale-95" title="Group voice call">
+              <button
+                onClick={() => onStartGroupCall("voice")}
+                className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] hover:bg-[#FFF6B8]"
+                title="Group Voice Call"
+              >
                 <Phone className="h-4 w-4" />
               </button>
-              <button onClick={() => onStartGroupCall("video")} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-full transition-colors active:scale-95" title="Group video call">
+              <button
+                onClick={() => onStartGroupCall("video")}
+                className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] hover:bg-[#FFF6B8]"
+                title="Group Video Call"
+              >
                 <Video className="h-4 w-4" />
               </button>
             </>
           )}
-          <button onClick={() => setShowInfo(!showInfo)} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-full transition-colors">
+          <button
+            onClick={() => setShowInfo(true)}
+            className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] hover:bg-[#FFF6B8]"
+            title="Group Settings"
+          >
             <Settings className="h-4 w-4" />
           </button>
         </div>
       </div>
 
-      {/* Messages Feed with Wallpaper */}
+      {/* Messages Feed */}
       <div
         ref={messagesContainerRef}
-        className="chat-messages-shell flex-1 overflow-y-auto px-3 md:px-6 py-4 space-y-2 smooth-scroll-momentum chat-feed-gpu relative"
+        className="chat-messages-shell flex-1 overflow-y-auto px-4 py-4 space-y-3 bz-grid-paper"
         style={getChatWallpaperStyle(theme)}
       >
-        <div className="flex justify-center my-2">
-          <span className="text-[11px] bg-card/80 backdrop-blur-md px-3 py-1 rounded-full border border-border text-muted-foreground/80 shadow-sm">
-            👥 Group Created · End-to-end encrypted
+        <div className="flex justify-center mb-2">
+          <span className="inline-block rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] px-3 py-1 font-mono text-[10px] font-black text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]">
+            👥 GROUP CREATED · END-TO-END ENCRYPTED
           </span>
         </div>
 
@@ -182,34 +219,38 @@ const GroupChatWindow = ({
           const senderName = senderProfile?.display_name || senderProfile?.username || "Member";
 
           return (
-            <div key={msg.id} className={`group flex flex-col ${isOwn ? "items-end" : "items-start"} low-fade`}>
+            <div key={msg.id} className={`group flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
               <div
-                className={`relative max-w-[82%] sm:max-w-[70%] rounded-2xl px-3.5 py-2 text-sm shadow-sm transition-shadow ${
-                  isOwn
-                    ? "bg-primary text-primary-foreground rounded-br-xs"
-                    : "bg-card text-foreground border border-border rounded-bl-xs"
+                className={`relative max-w-[85%] sm:max-w-[70%] rounded-2xl border-2 border-[#0a0a0a] p-3 text-xs font-medium shadow-[0_3px_0_0_#0a0a0a] ${
+                  isOwn ? "bg-[#FCE314] text-[#0a0a0a]" : "bg-white text-[#0a0a0a]"
                 }`}
               >
                 {!isOwn && (
-                  <p className="text-[11px] font-semibold text-primary mb-0.5 leading-tight">{senderName}</p>
+                  <p className="text-[10px] font-black text-purple-700 mb-1">@{senderName}</p>
                 )}
-                <MessageContent text={msg.text} isOwn={isOwn} />
-
-                <div className={`mt-0.5 flex items-center justify-end gap-1 text-[10px] ${
-                  isOwn ? "text-primary-foreground/75" : "text-muted-foreground"
-                }`}>
+                <MessageContent text={msg.text} />
+                <div className="mt-1 flex items-center justify-end gap-1 font-mono text-[9px] font-bold text-[#0a0a0a]/60">
                   <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
 
-                {/* Quick actions hover */}
-                <div className={`absolute top-0 -translate-y-1/2 hidden group-hover:flex items-center gap-0.5 bg-popover border border-border rounded-full px-1.5 py-0.5 shadow-md ${
-                  isOwn ? "right-2" : "left-2"
-                }`}>
-                  <button onClick={() => setForwardMessage(msg)} title="Forward" className="p-1 hover:text-primary text-muted-foreground">
+                {/* Hover Actions */}
+                <div
+                  className={`absolute top-0 -translate-y-1/2 hidden group-hover:flex items-center gap-1 rounded-lg border-2 border-[#0a0a0a] bg-white px-1.5 py-0.5 shadow-[0_2px_0_0_#0a0a0a] ${
+                    isOwn ? "right-2" : "left-2"
+                  }`}
+                >
+                  <button onClick={() => setForwardMessage(msg)} title="Forward" className="p-1 hover:text-blue-600">
                     <Forward className="h-3 w-3" />
                   </button>
                   {isOwn && onDeleteMessage && (
-                    <button onClick={() => { onDeleteMessage(msg.id); setTimeout(loadData, 300); }} title="Delete" className="p-1 hover:text-destructive text-muted-foreground">
+                    <button
+                      onClick={() => {
+                        onDeleteMessage(msg.id);
+                        setTimeout(loadData, 300);
+                      }}
+                      title="Delete"
+                      className="p-1 hover:text-red-500"
+                    >
                       <Trash2 className="h-3 w-3" />
                     </button>
                   )}
@@ -219,55 +260,51 @@ const GroupChatWindow = ({
           );
         })}
 
-        <div ref={messagesEndRef} className="h-px" />
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Attachment Preview */}
       {attachedFile && (
-        <div className="flex items-center justify-between border-t border-border bg-card/90 px-4 py-2">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between border-t-2 border-[#0a0a0a] bg-[#FFF6B8] px-4 py-2">
+          <div className="flex items-center gap-2">
             {filePreview ? (
-              <img src={filePreview} alt="" className="h-10 w-10 rounded-lg object-cover ring-1 ring-border" />
+              <img src={filePreview} alt="" className="h-8 w-8 rounded border border-[#0a0a0a] object-cover" />
             ) : (
-              <FileText className="h-6 w-6 text-primary" />
+              <FileText className="h-5 w-5" />
             )}
-            <div className="text-xs">
-              <p className="font-medium truncate max-w-[200px]">{attachedFile.name}</p>
-              <p className="text-muted-foreground text-[10px]">{(attachedFile.size / 1024).toFixed(0)} KB</p>
-            </div>
+            <span className="text-xs font-bold text-[#0a0a0a] truncate max-w-xs">{attachedFile.name}</span>
           </div>
-          <button onClick={() => { setAttachedFile(null); setFilePreview(null); }} className="p-1 text-muted-foreground hover:text-destructive">
+          <button onClick={() => { setAttachedFile(null); setFilePreview(null); }} className="text-[#0a0a0a]">
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* Input bar */}
-      <div className="border-t border-border p-2 sm:p-3 bg-card/80 backdrop-blur-xl shrink-0">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
+      {/* Tactile Input Bar */}
+      <div className="border-t-2 border-[#0a0a0a] bg-[#fffbec] p-3">
+        <div className="flex items-center gap-2">
           <button
-            type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-full transition-colors shrink-0"
+            className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] hover:bg-[#FFF6B8]"
             title="Attach file"
           >
-            <Paperclip className="h-5 w-5" />
+            <Paperclip className="h-4 w-4" />
           </button>
+          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} />
 
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={`Message ${group.name}...`}
-            className="flex-1 rounded-full bg-background border border-border px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+            placeholder={`Message in ${group.name}...`}
+            className="flex-1 rounded-xl border-2 border-[#0a0a0a] bg-white px-3.5 py-2.5 text-xs font-semibold text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] outline-none placeholder:text-[#0a0a0a]/40"
           />
 
           <button
             onClick={handleSend}
             disabled={uploading || (!input.trim() && !attachedFile)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 transition-all shrink-0 active:scale-95 shadow-sm"
+            className="bz-btn bz-btn-yellow grid h-10 w-10 place-items-center rounded-xl p-0 disabled:opacity-40"
             title="Send"
           >
             <Send className="h-4 w-4" />
@@ -275,22 +312,99 @@ const GroupChatWindow = ({
         </div>
       </div>
 
-      {/* Forward message dialog */}
+      {/* Forward Modal */}
       {forwardMessage && (
         <MessageForwardDialog
           open={!!forwardMessage}
-          onOpenChange={(open) => !open && setForwardMessage(null)}
+          onOpenChange={(o) => !o && setForwardMessage(null)}
           messageText={forwardMessage.text}
-          recipients={profiles}
-          currentUserId={currentUserId}
-          onForward={async (targets) => {
-            for (const t of targets) {
-              onSendMessage(t.id, forwardMessage.text);
-            }
-            toast.success("Forwarded message");
+          profiles={profiles}
+          onForward={(toId, text) => {
+            onSendMessage(toId, text);
             setForwardMessage(null);
+            toast.success("Forwarded successfully!");
           }}
         />
+      )}
+
+      {/* Group Info & Settings Modal */}
+      {showInfo && (
+        <Dialog open={showInfo} onOpenChange={setShowInfo}>
+          <DialogContent className="max-w-md overflow-hidden p-0 rounded-3xl border-4 border-[#0a0a0a] bg-white shadow-[0_10px_0_0_#0a0a0a]">
+            <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] p-4 flex items-center justify-between">
+              <DialogTitle className="text-base font-black text-[#0a0a0a] flex items-center gap-2">
+                <Users className="h-5 w-5" /> Group Info
+              </DialogTitle>
+              <button
+                onClick={() => setShowInfo(false)}
+                className="grid h-7 w-7 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3 bz-grid-paper max-h-[70vh] overflow-y-auto">
+              <div className="bz-card p-4 text-center">
+                <div className="grid h-14 w-14 mx-auto place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#E2ECFF] shadow-[0_2px_0_0_#0a0a0a] mb-2 font-black">
+                  <Users className="h-7 w-7 text-[#0a0a0a]" />
+                </div>
+                <h3 className="text-base font-black text-[#0a0a0a]">{group.name}</h3>
+                <p className="text-xs text-[#5b5b55] mt-1">{group.description || "Buzz Messaging Group"}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-black text-[#0a0a0a] mb-2">Members ({members.length})</p>
+                <div className="space-y-1.5">
+                  {members.map((m) => {
+                    const profile = (m as any).profiles;
+                    const uName = profile?.display_name || profile?.username || "Member";
+                    const isGroupAdmin = m.role === "admin" || m.user_id === group.created_by;
+                    return (
+                      <div key={m.id} className="bz-card p-2.5 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] gradient-brand text-[10px] font-black text-white">
+                            {uName.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-[#0a0a0a]">{uName}</p>
+                            <p className="text-[10px] font-mono text-[#5b5b55]">
+                              {isGroupAdmin ? "★ Admin" : "Member"}
+                            </p>
+                          </div>
+                        </div>
+                        {isCreator && m.user_id !== currentUserId && onRemoveMember && (
+                          <button
+                            onClick={() => {
+                              onRemoveMember(group.id, m.user_id);
+                              setTimeout(loadData, 300);
+                            }}
+                            className="rounded-lg border border-red-500 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600 hover:bg-red-100"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {isCreator && onDeleteGroup && (
+                <button
+                  onClick={() => {
+                    if (confirm("Are you sure you want to delete this group?")) {
+                      onDeleteGroup(group.id);
+                      setShowInfo(false);
+                    }
+                  }}
+                  className="bz-btn bz-btn-ink w-full py-2.5 text-xs font-black text-red-400 hover:text-red-200 uppercase"
+                >
+                  <Trash2 className="h-4 w-4" /> Delete Group Permanently
+                </button>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
