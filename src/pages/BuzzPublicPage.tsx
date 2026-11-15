@@ -1,33 +1,422 @@
 import { useState } from "react";
-import { ArrowDownToLine, ArrowRight, CheckCheck, LockKeyhole, MessageCircle, Mic, Phone, Send, ShieldCheck, Users, Video } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  ArrowDownToLine,
+  ArrowRight,
+  Check,
+  CheckCheck,
+  Globe,
+  KeyRound,
+  Lock,
+  LockKeyhole,
+  MessageCircle,
+  Mic,
+  Phone,
+  QrCode,
+  Send,
+  Shield,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+  Users,
+  Video,
+  Volume2,
+  Zap,
+} from "lucide-react";
+import { motion } from "framer-motion";
 import InstallAppDialog from "@/components/chat/InstallAppDialog";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
-import familyImage from "@/assets/buzz-family-call.jpg";
-import groupImage from "@/assets/buzz-group-call.jpg";
+import { QRCodeSVG } from "qrcode.react";
 
 type PublicPage = "features" | "privacy" | "buzz-web" | "download" | "contact";
 export const publicPages: PublicPage[] = ["features", "privacy", "buzz-web", "download", "contact"];
 
-const Preview = () => <div className="mx-auto w-full max-w-xl overflow-hidden rounded-md border border-border bg-card shadow-xl" aria-label="Buzz chat preview">
-  <div className="flex items-center gap-3 border-b border-border px-4 py-3"><img src={buzzLogo} alt="Buzz" className="h-9 w-9 rounded-md object-cover" /><div className="flex-1"><strong className="text-sm">Ayesha</strong><p className="text-xs text-online">online</p></div><Video className="h-5 w-5 text-primary" /><Phone className="h-5 w-5 text-primary" /></div>
-  <div className="space-y-4 bg-landing-canvas px-4 py-10"><p className="w-fit max-w-[85%] rounded-md bg-card px-4 py-3 text-sm shadow-sm">Hey! Are we meeting this evening?</p><p className="ml-auto w-fit max-w-[85%] rounded-md bg-landing-bubble px-4 py-3 text-sm shadow-sm">Yes, see you at 6! ☕ <CheckCheck className="inline h-3 w-3 text-primary" /></p><p className="w-fit rounded-md bg-card px-4 py-3 text-sm shadow-sm">I’ll bring everyone along 😊</p></div>
-  <div className="flex items-center gap-3 border-t border-border px-4 py-3 text-muted-foreground"><MessageCircle className="h-4 w-4" /><span className="flex-1 text-sm">Message</span><Mic className="h-4 w-4" /></div>
-</div>;
+/* Tactile Chat Preview */
+const PreviewCard = () => (
+  <div className="bz-card max-w-md mx-auto overflow-hidden p-0 shadow-[0_8px_0_0_#0a0a0a]">
+    <div className="flex items-center justify-between border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-4 py-3">
+      <div className="flex items-center gap-2.5">
+        <img
+          src={buzzLogo}
+          alt="Buzz"
+          className="h-8 w-8 rounded-lg border-2 border-[#0a0a0a] object-cover shadow-[0_2px_0_0_#0a0a0a]"
+        />
+        <div>
+          <p className="text-xs font-black text-[#0a0a0a]">Ayesha Sharma</p>
+          <span className="text-[10px] font-mono font-bold text-emerald-800">● ONLINE</span>
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="grid h-7 w-7 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white shadow-[0_2px_0_0_#0a0a0a]">
+          <Phone className="h-3.5 w-3.5" />
+        </span>
+        <span className="grid h-7 w-7 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white shadow-[0_2px_0_0_#0a0a0a]">
+          <Video className="h-3.5 w-3.5" />
+        </span>
+      </div>
+    </div>
 
-export default function BuzzPublicPage({ page, onLogin }: { page: PublicPage; onLogin: () => void }) {
-  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [message, setMessage] = useState("");
-  const install = <InstallAppDialog trigger={<Button className="gradient-brand h-12 gap-2 px-6"><ArrowDownToLine className="h-4 w-4" /> Install Buzz</Button>} />;
-  if (page === "contact") return <section className="mx-auto min-h-[70vh] max-w-5xl px-5 py-14 sm:py-24 low-fade"><p className="text-sm font-semibold text-primary">BUZZ SUPPORT</p><h1 className="mt-3 text-4xl sm:text-6xl">Contact Buzz</h1><p className="mt-5 max-w-xl text-muted-foreground">Questions or feedback? Write to us at <a className="underline text-primary" href="mailto:prasadprem904@gmail.com">prasadprem904@gmail.com</a>.</p><form className="mt-10 grid max-w-xl gap-5" onSubmit={e => { e.preventDefault(); window.location.href = `mailto:prasadprem904@gmail.com?subject=${encodeURIComponent(`Buzz contact from ${name}`)}&body=${encodeURIComponent(`${message}\n\nFrom: ${name}\nReply to: ${email}`)}`; }}><label className="grid gap-2 text-sm font-medium">Name<Input required value={name} onChange={e => setName(e.target.value)} placeholder="Your name" /></label><label className="grid gap-2 text-sm font-medium">Email<Input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label><label className="grid gap-2 text-sm font-medium">Message<Textarea required minLength={10} value={message} onChange={e => setMessage(e.target.value)} placeholder="How can we help?" rows={6} /></label><p className="text-xs text-muted-foreground">This opens your email app with your message ready to send. In-page delivery is not available yet.</p><Button type="submit" className="w-fit gap-2 gradient-brand"><Send className="h-4 w-4" /> Open email app</Button></form></section>;
-  if (page === "download") return <section className="mx-auto grid min-h-[70vh] max-w-6xl items-center gap-12 px-5 py-14 lg:grid-cols-2 lg:py-24 low-fade"><div className="order-2 lg:order-1"><Preview /></div><div className="order-1 lg:order-2"><img src={buzzLogo} alt="Buzz logo" className="h-20 w-20 rounded-md object-cover shadow-lg" /><h1 className="mt-7 text-4xl sm:text-6xl">Buzz on your device</h1><p className="my-6 max-w-md text-lg text-muted-foreground">Chat and call from your phone or desktop. Install Buzz for quick access from your home screen.</p>{install}<p className="mt-4 text-sm text-muted-foreground">If your browser doesn't offer direct installation, the install window shows the steps for your device.</p></div></section>;
-  if (page === "privacy") return <><section className="bg-landing-night text-primary-foreground"><div className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-16 lg:grid-cols-2 lg:py-24 low-fade"><div><ShieldCheck className="h-10 w-10 text-primary" /><h1 className="mt-6 text-4xl sm:text-6xl">Your conversations, your choice.</h1><p className="mt-6 max-w-lg text-lg text-primary-foreground/75">Buzz lets you connect with a username instead of sharing your phone number. Messages and calls are protected in transit.</p><Button className="mt-8 gradient-brand" onClick={onLogin}>Open Buzz <ArrowRight className="ml-2 h-4 w-4" /></Button></div><Preview /></div></section><section className="mx-auto grid max-w-6xl gap-8 px-5 py-16 sm:grid-cols-3"><div><LockKeyhole className="text-primary" /><h2 className="mt-4 text-xl font-semibold">Control your profile</h2><p className="mt-2 text-muted-foreground">Choose who sees your activity, typing, and read receipts in Buzz settings.</p></div><div><ShieldCheck className="text-primary" /><h2 className="mt-4 text-xl font-semibold">Private handles</h2><p className="mt-2 text-muted-foreground">Share only your @username — never your number or email.</p></div><div><MessageCircle className="text-primary" /><h2 className="mt-4 text-xl font-semibold">No phone number</h2><p className="mt-2 text-muted-foreground">Find friends by username without publishing your number.</p></div></section></>;
-  if (page === "buzz-web") return <><section className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-16 lg:grid-cols-2 lg:py-24 low-fade"><div><p className="font-semibold text-primary">BUZZ WEB</p><h1 className="mt-4 text-4xl sm:text-6xl">Your conversations, on a bigger screen.</h1><p className="my-6 max-w-lg text-lg text-muted-foreground">Send messages, share files, and make voice or video calls directly in your browser.</p><Button onClick={onLogin} className="gradient-brand gap-2">Open Buzz Web <ArrowRight className="h-4 w-4" /></Button></div><Preview /></section><section className="bg-landing-night text-primary-foreground"><div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-16 md:grid-cols-2"><img src={familyImage} alt="Family video calling" className="mx-auto max-h-[420px] w-full max-w-sm rounded-md object-cover" /><div><Video className="h-8 w-8 text-primary" /><h2 className="mt-5 text-3xl sm:text-4xl">Make every call feel closer.</h2><p className="mt-4 text-primary-foreground/70">Start a voice or video call from any conversation in Buzz.</p></div></div></section></>;
-  const features = [
-    { Icon: MessageCircle, title: "Private chats", copy: "Start a conversation by username." },
-    { Icon: Video, title: "Voice & video", copy: "Call directly from a chat." },
-    { Icon: ShieldCheck, title: "Moments & nearby", copy: "Share a Moment or connect nearby." },
-  ];
-  return <><section className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-16 lg:grid-cols-2 lg:py-24 low-fade"><div><p className="font-semibold text-primary">BUZZ FEATURES</p><h1 className="mt-4 text-4xl sm:text-6xl">Stay close, your way.</h1><p className="my-6 max-w-lg text-lg text-muted-foreground">One place for chats, Moments, calls and the people that matter.</p><Button onClick={onLogin} className="gradient-brand gap-2">Start chatting <ArrowRight className="h-4 w-4" /></Button></div><Preview /></section><section className="bg-landing-night text-primary-foreground"><div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 md:grid-cols-2"><img src={groupImage} alt="Friends enjoying a group conversation" className="aspect-video w-full rounded-md object-cover" /><div className="self-center"><Users className="text-primary" /><h2 className="mt-4 text-3xl">Together in every conversation</h2><p className="mt-4 text-primary-foreground/70">Create groups, share photos and files, and catch up with voice or video calls.</p></div></div></section><section className="mx-auto grid max-w-6xl gap-8 px-5 py-16 sm:grid-cols-3">{features.map(({ Icon, title, copy }) => <div key={title}><Icon className="text-primary" /><h2 className="mt-4 text-xl font-semibold">{title}</h2><p className="mt-2 text-muted-foreground">{copy}</p></div>)}</section></>;
+    <div className="space-y-3 bz-grid-paper p-4 text-xs font-medium">
+      <div className="w-fit max-w-[80%] rounded-xl border-2 border-[#0a0a0a] bg-white p-2.5 shadow-[0_2px_0_0_#0a0a0a]">
+        Hey! Are we meeting this evening? ☕
+      </div>
+      <div className="ml-auto w-fit max-w-[80%] rounded-xl border-2 border-[#0a0a0a] bg-[#FCE314] p-2.5 text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]">
+        Yes, see you at 6! Bringing everyone along 😊
+        <div className="mt-1 flex justify-end font-mono text-[9px] font-bold">
+          17:42 <CheckCheck className="ml-1 inline h-3 w-3 text-blue-800" />
+        </div>
+      </div>
+      <div className="w-fit max-w-[80%] rounded-xl border-2 border-[#0a0a0a] bg-[#E2ECFF] p-2.5 shadow-[0_2px_0_0_#0a0a0a]">
+        🎤 <span className="font-bold">Ghost Voice Note</span> (Chipmunk effect)
+      </div>
+    </div>
+
+    <div className="flex items-center gap-2 border-t-2 border-[#0a0a0a] bg-[#fffbec] p-3 text-xs text-[#0a0a0a]/60">
+      <MessageCircle className="h-4 w-4" />
+      <span className="flex-1 font-semibold">Message @ayesha...</span>
+      <Mic className="h-4 w-4" />
+    </div>
+  </div>
+);
+
+export default function BuzzPublicPage({
+  page,
+  onLogin,
+}: {
+  page: PublicPage;
+  onLogin: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+
+  /* ────────── 1. FEATURES PAGE ────────── */
+  if (page === "features") {
+    const categories = [
+      {
+        title: "🛡️ Privacy & Identity",
+        items: [
+          "Zero Phone Numbers: Connect solely via unique @username",
+          "Anonymous Guest Chat link: anyone can confession-chat without an account",
+          "Ghost Voice: Web Audio filters (Robot, Demon, Chipmunk, Deep)",
+          "End-to-end encrypted 1-on-1 conversations",
+          "Biometric & PIN App Lock with 2-step verification",
+        ],
+      },
+      {
+        title: "⚡ Messaging & Content",
+        items: [
+          "24-Hour Moments with live view counters",
+          "7 Curated Chat Themes with persistent wallpaper rendering",
+          "Direct & Group message forwarding with single dialog",
+          "Multi-device instant browser sync via PWA",
+          "Voice messages with browser waveform compression",
+        ],
+      },
+      {
+        title: "📞 Realtime Calls & Discovery",
+        items: [
+          "Low-latency P2P WebRTC HD Voice and Video calling",
+          "Network-aware Ringing (Online) vs Calling (Offline) states",
+          "Group calls with multi-party audio/video mixing",
+          "Discovery via username search & personal QR code scan",
+          "Automated ephemeral cleanup preserving account data",
+        ],
+      },
+    ];
+
+    return (
+      <div className="mx-auto max-w-6xl px-5 py-12 md:py-20 space-y-16">
+        <div className="grid gap-12 lg:grid-cols-2 items-center">
+          <div>
+            <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] px-3 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a] mb-4">
+              <Zap className="h-3.5 w-3.5" /> 100+ FEATURES UNLOCKED
+            </div>
+            <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
+              Stay close.<br />
+              <span className="bz-squig">Your rules.</span>
+            </h1>
+            <p className="mt-5 text-base sm:text-lg text-[#5b5b55] font-medium leading-relaxed">
+              Buzz combines the immediacy of modern messaging with the privacy of anonymous handles and Ghost Voice. No numbers leaked. No contact-book uploads.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button onClick={onLogin} className="bz-btn bz-btn-yellow px-6 py-3 text-sm font-black">
+                Start Chatting Free <ArrowRight className="h-4 w-4" />
+              </button>
+              <InstallAppDialog
+                trigger={
+                  <button className="bz-btn bz-btn-white px-5 py-3 text-sm font-bold">
+                    <ArrowDownToLine className="h-4 w-4" /> Install App
+                  </button>
+                }
+              />
+            </div>
+          </div>
+          <PreviewCard />
+        </div>
+
+        {/* Categories Matrix */}
+        <div className="grid gap-6 md:grid-cols-3">
+          {categories.map((cat, i) => (
+            <div key={i} className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
+              <h3 className="text-base font-black text-[#0a0a0a] mb-4 border-b-2 border-[#0a0a0a]/15 pb-2">
+                {cat.title}
+              </h3>
+              <ul className="space-y-2.5">
+                {cat.items.map((it, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-xs font-medium text-[#0a0a0a]">
+                    <span className="text-emerald-700 font-bold shrink-0">✓</span>
+                    <span>{it}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  /* ────────── 2. PRIVACY PAGE ────────── */
+  if (page === "privacy") {
+    return (
+      <div className="mx-auto max-w-6xl px-5 py-12 md:py-20 space-y-16">
+        <div className="grid gap-12 lg:grid-cols-2 items-center">
+          <div>
+            <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#DCF4E4] px-3 py-1 text-xs font-black text-emerald-900 shadow-[0_2px_0_0_#0a0a0a] mb-4">
+              <ShieldCheck className="h-3.5 w-3.5" /> ZERO-PHONE-NUMBER PRIVACY
+            </div>
+            <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
+              Your conversations.<br />
+              <span className="bz-squig">100% Private.</span>
+            </h1>
+            <p className="mt-5 text-base sm:text-lg text-[#5b5b55] font-medium leading-relaxed">
+              Traditional chat apps ask for your phone number, upload your entire contact book, and link you to advertisers. Buzz asks for none of that.
+            </p>
+            <button onClick={onLogin} className="mt-8 bz-btn bz-btn-yellow px-7 py-3.5 text-sm font-black">
+              Open Buzz Account <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+          <PreviewCard />
+        </div>
+
+        {/* The 3 Privacy Pillars */}
+        <div className="grid gap-6 sm:grid-cols-3">
+          <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#FFF6B8] mb-4">
+              <LockKeyhole className="h-6 w-6 text-[#0a0a0a]" />
+            </div>
+            <h2 className="text-base font-black text-[#0a0a0a]">No Phone Number Identity</h2>
+            <p className="mt-2 text-xs text-[#5b5b55] font-medium leading-relaxed">
+              Sign up with just a username and password. You will never receive spam calls, SIM-swap attacks, or phone-linked data leaks.
+            </p>
+          </div>
+
+          <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#E2ECFF] mb-4">
+              <Shield className="h-6 w-6 text-[#0a0a0a]" />
+            </div>
+            <h2 className="text-base font-black text-[#0a0a0a]">Row-Level Security (RLS)</h2>
+            <p className="mt-2 text-xs text-[#5b5b55] font-medium leading-relaxed">
+              Messages and push tokens are strictly gated by database-level cryptographic policies. Only you and your chat partner can read your messages.
+            </p>
+          </div>
+
+          <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#DCF4E4] mb-4">
+              <Sparkles className="h-6 w-6 text-emerald-800" />
+            </div>
+            <h2 className="text-base font-black text-[#0a0a0a]">Ephemeral Secret Chats</h2>
+            <p className="mt-2 text-xs text-[#5b5b55] font-medium leading-relaxed">
+              Guest chats are tokenized and automatically expire. Moments vanish after 24 hours. Your digital footprint remains clean.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ────────── 3. BUZZ WEB PAGE ────────── */
+  if (page === "buzz-web") {
+    return (
+      <div className="mx-auto max-w-6xl px-5 py-12 md:py-20 space-y-16">
+        <div className="grid gap-12 lg:grid-cols-2 items-center">
+          <div>
+            <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#E2ECFF] px-3 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a] mb-4">
+              <Globe className="h-3.5 w-3.5" /> BROWSER MESSAGING
+            </div>
+            <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
+              Buzz on your<br />
+              <span className="bz-squig">Big Screen.</span>
+            </h1>
+            <p className="mt-5 text-base sm:text-lg text-[#5b5b55] font-medium leading-relaxed">
+              Send messages, share large media files, make voice/video calls, and manage groups directly in Chrome, Safari, or Edge without linking your phone.
+            </p>
+            <div className="mt-8 flex gap-3">
+              <button onClick={onLogin} className="bz-btn bz-btn-yellow px-7 py-3.5 text-sm font-black">
+                Open Buzz Web <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <PreviewCard />
+        </div>
+
+        {/* Web Features Grid */}
+        <div className="grid gap-6 sm:grid-cols-3">
+          <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
+            <h3 className="font-black text-sm text-[#0a0a0a]">⚡ Keyboard Productivity</h3>
+            <p className="mt-1 text-xs text-[#5b5b55] leading-relaxed">
+              Enter to send, Shift+Enter for new lines, smooth momentum scrolling, and instant search.
+            </p>
+          </div>
+          <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
+            <h3 className="font-black text-sm text-[#0a0a0a]">📹 In-Browser HD Calls</h3>
+            <p className="mt-1 text-xs text-[#5b5b55] leading-relaxed">
+              WebRTC voice and video calls directly through your browser's mic and camera.
+            </p>
+          </div>
+          <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
+            <h3 className="font-black text-sm text-[#0a0a0a]">🔒 Zero Phone Dependency</h3>
+            <p className="mt-1 text-xs text-[#5b5b55] leading-relaxed">
+              Unlike other web messengers, Buzz Web runs independently. Your laptop doesn't need a connected phone.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ────────── 4. DOWNLOAD PAGE ────────── */
+  if (page === "download") {
+    return (
+      <div className="mx-auto max-w-6xl px-5 py-12 md:py-20 space-y-16">
+        <div className="grid gap-12 lg:grid-cols-2 items-center">
+          <div>
+            <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] px-3 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a] mb-4">
+              <Smartphone className="h-3.5 w-3.5" /> PWA FOR ALL PLATFORMS
+            </div>
+            <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
+              Buzz on every<br />
+              <span className="bz-squig">single device.</span>
+            </h1>
+            <p className="mt-5 text-base sm:text-lg text-[#5b5b55] font-medium leading-relaxed">
+              Install Buzz directly from your browser. Ultra-lightweight (under 5MB), instant updates, and zero Play Store / App Store tracking.
+            </p>
+            <div className="mt-8 flex gap-3">
+              <InstallAppDialog
+                trigger={
+                  <button className="bz-btn bz-btn-yellow px-7 py-3.5 text-sm font-black">
+                    <ArrowDownToLine className="h-4 w-4" /> Install Buzz Now
+                  </button>
+                }
+              />
+              <button onClick={onLogin} className="bz-btn bz-btn-white px-6 py-3.5 text-sm font-bold">
+                Open in Browser
+              </button>
+            </div>
+          </div>
+
+          <div className="bz-card p-6 text-center max-w-md mx-auto shadow-[0_8px_0_0_#0a0a0a]">
+            <h3 className="text-sm font-black text-[#0a0a0a] mb-2">Scan with Phone to Install</h3>
+            <div className="inline-block rounded-2xl border-3 border-[#0a0a0a] bg-white p-4 shadow-[0_4px_0_0_#0a0a0a]">
+              <QRCodeSVG value="https://chat-without-digits.lovable.app" size={160} level="H" />
+            </div>
+            <p className="mt-3 text-[11px] font-mono font-bold text-[#5b5b55]">
+              https://chat-without-digits.lovable.app
+            </p>
+          </div>
+        </div>
+
+        {/* Installation Steps */}
+        <div className="grid gap-6 sm:grid-cols-3">
+          <div className="bz-card p-5 shadow-[0_4px_0_0_#0a0a0a]">
+            <span className="bz-label">ANDROID</span>
+            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">Chrome or Brave</h4>
+            <p className="mt-1 text-xs text-[#5b5b55]">
+              Tap the 3 dots menu in Chrome, then select <strong>"Install app"</strong> or tap the yellow Install button.
+            </p>
+          </div>
+          <div className="bz-card p-5 shadow-[0_4px_0_0_#0a0a0a]">
+            <span className="bz-label">APPLE iOS</span>
+            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">Safari on iPhone / iPad</h4>
+            <p className="mt-1 text-xs text-[#5b5b55]">
+              Open in Safari, tap the <strong>Share</strong> icon, and choose <strong>"Add to Home Screen"</strong>.
+            </p>
+          </div>
+          <div className="bz-card p-5 shadow-[0_4px_0_0_#0a0a0a]">
+            <span className="bz-label">DESKTOP</span>
+            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">Windows / Mac / Linux</h4>
+            <p className="mt-1 text-xs text-[#5b5b55]">
+              Click the install icon in your address bar or tap "Install Buzz" for a standalone desktop window.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ────────── 5. CONTACT PAGE ────────── */
+  return (
+    <div className="mx-auto max-w-4xl px-5 py-12 md:py-20">
+      <div className="bz-card p-6 md:p-10 shadow-[0_8px_0_0_#0a0a0a]">
+        <span className="bz-label">BUZZ SUPPORT</span>
+        <h1 className="mt-2 text-3xl sm:text-5xl font-black text-[#0a0a0a] tracking-tight">
+          Contact Buzz Team 📬
+        </h1>
+        <p className="mt-3 text-sm text-[#5b5b55] font-medium">
+          Have feedback, feature requests, or questions? Send us a direct note at{" "}
+          <a href="mailto:prasadprem904@gmail.com" className="font-bold underline text-[#0a0a0a]">
+            prasadprem904@gmail.com
+          </a>
+          .
+        </p>
+
+        <form
+          className="mt-8 space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            window.location.href = `mailto:prasadprem904@gmail.com?subject=${encodeURIComponent(
+              `Buzz inquiry from ${name}`
+            )}&body=${encodeURIComponent(`${message}\n\nFrom: ${name}\nReply to: ${email}`)}`;
+          }}
+        >
+          <div>
+            <label className="text-xs font-black text-[#0a0a0a]">Your Name</label>
+            <input
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Rahul Verma"
+              className="mt-1 w-full rounded-xl border-2 border-[#0a0a0a] bg-[#fffbec] p-3 text-xs font-bold outline-none"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-black text-[#0a0a0a]">Your Email</label>
+            <input
+              required
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@domain.com"
+              className="mt-1 w-full rounded-xl border-2 border-[#0a0a0a] bg-[#fffbec] p-3 text-xs font-bold outline-none"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-black text-[#0a0a0a]">Message or Feedback</label>
+            <textarea
+              required
+              rows={5}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Tell us what you love or what we should build next..."
+              className="mt-1 w-full rounded-xl border-2 border-[#0a0a0a] bg-[#fffbec] p-3 text-xs font-bold outline-none resize-none"
+            />
+          </div>
+
+          <button type="submit" className="bz-btn bz-btn-yellow w-full py-3.5 text-xs font-black uppercase">
+            <Send className="h-4 w-4" /> Send Direct Message
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 }
