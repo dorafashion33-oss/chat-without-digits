@@ -1,29 +1,17 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  ArrowDownToLine,
-  ArrowRight,
-  Check,
-  CheckCheck,
-  Globe,
-  Lock,
-  Menu,
-  MessageCircle,
-  Phone,
-  QrCode,
-  Shield,
-  Smartphone,
-  Sparkles,
-  Users,
-  Video,
-  X,
-  Zap,
-} from "lucide-react";
+import { ArrowDownToLine, ArrowRight, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import InstallAppDialog from "@/components/chat/InstallAppDialog";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
-import BuzzPublicPage, { publicPages, BuzzRealtimeChatSimulator } from "./BuzzPublicPage";
+import type { ComponentType } from "react";
+import BuzzPublicPage, * as BuzzPublicPageModule from "./BuzzPublicPage";
+
+// Namespace import avoids Rollup's strict named-export resolution error.
+const { publicPages } = BuzzPublicPageModule;
+const BuzzRealtimeChatSimulator =
+  (BuzzPublicPageModule as unknown as { BuzzRealtimeChatSimulator: ComponentType }).BuzzRealtimeChatSimulator;
 
 const TARGET_LAUNCH_TIMESTAMP = new Date("2027-03-25T10:30:00+05:30").getTime();
 
