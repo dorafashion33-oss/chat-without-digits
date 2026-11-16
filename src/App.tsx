@@ -10,6 +10,7 @@ import GuestChat from "./pages/GuestChat";
 import GuestInbox from "./pages/GuestInbox";
 import AuthPage from "./pages/AuthPage";
 import MotionFX from "./components/MotionFX";
+import AppLockDialog from "./components/chat/AppLockDialog";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <MotionFX />
+        <AppLockDialog />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
