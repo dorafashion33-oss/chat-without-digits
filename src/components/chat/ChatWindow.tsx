@@ -1,12 +1,12 @@
-import { Send, Phone, Video, Paperclip, ArrowLeft, Trash2, Edit2, X, Check, CheckCheck } from "lucide-react";
-import { useState, useRef, useEffect, useMemo } from "react";
-import type { ChatThread, DbMessage, DbProfile } from "@/hooks/useRealtimeMessages";
-import MessageContent from "./MessageContent";
-import MessageForwardDialog from "./MessageForwardDialog";
+import { useState, useRef, useEffect } from "react";
+import { Phone, Video, Send, ArrowLeft, Image, Smile, Trash2, Edit2, Reply, X, Paperclip, Check, CheckCheck } from "lucide-react";
+import { type ChatThread, type DbMessage, type DbProfile } from "@/hooks/useRealtimeMessages";
 import MessageReactions from "./MessageReactions";
-import VoiceMessageButton from "./VoiceMessageButton";
-import TypingIndicator from "./TypingIndicator";
+import EmojiPicker from "./EmojiPicker";
+import MessageForwardDialog from "./MessageForwardDialog";
 import UserProfileDialog from "./UserProfileDialog";
+import VoiceMessageButton from "./VoiceMessageButton";
+import MessageContent from "./MessageContent";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useChatTheme } from "./ChatThemeProvider";
@@ -37,16 +37,18 @@ const ChatWindow = ({
   onBack,
   onStartCall,
 }: ChatWindowProps) => {
-  const { theme } = useChatTheme();
   const [input, setInput] = useState("");
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [editingMessage, setEditingMessage] = useState<DbMessage | null>(null);
+  const [editText, setEditText] = useState("");
+  const [replyTo, setReplyTo] = useState<DbMessage | null>(null);
+  const [forwardMessage, setForwardMessage] = useState<DbMessage | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
+  const [activePartnerProfile, setActivePartnerProfile] = useState<DbProfile | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-  const [editText, setEditText] = useState("");
-  const [forwardMessage, setForwardMessage] = useState<DbMessage | null>(null);
-  const [replyTo, setReplyTo] = useState<DbMessage | null>(null);
-  const [showProfile, setShowProfile] = useState(false);
+  const { theme } = useChatTheme();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -55,6 +57,23 @@ const ChatWindow = ({
 
   const displayName = thread.profile?.display_name || thread.profile?.username || "Unknown";
   const initials = displayName.slice(0, 2).toUpperCase();
+
+  // Load fresh partner profile for reliable profile view
+  useEffect(() => {
+    const partner = thread.profile || profiles.find((p) => p.user_id === thread.id);
+    if (partner) {
+      setActivePartnerProfile(partner);
+    } else {
+      supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", thread.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) setActivePartnerProfile(data);
+        });
+    }
+  }, [thread.id, thread.profile, profiles]);
 
   useEffect(() => {
     const isNew = prevThreadIdRef.current !== thread.id;
@@ -74,7 +93,8 @@ const ChatWindow = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
-    onTyping?.(thread.id);
+    const typingAllowed = localStorage.getItem("buzz-privacy-typing") !== "0";
+    if (typingAllowed) onTyping?.(thread.id);
   };
 
   const handleSend = async () => {
@@ -138,6 +158,10 @@ const ChatWindow = ({
     }
   };
 
+  const handleOpenProfile = () => {
+    setShowProfile(true);
+  };
+
   return (
     <div className="flex h-full flex-col bg-white">
       {/* Neo-Brutalist Chat Header */}
@@ -152,10 +176,12 @@ const ChatWindow = ({
             </button>
           )}
 
-          <div
-            onClick={() => setShowProfile(true)}
-            className="flex items-center gap-2.5 cursor-pointer group"
-            title="View Profile"
+          {/* Profile Trigger button */}
+          <button
+            type="button"
+            onClick={handleOpenProfile}
+            className="flex items-center gap-2.5 text-left group cursor-pointer p-1 rounded-xl hover:bg-[#FFF6B8]/50 transition-colors"
+            title="Click to view full profile"
           >
             <div className="relative">
               <div className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] gradient-brand text-xs font-black text-white shadow-[0_2px_0_0_#0a0a0a] group-hover:scale-105 transition-transform">
@@ -172,7 +198,7 @@ const ChatWindow = ({
                 {thread.profile?.is_online ? "● ONLINE" : "OFFLINE"}
               </p>
             </div>
-          </div>
+          </button>
         </div>
 
         <div className="flex items-center gap-2">
@@ -211,139 +237,125 @@ const ChatWindow = ({
 
         {thread.messages.map((msg) => {
           const isOwn = msg.sender_id === currentUserId;
-          const isEditing = editingMessageId === msg.id;
-
           return (
-            <div key={msg.id} className={`group flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
+            <div key={msg.id} className={`flex flex-col ${isOwn ? "items-end" : "items-start"} group/msg`}>
               <div
-                className={`relative max-w-[85%] sm:max-w-[70%] rounded-2xl border-2 border-[#0a0a0a] p-3 text-xs font-medium shadow-[0_3px_0_0_#0a0a0a] ${
-                  isOwn ? "bg-[#FCE314] text-[#0a0a0a]" : "bg-white text-[#0a0a0a]"
+                className={`max-w-[80%] rounded-2xl border-2 border-[#0a0a0a] px-3.5 py-2.5 text-xs font-medium shadow-[0_3px_0_0_#0a0a0a] ${
+                  isOwn
+                    ? "bg-[#FFF6B8] text-[#0a0a0a]"
+                    : isPhotoTheme(theme)
+                    ? "bg-white/95 backdrop-blur-md text-[#0a0a0a]"
+                    : "bg-white text-[#0a0a0a]"
                 }`}
               >
-                {isEditing ? (
-                  <div className="flex flex-col gap-2">
-                    <input
-                      type="text"
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      className="rounded-lg border-2 border-[#0a0a0a] bg-white px-2 py-1 text-xs outline-none"
-                      autoFocus
-                    />
-                    <div className="flex justify-end gap-1.5">
-                      <button
-                        onClick={() => setEditingMessageId(null)}
-                        className="rounded border border-[#0a0a0a] px-2 py-0.5 text-[10px] font-bold"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => {
-                          onEditMessage?.(msg.id, editText);
-                          setEditingMessageId(null);
-                        }}
-                        className="rounded border border-[#0a0a0a] bg-[#0a0a0a] px-2 py-0.5 text-[10px] font-bold text-white"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <MessageContent text={msg.text} />
-                    <div className="mt-1 flex items-center justify-end gap-1 font-mono text-[9px] font-bold text-[#0a0a0a]/60">
-                      <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                      {isOwn && (msg.is_read ? <CheckCheck className="h-3 w-3 text-blue-600" /> : <Check className="h-3 w-3" />)}
-                    </div>
-                  </>
-                )}
+                <MessageContent text={msg.text} isOwn={isOwn} />
 
-                {/* Hover Actions */}
-                <div
-                  className={`absolute top-0 -translate-y-1/2 hidden group-hover:flex items-center gap-1 rounded-lg border-2 border-[#0a0a0a] bg-white px-1.5 py-0.5 shadow-[0_2px_0_0_#0a0a0a] ${
-                    isOwn ? "right-2" : "left-2"
-                  }`}
-                >
-                  <MessageReactions messageId={msg.id} currentUserId={currentUserId} />
-                  {isOwn && onDeleteMessage && (
-                    <button onClick={() => onDeleteMessage(msg.id)} className="p-1 hover:text-red-500">
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  )}
-                  {isOwn && onEditMessage && (
-                    <button
-                      onClick={() => {
-                        setEditingMessageId(msg.id);
-                        setEditText(msg.text);
-                      }}
-                      className="p-1 hover:text-blue-500"
-                    >
-                      <Edit2 className="h-3 w-3" />
-                    </button>
+                <div className="mt-1 flex items-center justify-end gap-1.5 text-[9px] font-mono font-bold text-[#5b5b55]">
+                  <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                  {isOwn && (
+                    <span>
+                      {msg.read_at ? (
+                        <CheckCheck className="inline h-3 w-3 stroke-[3] text-blue-600" />
+                      ) : (
+                        <Check className="inline h-3 w-3 stroke-[3]" />
+                      )}
+                    </span>
                   )}
                 </div>
+              </div>
+
+              {/* Message Context Controls */}
+              <div className="opacity-0 group-hover/msg:opacity-100 flex items-center gap-1 mt-1 transition-opacity">
+                <button
+                  onClick={() => setReplyTo(msg)}
+                  className="rounded border border-[#0a0a0a] bg-white p-1 shadow-[0_1px_0_0_#0a0a0a] hover:bg-[#FFF6B8]"
+                  title="Reply"
+                >
+                  <Reply className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={() => setForwardMessage(msg)}
+                  className="rounded border border-[#0a0a0a] bg-white p-1 shadow-[0_1px_0_0_#0a0a0a] hover:bg-[#FFF6B8]"
+                  title="Forward"
+                >
+                  <Paperclip className="h-3 w-3" />
+                </button>
+                {isOwn && onDeleteMessage && (
+                  <button
+                    onClick={() => onDeleteMessage(msg.id)}
+                    className="rounded border border-[#0a0a0a] bg-white p-1 text-red-600 shadow-[0_1px_0_0_#0a0a0a] hover:bg-red-50"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                )}
               </div>
             </div>
           );
         })}
 
-        {isOtherTyping && <TypingIndicator name={displayName} />}
+        {isOtherTyping && (
+          <div className="flex items-center gap-2 text-xs font-bold text-[#5b5b55] italic bg-white/80 border border-[#0a0a0a] px-3 py-1 rounded-full w-fit">
+            <span>typing...</span>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Attachment Preview */}
-      {attachedFile && (
-        <div className="flex items-center justify-between border-t-2 border-[#0a0a0a] bg-[#FFF6B8] px-4 py-2">
-          <div className="flex items-center gap-2">
-            {imagePreview && <img src={imagePreview} alt="Preview" className="h-8 w-8 rounded border border-[#0a0a0a] object-cover" />}
-            <span className="text-xs font-bold text-[#0a0a0a] truncate max-w-xs">{attachedFile.name}</span>
-          </div>
-          <button onClick={() => { setAttachedFile(null); setImagePreview(null); }} className="text-[#0a0a0a]">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-
-      {/* Reply Banner */}
-      {replyTo && (
-        <div className="flex items-center justify-between border-t-2 border-[#0a0a0a] bg-[#DCF4E4] px-4 py-2">
-          <p className="text-xs font-bold text-[#0a0a0a] truncate">Replying to: {replyTo.text.slice(0, 40)}...</p>
-          <button onClick={() => setReplyTo(null)} className="text-[#0a0a0a]">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-
-      {/* Tactile Chat Input Bar */}
+      {/* Input Bar */}
       <div className="border-t-2 border-[#0a0a0a] bg-[#fffbec] p-3">
+        {replyTo && (
+          <div className="mb-2 flex items-center justify-between rounded-xl border-2 border-[#0a0a0a] bg-white px-3 py-1.5 text-xs font-semibold">
+            <span className="truncate">Replying to: {replyTo.text.slice(0, 40)}</span>
+            <button onClick={() => setReplyTo(null)} className="font-bold">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {imagePreview && (
+          <div className="relative mb-2 inline-block">
+            <img src={imagePreview} alt="Preview" className="h-20 w-20 rounded-xl border-2 border-[#0a0a0a] object-cover" />
+            <button
+              onClick={() => {
+                setAttachedFile(null);
+                setImagePreview(null);
+              }}
+              className="absolute -right-2 -top-2 rounded-full border border-[#0a0a0a] bg-red-500 p-1 text-white shadow"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
+          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] hover:bg-[#FFF6B8]"
+            className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-white shadow-[0_2px_0_0_#0a0a0a] hover:bg-[#FFF6B8]"
             title="Attach file"
           >
             <Paperclip className="h-4 w-4" />
           </button>
-          <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} />
 
-          <input
-            type="text"
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder={`Message @${displayName}...`}
-            className="flex-1 rounded-xl border-2 border-[#0a0a0a] bg-white px-3.5 py-2.5 text-xs font-semibold text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] outline-none placeholder:text-[#0a0a0a]/40"
-          />
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your encrypted message..."
+              className="w-full rounded-xl border-2 border-[#0a0a0a] bg-white px-3.5 py-2 text-xs font-bold text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] outline-none placeholder:text-[#5b5b55]"
+            />
+          </div>
 
-          <VoiceMessageButton
-            receiverId={thread.id}
-            onSendVoice={(voiceUrl) => onSendMessage(thread.id, `[voice]${voiceUrl}[/voice]`)}
-          />
+          <VoiceMessageButton receiverId={thread.id} onSendVoice={(url, dur) => onSendMessage(thread.id, `[voice]${url}|${dur}[/voice]`)} />
 
           <button
             onClick={handleSend}
             disabled={uploading || (!input.trim() && !attachedFile)}
-            className="bz-btn bz-btn-yellow grid h-10 w-10 place-items-center rounded-xl p-0 disabled:opacity-40"
-            title="Send"
+            className="bz-btn bz-btn-yellow h-10 px-4 text-xs font-black uppercase disabled:opacity-40"
           >
             <Send className="h-4 w-4" />
           </button>
@@ -365,10 +377,24 @@ const ChatWindow = ({
         />
       )}
 
-      {/* Partner User Profile Dialog */}
-      {showProfile && thread.profile && (
+      {/* Partner User Profile Dialog with guaranteed fallback */}
+      {showProfile && (
         <UserProfileDialog
-          profile={thread.profile}
+          profile={
+            activePartnerProfile ||
+            thread.profile || {
+              id: thread.id,
+              user_id: thread.id,
+              username: displayName.replace(/^@/, ""),
+              display_name: displayName,
+              about: "Hey there! I'm using Buzz 💬",
+              avatar_url: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              is_online: false,
+              last_seen: null,
+            }
+          }
           onClose={() => setShowProfile(false)}
           onMessage={() => setShowProfile(false)}
           onCall={onStartCall}
