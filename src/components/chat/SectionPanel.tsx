@@ -13,12 +13,9 @@ import {
   ArrowLeft,
   LogOut,
   Search,
-  Users,
-  Plus,
   X,
   Phone,
   Video,
-  Send,
   Eye,
   Palette,
   QrCode,
@@ -28,6 +25,8 @@ import {
   PhoneIncoming,
   PhoneMissed,
   KeyRound,
+  Edit2,
+  Share2,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
@@ -53,12 +52,107 @@ interface SectionPanelProps {
   onPostMoment: (text: string, mediaFile?: File) => Promise<boolean>;
   onDeleteMoment: (id: string) => void;
   onRecordView: (momentId: string) => void;
-  groups: Group[];
-  onCreateGroup: (name: string, description: string, memberIds: string[]) => void;
-  onSelectGroup: (groupId: string) => void;
+  groups?: Group[];
+  onCreateGroup?: (name: string, description: string, memberIds: string[]) => void;
+  onSelectGroup?: (groupId: string) => void;
   onStartCall?: (userId: string, type: "voice" | "video") => void;
 }
 
+/* ─── Reactive Language Hook ─── */
+const useAppLanguage = () => {
+  const [lang, setLang] = useState<string>(() => {
+    if (typeof window === "undefined") return "en";
+    return localStorage.getItem("buzz-language") || "en";
+  });
+
+  useEffect(() => {
+    const handler = () => {
+      setLang(localStorage.getItem("buzz-language") || "en");
+    };
+    window.addEventListener("languagechange", handler);
+    return () => window.removeEventListener("languagechange", handler);
+  }, []);
+
+  return lang;
+};
+
+const tr = (lang: string, en: string, hi: string) => (lang === "hi" ? hi : en);
+
+/* ─── Local State Persistence Helpers ─── */
+const useLocalToggle = (key: string, def = true) => {
+  const [v, setV] = useState<boolean>(() => {
+    const s = localStorage.getItem(key);
+    return s === null ? def : s === "1";
+  });
+  useEffect(() => {
+    localStorage.setItem(key, v ? "1" : "0");
+  }, [key, v]);
+  return [v, setV] as const;
+};
+
+const useLocalString = (key: string, def: string) => {
+  const [v, setV] = useState<string>(() => localStorage.getItem(key) || def);
+  useEffect(() => {
+    localStorage.setItem(key, v);
+  }, [key, v]);
+  return [v, setV] as const;
+};
+
+/* ─── Tactile Toggle Component ─── */
+const TactileToggleRow = ({
+  label,
+  desc,
+  checked,
+  onChange,
+  enabledMsg,
+  disabledMsg,
+}: {
+  label: string;
+  desc?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  enabledMsg?: string;
+  disabledMsg?: string;
+}) => (
+  <div
+    className="bz-card p-3 flex items-center justify-between cursor-pointer hover:bg-white active:scale-[0.99] transition-all"
+    onClick={() => {
+      const next = !checked;
+      onChange(next);
+      toast.success(`${label}: ${next ? (enabledMsg || "Enabled ✅") : (disabledMsg || "Disabled ⚪")}`);
+    }}
+  >
+    <div className="text-left flex-1 pr-3">
+      <p className="text-xs font-black text-[#0a0a0a]">{label}</p>
+      {desc && <p className="text-[11px] text-[#5b5b55] font-medium">{desc}</p>}
+    </div>
+    <div
+      className={`relative h-6 w-11 rounded-full border-2 border-[#0a0a0a] transition-colors ${
+        checked ? "bg-[#FCE314]" : "bg-white"
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 h-4 w-4 rounded-full border-2 border-[#0a0a0a] transition-transform ${
+          checked ? "translate-x-[22px] bg-[#0a0a0a]" : "translate-x-0.5 bg-white"
+        }`}
+      />
+    </div>
+  </div>
+);
+
+const SettingsSubHeader = ({ title, onBack }: { title: string; onBack: () => void }) => (
+  <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-4 py-3.5 flex items-center gap-2">
+    <button
+      onClick={onBack}
+      className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]"
+    >
+      <ArrowLeft className="h-4 w-4" />
+    </button>
+    <h1 className="text-base font-black text-[#0a0a0a]">{title}</h1>
+  </div>
+);
+
+/* ─── Main Section Router ─── */
 const SectionPanel = ({
   section,
   onBack,
@@ -97,68 +191,6 @@ const SectionPanel = ({
   }
 };
 
-/* ─── Helpers for Setting Toggles ─── */
-const useLocalToggle = (key: string, def = true) => {
-  const [v, setV] = useState<boolean>(() => {
-    const s = localStorage.getItem(key);
-    return s === null ? def : s === "1";
-  });
-  useEffect(() => {
-    localStorage.setItem(key, v ? "1" : "0");
-  }, [key, v]);
-  return [v, setV] as const;
-};
-
-const useLocalString = (key: string, def: string) => {
-  const [v, setV] = useState<string>(() => localStorage.getItem(key) || def);
-  useEffect(() => {
-    localStorage.setItem(key, v);
-  }, [key, v]);
-  return [v, setV] as const;
-};
-
-const TactileToggleRow = ({
-  label,
-  desc,
-  checked,
-  onChange,
-}: {
-  label: string;
-  desc?: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) => (
-  <div className="bz-card p-3 flex items-center justify-between cursor-pointer hover:bg-white" onClick={() => onChange(!checked)}>
-    <div className="text-left flex-1 pr-3">
-      <p className="text-xs font-black text-[#0a0a0a]">{label}</p>
-      {desc && <p className="text-[11px] text-[#5b5b55] font-medium">{desc}</p>}
-    </div>
-    <div
-      className={`relative h-6 w-11 rounded-full border-2 border-[#0a0a0a] transition-colors ${
-        checked ? "bg-[#FCE314]" : "bg-white"
-      }`}
-    >
-      <span
-        className={`absolute top-0.5 h-4 w-4 rounded-full border-2 border-[#0a0a0a] bg-white transition-transform ${
-          checked ? "translate-x-[22px] bg-[#0a0a0a]" : "translate-x-0.5"
-        }`}
-      />
-    </div>
-  </div>
-);
-
-const SettingsSubHeader = ({ title, onBack }: { title: string; onBack: () => void }) => (
-  <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-4 py-3.5 flex items-center gap-2">
-    <button
-      onClick={onBack}
-      className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]"
-    >
-      <ArrowLeft className="h-4 w-4" />
-    </button>
-    <h1 className="text-base font-black text-[#0a0a0a]">{title}</h1>
-  </div>
-);
-
 /* ─── Moments Panel with Full Working Story Viewer ─── */
 const MomentsPanel = ({
   onBack,
@@ -177,9 +209,9 @@ const MomentsPanel = ({
   onRecordView: (momentId: string) => void;
   username?: string;
 }) => {
+  const lang = useAppLanguage();
   const [newText, setNewText] = useState("");
   const [mediaFile, setMediaFile] = useState<File | null>(null);
-  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
   const [viewingMoment, setViewingMoment] = useState<Moment | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -191,8 +223,7 @@ const MomentsPanel = ({
     if (ok) {
       setNewText("");
       setMediaFile(null);
-      setMediaPreview(null);
-      toast.success("Moment shared! Disappears in 24 hours ⏱️");
+      toast.success(tr(lang, "Moment shared! Disappears in 24 hours ⏱️", "मोमेंट शेयर हो गया! 24 घंटे में हट जाएगा ⏱️"));
     }
     setPosting(false);
   };
@@ -209,7 +240,7 @@ const MomentsPanel = ({
               <ArrowLeft className="h-4 w-4" />
             </button>
           )}
-          <h1 className="text-lg font-black text-[#0a0a0a]">Moments (24h) ⏱️</h1>
+          <h1 className="text-lg font-black text-[#0a0a0a]">{tr(lang, "Moments (24h) ⏱️", "मोमेंट्स (24 घंटे) ⏱️")}</h1>
         </div>
       </div>
 
@@ -217,7 +248,7 @@ const MomentsPanel = ({
         <textarea
           value={newText}
           onChange={(e) => setNewText(e.target.value)}
-          placeholder="Share what's on your mind..."
+          placeholder={tr(lang, "Share what's on your mind...", "अपने विचार यहाँ साझा करें...")}
           className="w-full rounded-xl border-2 border-[#0a0a0a] bg-[#fffbec] p-3 text-xs font-semibold outline-none resize-none"
           rows={2}
         />
@@ -226,7 +257,7 @@ const MomentsPanel = ({
             onClick={() => fileRef.current?.click()}
             className="bz-btn bz-btn-white px-3 py-1.5 text-xs font-bold"
           >
-            <Camera className="h-3.5 w-3.5" /> Attach Media
+            <Camera className="h-3.5 w-3.5" /> {mediaFile ? "Media Selected 📷" : tr(lang, "Attach Media", "फोटो जोड़ें")}
           </button>
           <input
             ref={fileRef}
@@ -235,9 +266,7 @@ const MomentsPanel = ({
             accept="image/*,video/*"
             onChange={(e) => {
               const f = e.target.files?.[0];
-              if (!f) return;
-              setMediaFile(f);
-              setMediaPreview(URL.createObjectURL(f));
+              if (f) setMediaFile(f);
             }}
           />
           <button
@@ -245,7 +274,7 @@ const MomentsPanel = ({
             disabled={posting || (!newText.trim() && !mediaFile)}
             className="bz-btn bz-btn-yellow px-4 py-1.5 text-xs font-black disabled:opacity-50"
           >
-            {posting ? "Sharing..." : "Post Moment"}
+            {posting ? tr(lang, "Sharing...", "शेयर हो रहा है...") : tr(lang, "Post Moment", "पोस्ट करें")}
           </button>
         </div>
       </div>
@@ -253,7 +282,7 @@ const MomentsPanel = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bz-grid-paper">
         {moments.length === 0 ? (
           <div className="p-8 text-center text-xs font-bold text-[#5b5b55]">
-            No moments active yet. Be the first to share one!
+            {tr(lang, "No moments active yet. Be the first to share one!", "अभी कोई मोमेंट नहीं है। पहला मोमेंट शेयर करें!")}
           </div>
         ) : (
           moments.map((m) => (
@@ -277,16 +306,15 @@ const MomentsPanel = ({
               {m.text && <p className="text-xs font-semibold text-[#0a0a0a]">{m.text}</p>}
               <div className="mt-2 flex items-center justify-between text-[10px] font-mono font-bold text-[#5b5b55]">
                 <span className="flex items-center gap-1">
-                  <Eye className="h-3 w-3" /> {m.view_count || m.views?.length || 0} views
+                  <Eye className="h-3 w-3" /> {m.view_count || m.views?.length || 0} {tr(lang, "views", "देखा")}
                 </span>
-                <span className="text-blue-600 font-bold">Tap to view story ›</span>
+                <span className="text-blue-600 font-bold">{tr(lang, "Tap to view story ›", "स्टोरी देखें ›")}</span>
               </div>
             </div>
           ))
         )}
       </div>
 
-      {/* Fullscreen Story Viewer Modal */}
       {viewingMoment && (
         <Dialog open={!!viewingMoment} onOpenChange={() => setViewingMoment(null)}>
           <DialogContent className="max-w-sm overflow-hidden p-0 rounded-3xl border-4 border-[#0a0a0a] bg-white shadow-[0_10px_0_0_#0a0a0a]">
@@ -340,7 +368,7 @@ const MomentsPanel = ({
                     onClick={() => {
                       onDeleteMoment(viewingMoment.id);
                       setViewingMoment(null);
-                      toast.success("Moment deleted");
+                      toast.success(tr(lang, "Moment deleted", "मोमेंट हटा दिया गया"));
                     }}
                     className="flex items-center gap-1 text-red-600 hover:underline"
                   >
@@ -356,16 +384,16 @@ const MomentsPanel = ({
   );
 };
 
-/* ─── Connect Panel with REAL Call Logs ─── */
+/* ─── Connect Panel with Real Call Logs ─── */
 const ConnectPanel = ({
   onBack,
-  onStartChat,
   onStartCall,
 }: {
   onBack?: () => void;
   onStartChat?: (userId: string) => void;
   onStartCall?: (userId: string, type: "voice" | "video") => void;
 }) => {
+  const lang = useAppLanguage();
   const [callHistory, setCallHistory] = useState<CallLog[]>(getCallHistory());
 
   useEffect(() => {
@@ -386,7 +414,7 @@ const ConnectPanel = ({
               <ArrowLeft className="h-4 w-4" />
             </button>
           )}
-          <h1 className="text-lg font-black text-[#0a0a0a]">Call Logs & History 📞</h1>
+          <h1 className="text-lg font-black text-[#0a0a0a]">{tr(lang, "Call Logs & History 📞", "कॉल इतिहास 📞")}</h1>
         </div>
         {callHistory.length > 0 && (
           <button
@@ -395,7 +423,7 @@ const ConnectPanel = ({
             }}
             className="text-[10px] font-black underline text-red-600"
           >
-            Clear History
+            {tr(lang, "Clear History", "इतिहास साफ़ करें")}
           </button>
         )}
       </div>
@@ -404,9 +432,9 @@ const ConnectPanel = ({
         {callHistory.length === 0 ? (
           <div className="bz-card p-6 text-center my-8">
             <PhoneCall className="h-8 w-8 mx-auto mb-2 text-[#0a0a0a]/40" />
-            <p className="text-xs font-black text-[#0a0a0a]">No Call Records Yet</p>
+            <p className="text-xs font-black text-[#0a0a0a]">{tr(lang, "No Call Records Yet", "कोई कॉल रिकॉर्ड नहीं है")}</p>
             <p className="text-[11px] text-[#5b5b55] mt-1">
-              Calls made or received via Buzz WebRTC will appear here automatically.
+              {tr(lang, "Calls made or received via Buzz WebRTC will appear here automatically.", "Buzz पर की गई कॉल यहाँ दिखाई देंगी।")}
             </p>
           </div>
         ) : (
@@ -456,7 +484,7 @@ const ConnectPanel = ({
   );
 };
 
-/* ─── Discover ─── */
+/* ─── Discover Panel ─── */
 const DiscoverPanel = ({
   onBack,
   onStartChat,
@@ -466,6 +494,7 @@ const DiscoverPanel = ({
   onStartChat?: (userId: string) => void;
   onStartCall?: (userId: string, type: "voice" | "video") => void;
 }) => {
+  const lang = useAppLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<DbProfile[]>([]);
   const [me, setMe] = useState<DbProfile | null>(null);
@@ -510,7 +539,7 @@ const DiscoverPanel = ({
               <ArrowLeft className="h-4 w-4" />
             </button>
           )}
-          <h1 className="text-lg font-black text-[#0a0a0a]">Discover People 🔍</h1>
+          <h1 className="text-lg font-black text-[#0a0a0a]">{tr(lang, "Discover People 🔍", "मित्र खोजें 🔍")}</h1>
         </div>
       </div>
 
@@ -519,7 +548,7 @@ const DiscoverPanel = ({
           <Search className="h-4 w-4 text-[#0a0a0a]/60" />
           <input
             type="text"
-            placeholder="Search unique @username..."
+            placeholder={tr(lang, "Search unique @username...", "यूज़रनेम खोजें (@username)...")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-transparent text-xs font-semibold outline-none"
@@ -530,7 +559,7 @@ const DiscoverPanel = ({
           onClick={() => setShowQR(!showQR)}
           className="bz-btn bz-btn-white w-full py-1.5 text-xs font-bold"
         >
-          <QrCode className="h-3.5 w-3.5" /> {showQR ? "Hide My QR" : "Show My Personal QR"}
+          <QrCode className="h-3.5 w-3.5" /> {showQR ? tr(lang, "Hide My QR", "QR कोड छुपाएं") : tr(lang, "Show My Personal QR", "मेरा QR कोड दिखाएं")}
         </button>
       </div>
 
@@ -546,7 +575,7 @@ const DiscoverPanel = ({
       <div className="flex-1 overflow-y-auto p-3 space-y-2 bz-grid-paper">
         {results.length === 0 ? (
           <div className="p-8 text-center text-xs font-bold text-[#5b5b55]">
-            Search by typing at least 2 characters of a friend's @username.
+            {tr(lang, "Search by typing at least 2 characters of a friend's @username.", "कम से कम 2 अक्षर लिखकर दोस्त का यूज़रनेम खोजें।")}
           </div>
         ) : (
           results.map((profile) => (
@@ -571,7 +600,7 @@ const DiscoverPanel = ({
                 }}
                 className="bz-btn bz-btn-yellow px-3 py-1 text-xs font-black"
               >
-                Chat
+                {tr(lang, "Chat", "चैट")}
               </button>
             </div>
           ))
@@ -590,16 +619,17 @@ const DiscoverPanel = ({
   );
 };
 
-/* ─── Settings Panel with PIN Setup ─── */
+/* ─── Settings Panel ─── */
 type SettingsView = "main" | "account" | "privacy" | "security" | "notifications" | "language" | "help" | "chat-themes";
 
 const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
+  const lang = useAppLanguage();
   const { theme, setTheme } = useTheme();
   const [view, setView] = useState<SettingsView>("main");
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    toast.success("Logged out of Buzz");
+    toast.success(tr(lang, "Logged out of Buzz", "Buzz से लॉग आउट हो गए"));
   };
 
   if (view === "account") return <AccountView onBack={() => setView("main")} />;
@@ -610,25 +640,22 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
   if (view === "help") return <HelpView onBack={() => setView("main")} />;
   if (view === "chat-themes") return <ChatThemesPanel onBack={() => setView("main")} />;
 
-  const settingGroups: {
-    title: string;
-    items: { icon: typeof User; label: string; desc: string; view: SettingsView }[];
-  }[] = [
+  const settingGroups = [
     {
-      title: "Account & Security",
+      title: tr(lang, "Account & Security", "खाता और सुरक्षा"),
       items: [
-        { icon: User, label: "Account Info", desc: "Username, display name, about", view: "account" },
-        { icon: Lock, label: "Privacy", desc: "Last seen, read receipts, typing", view: "privacy" },
-        { icon: Shield, label: "Security & PIN Lock", desc: "4-Digit PIN, app lock, 2-step", view: "security" },
+        { icon: User, label: tr(lang, "Account Info", "खाता विवरण"), desc: tr(lang, "Username, display name, about", "यूज़रनेम, नाम, परिचय"), view: "account" as SettingsView },
+        { icon: Lock, label: tr(lang, "Privacy", "गोपनीयता (Privacy)"), desc: tr(lang, "Last seen, read receipts, typing", "लास्ट सीन, ब्लू टिक, टाइपिंग"), view: "privacy" as SettingsView },
+        { icon: Shield, label: tr(lang, "Security & PIN Lock", "सुरक्षा और पिन लॉक"), desc: tr(lang, "4-Digit PIN, app lock, password", "4-अंकों का पिन, ऐप लॉक, पासवर्ड"), view: "security" as SettingsView },
       ],
     },
     {
-      title: "Preferences & Customization",
+      title: tr(lang, "Preferences & Customization", "पसंद और कस्टमाइज़ेशन"),
       items: [
-        { icon: Palette, label: "Chat Themes", desc: "Buzz default cream + wallpapers", view: "chat-themes" },
-        { icon: Bell, label: "Notifications", desc: "Browser Web Push, tones, preview", view: "notifications" },
-        { icon: Globe, label: "Language", desc: "Select app interface language", view: "language" },
-        { icon: HelpCircle, label: "Help & FAQs", desc: "Guides, troubleshooting, contact", view: "help" },
+        { icon: Palette, label: tr(lang, "Chat Themes", "चैट थीम्स"), desc: tr(lang, "Buzz cream + 7 vibrant wallpapers", "क्रीमी लुक + 7 नए वॉलपेपर्स"), view: "chat-themes" as SettingsView },
+        { icon: Bell, label: tr(lang, "Notifications", "नोटिफ़िकेशन"), desc: tr(lang, "Browser Web Push, tones, preview", "वेब पुश, रिंगटोन, प्रीव्यू"), view: "notifications" as SettingsView },
+        { icon: Globe, label: tr(lang, "Language", "भाषा (Language)"), desc: tr(lang, "English / हिन्दी इंटरफ़ेस", "English / हिन्दी इंटरफ़ेस"), view: "language" as SettingsView },
+        { icon: HelpCircle, label: tr(lang, "Help & FAQs", "सहायता और सवाल"), desc: tr(lang, "Guides, troubleshooting, contact", "गाइड्स, सहायता, संपर्क"), view: "help" as SettingsView },
       ],
     },
   ];
@@ -645,13 +672,17 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
               <ArrowLeft className="h-4 w-4" />
             </button>
           )}
-          <h1 className="text-lg font-black text-[#0a0a0a]">Settings ⚙️</h1>
+          <h1 className="text-lg font-black text-[#0a0a0a]">{tr(lang, "Settings ⚙️", "सेटिंग्स ⚙️")}</h1>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bz-grid-paper">
         <div
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          onClick={() => {
+            const next = theme === "dark" ? "light" : "dark";
+            setTheme(next);
+            toast.success(next === "dark" ? "Dark Mode Active 🌙" : "Light Mode Active ☀️");
+          }}
           className="bz-card p-3.5 flex items-center justify-between cursor-pointer hover:bg-white"
         >
           <div className="flex items-center gap-3">
@@ -659,11 +690,11 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </div>
             <div>
-              <p className="text-xs font-black text-[#0a0a0a]">Theme Mode</p>
-              <p className="text-[11px] text-[#5b5b55]">{theme === "dark" ? "Dark Active" : "Light Active"}</p>
+              <p className="text-xs font-black text-[#0a0a0a]">{tr(lang, "Theme Mode", "थीम मोड")}</p>
+              <p className="text-[11px] text-[#5b5b55]">{theme === "dark" ? tr(lang, "Dark Active", "डार्क मोड") : tr(lang, "Light Active", "लाइट मोड")}</p>
             </div>
           </div>
-          <span className="bz-btn bz-btn-white px-2.5 py-1 text-xs font-bold">Toggle</span>
+          <span className="bz-btn bz-btn-white px-2.5 py-1 text-xs font-bold">{tr(lang, "Toggle", "बदलें")}</span>
         </div>
 
         <a href="/guests" className="bz-card p-3.5 flex items-center justify-between hover:bg-white block">
@@ -672,8 +703,8 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
               <Globe className="h-4 w-4 text-blue-700" />
             </div>
             <div>
-              <p className="text-xs font-black text-[#0a0a0a]">Guest Inbox</p>
-              <p className="text-[11px] text-[#5b5b55]">Secret confessions & anonymous chats</p>
+              <p className="text-xs font-black text-[#0a0a0a]">{tr(lang, "Guest Inbox", "गेस्ट इनबॉक्स")}</p>
+              <p className="text-[11px] text-[#5b5b55]">{tr(lang, "Secret confessions & anonymous chats", "गुमनाम संदेश और सीक्रेट चैट")}</p>
             </div>
           </div>
           <span className="text-base font-black">›</span>
@@ -709,10 +740,14 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
         <div className="rounded-2xl border-2 border-[#0a0a0a] bg-[#DCF4E4] p-3.5 shadow-[0_2px_0_0_#0a0a0a]">
           <div className="flex items-center gap-2 mb-1">
             <Shield className="h-4 w-4 text-emerald-800" />
-            <p className="text-xs font-black text-emerald-900">Zero Phone Number Guarantee</p>
+            <p className="text-xs font-black text-emerald-900">{tr(lang, "Zero Phone Number Guarantee", "फ़ोन नंबर से पूर्ण मुक्ति")}</p>
           </div>
           <p className="text-[11px] text-[#2d5a3e] leading-relaxed">
-            Buzz never collects, shares, or asks for your phone number. Your chats belong exclusively to you.
+            {tr(
+              lang,
+              "Buzz never collects, shares, or asks for your phone number. Your chats belong exclusively to you.",
+              "Buzz कभी भी आपका फ़ोन नंबर नहीं मांगता। आपकी पहचान केवल आपका यूज़रनेम है।"
+            )}
           </p>
         </div>
 
@@ -720,15 +755,16 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
           onClick={handleLogout}
           className="bz-btn bz-btn-ink w-full py-3 text-xs font-black uppercase text-red-300 hover:text-red-100"
         >
-          <LogOut className="h-4 w-4" /> Log Out of Buzz
+          <LogOut className="h-4 w-4" /> {tr(lang, "Log Out of Buzz", "लॉग आउट करें")}
         </button>
       </div>
     </div>
   );
 };
 
-/* ─── Sub-Views: Account, Privacy, Security, etc. ─── */
+/* ─── Account View ─── */
 const AccountView = ({ onBack }: { onBack: () => void }) => {
+  const lang = useAppLanguage();
   const [profile, setProfile] = useState<{ username: string; display_name: string; about: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -757,31 +793,31 @@ const AccountView = ({ onBack }: { onBack: () => void }) => {
         .update({ display_name: profile.display_name, about: profile.about })
         .eq("user_id", user.id);
       if (error) toast.error(error.message);
-      else toast.success("Account updated successfully! 🎉");
+      else toast.success(tr(lang, "Account updated successfully! 🎉", "खाता सफलतापूर्वक अपडेट हो गया! 🎉"));
     }
     setSaving(false);
   };
 
   return (
     <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
-      <SettingsSubHeader title="Account Info" onBack={onBack} />
+      <SettingsSubHeader title={tr(lang, "Account Info", "खाता विवरण")} onBack={onBack} />
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bz-grid-paper">
         {!profile ? (
-          <p className="text-xs text-[#5b5b55] font-bold">Loading profile data...</p>
+          <p className="text-xs text-[#5b5b55] font-bold">Loading profile...</p>
         ) : (
           <>
             <div className="bz-card p-3">
-              <label className="text-[10px] font-mono font-bold text-[#5b5b55] uppercase">Permanent Username</label>
+              <label className="text-[10px] font-mono font-bold text-[#5b5b55] uppercase">{tr(lang, "Permanent Username", "स्थायी यूज़रनेम")}</label>
               <input
                 value={`@${profile.username}`}
                 disabled
                 className="mt-1 w-full rounded-lg border-2 border-[#0a0a0a] bg-[#fffbec]/50 px-3 py-2 text-xs font-black text-[#0a0a0a]"
               />
-              <p className="text-[10px] text-[#5b5b55] mt-1 font-medium">Username acts as your immutable ID</p>
+              <p className="text-[10px] text-[#5b5b55] mt-1 font-medium">{tr(lang, "Username acts as your immutable ID", "यूज़रनेम आपकी अपरिवर्तनीय पहचान है")}</p>
             </div>
 
             <div className="bz-card p-3">
-              <label className="text-[10px] font-mono font-bold text-[#5b5b55] uppercase">Display Name</label>
+              <label className="text-[10px] font-mono font-bold text-[#5b5b55] uppercase">{tr(lang, "Display Name", "प्रदर्शित नाम")}</label>
               <input
                 value={profile.display_name}
                 onChange={(e) => setProfile({ ...profile, display_name: e.target.value })}
@@ -790,7 +826,7 @@ const AccountView = ({ onBack }: { onBack: () => void }) => {
             </div>
 
             <div className="bz-card p-3">
-              <label className="text-[10px] font-mono font-bold text-[#5b5b55] uppercase">About / Bio</label>
+              <label className="text-[10px] font-mono font-bold text-[#5b5b55] uppercase">{tr(lang, "About / Bio", "परिचय (Bio)")}</label>
               <textarea
                 value={profile.about}
                 onChange={(e) => setProfile({ ...profile, about: e.target.value })}
@@ -804,7 +840,7 @@ const AccountView = ({ onBack }: { onBack: () => void }) => {
               disabled={saving}
               className="bz-btn bz-btn-yellow w-full py-3 text-xs font-black uppercase disabled:opacity-50"
             >
-              {saving ? "Saving..." : "Save Account Changes"}
+              {saving ? tr(lang, "Saving...", "सेव हो रहा है...") : tr(lang, "Save Account Changes", "बदलाव सेव करें")}
             </button>
           </>
         )}
@@ -813,7 +849,9 @@ const AccountView = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
+/* ─── Privacy View ─── */
 const PrivacyView = ({ onBack }: { onBack: () => void }) => {
+  const lang = useAppLanguage();
   const [lastSeen, setLastSeen] = useLocalToggle("buzz-privacy-last-seen", true);
   const [readReceipts, setReadReceipts] = useLocalToggle("buzz-privacy-read-receipts", true);
   const [typing, setTyping] = useLocalToggle("buzz-privacy-typing", true);
@@ -821,29 +859,29 @@ const PrivacyView = ({ onBack }: { onBack: () => void }) => {
 
   return (
     <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
-      <SettingsSubHeader title="Privacy Controls" onBack={onBack} />
+      <SettingsSubHeader title={tr(lang, "Privacy Controls", "गोपनीयता सेटिंग्स")} onBack={onBack} />
       <div className="flex-1 overflow-y-auto p-4 space-y-2.5 bz-grid-paper">
         <TactileToggleRow
-          label="Show Last Seen Status"
-          desc="Let your contacts see when you were last online"
+          label={tr(lang, "Show Last Seen Status", "लास्ट सीन दिखाएं")}
+          desc={tr(lang, "Let your contacts see when you were last online", "संपर्कों को पता चलेगा कि आप कब ऑनलाइन थे")}
           checked={lastSeen}
           onChange={setLastSeen}
         />
         <TactileToggleRow
-          label="Read Receipts (Blue Ticks)"
-          desc="Display checkmarks when messages are read"
+          label={tr(lang, "Read Receipts (Blue Ticks)", "रीड रिसीट्स (ब्लू टिक)")}
+          desc={tr(lang, "Display checkmarks when messages are read", "संदेश पढ़े जाने पर चेकमार्क दिखेगा")}
           checked={readReceipts}
           onChange={setReadReceipts}
         />
         <TactileToggleRow
-          label="Typing Indicator"
-          desc="Broadcast typing state while writing a reply"
+          label={tr(lang, "Typing Indicator", "टाइपिंग संकेत")}
+          desc={tr(lang, "Broadcast typing state while writing a reply", "टाइप करते समय दूसरे को टाइपिंग दिखेगी")}
           checked={typing}
           onChange={setTyping}
         />
         <TactileToggleRow
-          label="Profile Photo Visibility"
-          desc="Allow anyone with your @handle to view your avatar"
+          label={tr(lang, "Profile Photo Visibility", "प्रोफ़ाइल फ़ोटो दृश्यता")}
+          desc={tr(lang, "Allow anyone with your @handle to view your avatar", "कोई भी आपकी प्रोफ़ाइल फ़ोटो देख सकेगा")}
           checked={profilePhoto}
           onChange={setProfilePhoto}
         />
@@ -852,7 +890,9 @@ const PrivacyView = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
+/* ─── Security View ─── */
 const SecurityView = ({ onBack }: { onBack: () => void }) => {
+  const lang = useAppLanguage();
   const [pwd, setPwd] = useState("");
   const [confirm, setConfirm] = useState("");
   const [pin, setPin] = useState("");
@@ -862,18 +902,18 @@ const SecurityView = ({ onBack }: { onBack: () => void }) => {
 
   const changePassword = async () => {
     if (pwd.length < 6) {
-      toast.error("Password must be at least 6 characters");
+      toast.error(tr(lang, "Password must be at least 6 characters", "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए"));
       return;
     }
     if (pwd !== confirm) {
-      toast.error("Passwords don't match");
+      toast.error(tr(lang, "Passwords don't match", "पासवर्ड मेल नहीं खाते"));
       return;
     }
     setSaving(true);
     const { error } = await supabase.auth.updateUser({ password: pwd });
     if (error) toast.error(error.message);
     else {
-      toast.success("Password updated successfully");
+      toast.success(tr(lang, "Password updated successfully! 🔒", "पासवर्ड सफलतापूर्वक अपडेट हो गया! 🔒"));
       setPwd("");
       setConfirm("");
     }
@@ -882,62 +922,63 @@ const SecurityView = ({ onBack }: { onBack: () => void }) => {
 
   const handleSetPin = async () => {
     if (pin.length !== 4) {
-      toast.error("PIN must be exactly 4 digits");
+      toast.error(tr(lang, "PIN must be exactly 4 digits", "पिन पूरे 4 अंकों का होना चाहिए"));
       return;
     }
     await setupAppPin(pin);
+    setAppLock(true);
     setPin("");
   };
 
   return (
     <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
-      <SettingsSubHeader title="Security & PIN Lock" onBack={onBack} />
+      <SettingsSubHeader title={tr(lang, "Security & PIN Lock", "सुरक्षा और पिन लॉक")} onBack={onBack} />
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bz-grid-paper">
         <TactileToggleRow
-          label="App Lock Enabled"
-          desc="Require 4-digit PIN every time Buzz opens"
+          label={tr(lang, "App Lock Enabled", "ऐप लॉक सक्रिय")}
+          desc={tr(lang, "Require 4-digit PIN every time Buzz opens", "Buzz खोलते समय 4-अंकों का पिन अनिवार्य होगा")}
           checked={appLock}
           onChange={setAppLock}
         />
 
         {appLock && (
-          <div className="bz-card p-3 bg-[#FFF6B8]">
-            <p className="text-xs font-black text-[#0a0a0a] mb-1">Set 4-Digit Security PIN</p>
+          <div className="bz-card p-3 bg-[#FFF6B8] border-2 border-[#0a0a0a]">
+            <p className="text-xs font-black text-[#0a0a0a] mb-1">{tr(lang, "Set 4-Digit Security PIN", "4-अंकों का नया पिन बनाएं")}</p>
             <div className="flex gap-2">
               <input
                 type="password"
                 maxLength={4}
-                placeholder="4 Digits (e.g. 1234)"
+                placeholder="4 Digits"
                 value={pin}
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-                className="flex-1 rounded-xl border-2 border-[#0a0a0a] bg-white px-3 py-1.5 text-xs font-black tracking-widest outline-none"
+                className="flex-1 rounded-xl border-2 border-[#0a0a0a] bg-white px-3 py-1.5 text-xs font-black tracking-widest outline-none text-center"
               />
               <button onClick={handleSetPin} className="bz-btn bz-btn-yellow px-3 py-1 text-xs font-black">
-                Save PIN
+                {tr(lang, "Save PIN", "पिन सेव करें")}
               </button>
             </div>
           </div>
         )}
 
         <TactileToggleRow
-          label="Two-Step Verification"
-          desc="Extra layer of protection on new logins"
+          label={tr(lang, "Two-Step Verification", "टू-स्टेप वेरिफिकेशन")}
+          desc={tr(lang, "Extra layer of protection on new logins", "नए लॉगिन पर अतिरिक्त सुरक्षा परत")}
           checked={twoStep}
           onChange={setTwoStep}
         />
 
         <div className="bz-card p-4 space-y-2.5 shadow-[0_4px_0_0_#0a0a0a]">
-          <p className="text-xs font-black text-[#0a0a0a]">Change Password</p>
+          <p className="text-xs font-black text-[#0a0a0a]">{tr(lang, "Change Password", "पासवर्ड बदलें")}</p>
           <input
             type="password"
-            placeholder="New password (min 6 characters)"
+            placeholder={tr(lang, "New password (min 6 chars)", "नया पासवर्ड (कम से कम 6 अक्षर)")}
             value={pwd}
             onChange={(e) => setPwd(e.target.value)}
             className="w-full rounded-xl border-2 border-[#0a0a0a] bg-white px-3 py-2 text-xs font-bold outline-none"
           />
           <input
             type="password"
-            placeholder="Confirm new password"
+            placeholder={tr(lang, "Confirm new password", "पासवर्ड की पुष्टि करें")}
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             className="w-full rounded-xl border-2 border-[#0a0a0a] bg-white px-3 py-2 text-xs font-bold outline-none"
@@ -947,7 +988,7 @@ const SecurityView = ({ onBack }: { onBack: () => void }) => {
             disabled={saving || !pwd}
             className="bz-btn bz-btn-yellow w-full py-2.5 text-xs font-black uppercase disabled:opacity-40"
           >
-            {saving ? "Updating..." : "Update Password"}
+            {saving ? tr(lang, "Updating...", "अपडेट हो रहा है...") : tr(lang, "Update Password", "पासवर्ड अपडेट करें")}
           </button>
         </div>
       </div>
@@ -955,7 +996,9 @@ const SecurityView = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
+/* ─── Notifications View ─── */
 const NotificationsView = ({ onBack }: { onBack: () => void }) => {
+  const lang = useAppLanguage();
   const [messages, setMessages] = useLocalToggle("buzz-notif-messages", true);
   const [groups, setGroups] = useLocalToggle("buzz-notif-groups", true);
   const [calls, setCalls] = useLocalToggle("buzz-notif-calls", true);
@@ -965,63 +1008,69 @@ const NotificationsView = ({ onBack }: { onBack: () => void }) => {
 
   const requestBrowser = async () => {
     if (!pushSupported()) {
-      toast.error("Not supported on this browser — Add Buzz to Home Screen on iOS first.");
+      toast.error("Not supported on this browser — Add Buzz to Home Screen first.");
       return;
     }
     const { data } = await supabase.auth.getUser();
     if (!data.user) return;
     const ok = await enablePush(data.user.id);
-    if (ok) toast.success("Browser push notifications activated! 🔔");
-    else toast.error("Notification permission was denied.");
+    if (ok) toast.success(tr(lang, "Browser push notifications activated! 🔔", "वेब पुश नोटिफिकेशन चालू हो गया! 🔔"));
+    else toast.error(tr(lang, "Notification permission was denied.", "नोटिफिकेशन की अनुमति नहीं दी गई।"));
   };
 
   return (
     <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
-      <SettingsSubHeader title="Notifications" onBack={onBack} />
+      <SettingsSubHeader title={tr(lang, "Notifications", "नोटिफ़िकेशन")} onBack={onBack} />
       <div className="flex-1 overflow-y-auto p-4 space-y-2.5 bz-grid-paper">
         <button
           onClick={requestBrowser}
           className="bz-btn bz-btn-yellow w-full py-2.5 text-xs font-black uppercase shadow-[0_3px_0_0_#0a0a0a]"
         >
-          Enable Browser Web Push (Background Rings)
+          {tr(lang, "Enable Web Push (Background Rings)", "बैकग्राउंड कॉल व पुश चालू करें")}
         </button>
 
-        <TactileToggleRow label="Message Notifications" checked={messages} onChange={setMessages} />
-        <TactileToggleRow label="Group Notifications" checked={groups} onChange={setGroups} />
-        <TactileToggleRow label="Call Alerts" checked={calls} onChange={setCalls} />
-        <TactileToggleRow label="Sound Effects" checked={sound} onChange={setSound} />
-        <TactileToggleRow label="Vibrate" checked={vibrate} onChange={setVibrate} />
-        <TactileToggleRow label="Show Message Preview" checked={preview} onChange={setPreview} />
+        <TactileToggleRow label={tr(lang, "Message Notifications", "संदेश नोटिफ़िकेशन")} checked={messages} onChange={setMessages} />
+        <TactileToggleRow label={tr(lang, "Group Notifications", "ग्रुप नोटिफ़िकेशन")} checked={groups} onChange={setGroups} />
+        <TactileToggleRow label={tr(lang, "Call Alerts", "कॉल अलर्ट्स")} checked={calls} onChange={setCalls} />
+        <TactileToggleRow label={tr(lang, "Sound Effects", "ध्वनि प्रभाव (Sound)")} checked={sound} onChange={setSound} />
+        <TactileToggleRow label={tr(lang, "Vibrate", "कंपन (Vibrate)")} checked={vibrate} onChange={setVibrate} />
+        <TactileToggleRow label={tr(lang, "Show Message Preview", "संदेश का पूर्वावलोकन")} checked={preview} onChange={setPreview} />
       </div>
     </div>
   );
 };
 
-const LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "hi", label: "हिन्दी (Hindi)" },
-];
-
+/* ─── Language View ─── */
 const LanguageView = ({ onBack }: { onBack: () => void }) => {
   const [lang, setLang] = useLocalString("buzz-language", "en");
 
+  const setAppLanguage = (code: string) => {
+    setLang(code);
+    localStorage.setItem("buzz-language", code);
+    toast.success(code === "hi" ? "भाषा बदलकर हिन्दी कर दी गई है! 🇮🇳" : "Language set to English! 🌐");
+    window.dispatchEvent(new Event("languagechange"));
+  };
+
   return (
     <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
-      <SettingsSubHeader title="App Language" onBack={onBack} />
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 bz-grid-paper">
-        {LANGUAGES.map((l) => (
+      <SettingsSubHeader title="App Language / भाषा" onBack={onBack} />
+      <div className="flex-1 overflow-y-auto p-4 space-y-2.5 bz-grid-paper">
+        {[
+          { code: "en", label: "English", sub: "Standard English interface" },
+          { code: "hi", label: "हिन्दी (Hindi)", sub: "सम्पूर्ण हिन्दी इंटरफ़ेस 🇮🇳" },
+        ].map((l) => (
           <div
             key={l.code}
-            onClick={() => {
-              setLang(l.code);
-              toast.success(`Language set to ${l.label}`);
-            }}
-            className={`bz-card p-3 flex items-center justify-between cursor-pointer ${
-              lang === l.code ? "bg-[#FFF6B8] border-2 border-[#0a0a0a]" : "hover:bg-white"
+            onClick={() => setAppLanguage(l.code)}
+            className={`bz-card p-3.5 flex items-center justify-between cursor-pointer transition-all ${
+              lang === l.code ? "bg-[#FFF6B8] border-2 border-[#0a0a0a] shadow-[0_3px_0_0_#0a0a0a]" : "hover:bg-white"
             }`}
           >
-            <span className="text-xs font-black text-[#0a0a0a]">{l.label}</span>
-            {lang === l.code && <Check className="h-4 w-4 stroke-[3]" />}
+            <div>
+              <span className="text-xs font-black text-[#0a0a0a]">{l.label}</span>
+              <p className="text-[10px] text-[#5b5b55] font-semibold">{l.sub}</p>
+            </div>
+            {lang === l.code && <Check className="h-5 w-5 stroke-[3] text-black" />}
           </div>
         ))}
       </div>
@@ -1029,30 +1078,32 @@ const LanguageView = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
+/* ─── Help View ─── */
 const HelpView = ({ onBack }: { onBack: () => void }) => {
+  const lang = useAppLanguage();
   const [open, setOpen] = useState<number | null>(null);
   const faqs = [
     {
-      q: "How do I find friends without phone numbers?",
-      a: "Tap the Discover tab and search by their unique @username, or scan their personal QR code.",
+      q: tr(lang, "How do I find friends without phone numbers?", "फ़ोन नंबर के बिना दोस्तों को कैसे खोजें?"),
+      a: tr(lang, "Tap the Discover tab and search by their unique @username, or scan their personal QR code.", "Discover टैब में जाएं और उनके @username से खोजें या उनका QR कोड स्कैन करें।"),
     },
     {
-      q: "What is Ghost Voice in Guest Chat?",
-      a: "Ghost Voice applies real-time browser audio filters (Robot, Demon, Chipmunk, Deep) so callers can chat anonymously.",
+      q: tr(lang, "What is Ghost Voice in Guest Chat?", "गेस्ट चैट में घोस्ट वॉइस (Ghost Voice) क्या है?"),
+      a: tr(lang, "Ghost Voice applies browser audio filters (Robot, Demon, Chipmunk, Deep) for private voice messages.", "यह आपकी आवाज़ बदलकर रोबोट, डेमन या चिंपमंक जैसी बनाकर गुप्त वॉइस मैसेज भेजता है।"),
     },
     {
-      q: "Are my chats truly encrypted?",
-      a: "Yes. Buzz isolates chats using Supabase Row-Level Security and peer-to-peer WebRTC channels for audio/video calls.",
+      q: tr(lang, "Are my chats secure?", "क्या मेरी चैट पूरी तरह सुरक्षित हैं?"),
+      a: tr(lang, "Yes. Buzz isolates chats using Supabase Row-Level Security and peer-to-peer WebRTC channels for audio/video calls.", "हाँ, Buzz की सभी चैट और कॉल सीधे एन्क्रिप्टेड और सुरक्षित हैं।"),
     },
     {
-      q: "How do 24-Hour Moments work?",
-      a: "Moments automatically disappear after 24 hours. You can view real-time counts of who watched your moment.",
+      q: tr(lang, "How do 24-Hour Moments work?", "24 घंटे वाले मोमेंट्स कैसे काम करते हैं?"),
+      a: tr(lang, "Moments automatically disappear after 24 hours. You can view real-time counts of who watched your moment.", "मोमेंट्स 24 घंटे के बाद अपने आप हट जाते हैं और आप देख सकते हैं कि किसने देखा।"),
     },
   ];
 
   return (
     <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
-      <SettingsSubHeader title="Help & FAQs" onBack={onBack} />
+      <SettingsSubHeader title={tr(lang, "Help & FAQs", "सहायता व अक्सर पूछे जाने वाले सवाल")} onBack={onBack} />
       <div className="flex-1 overflow-y-auto p-4 space-y-2.5 bz-grid-paper">
         {faqs.map((f, i) => (
           <div key={i} className="bz-card p-3 overflow-hidden">
@@ -1068,13 +1119,13 @@ const HelpView = ({ onBack }: { onBack: () => void }) => {
         ))}
 
         <div className="bz-card p-4 bg-[#E2ECFF] mt-4">
-          <p className="text-xs font-black text-[#0a0a0a]">Need Direct Assistance?</p>
-          <p className="text-[11px] text-[#5b5b55] mt-1 mb-3">Our team replies within 24 hours.</p>
+          <p className="text-xs font-black text-[#0a0a0a]">{tr(lang, "Need Direct Assistance?", "सीधी सहायता चाहिए?")}</p>
+          <p className="text-[11px] text-[#5b5b55] mt-1 mb-3">{tr(lang, "Our team replies within 24 hours.", "हमारी टीम 24 घंटे में उत्तर देती है।")}</p>
           <a
             href="mailto:prasadprem904@gmail.com"
             className="bz-btn bz-btn-white inline-flex px-3 py-1.5 text-xs font-bold"
           >
-            Email Support
+            {tr(lang, "Email Support", "सपोर्ट ईमेल करें")}
           </a>
         </div>
       </div>
@@ -1084,10 +1135,14 @@ const HelpView = ({ onBack }: { onBack: () => void }) => {
 
 /* ─── Profile Panel ─── */
 const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: string }) => {
+  const lang = useAppLanguage();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState("");
   const [about, setAbout] = useState("Hey there! I'm using Buzz 💬");
   const [editingAbout, setEditingAbout] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1109,7 +1164,7 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
       const urlWithCache = `${publicUrl}?t=${Date.now()}`;
       await supabase.from("profiles").update({ avatar_url: urlWithCache }).eq("user_id", user.id);
       setAvatarUrl(urlWithCache);
-      toast.success("Avatar updated! 🎉");
+      toast.success(tr(lang, "Avatar updated! 🎉", "प्रोफ़ाइल फ़ोटो अपडेट हो गई! 🎉"));
     } catch (err: any) {
       toast.error(err.message || "Upload failed");
     } finally {
@@ -1123,9 +1178,20 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
     } = await supabase.auth.getUser();
     if (user) {
       await supabase.from("profiles").update({ about }).eq("user_id", user.id);
-      toast.success("About updated!");
+      toast.success(tr(lang, "About updated!", "बायो अपडेट हो गया!"));
     }
     setEditingAbout(false);
+  };
+
+  const handleSaveName = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from("profiles").update({ display_name: displayName }).eq("user_id", user.id);
+      toast.success(tr(lang, "Name updated!", "नाम अपडेट हो गया!"));
+    }
+    setEditingName(false);
   };
 
   useEffect(() => {
@@ -1134,9 +1200,10 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        const { data } = await supabase.from("profiles").select("avatar_url, about").eq("user_id", user.id).maybeSingle();
+        const { data } = await supabase.from("profiles").select("avatar_url, about, display_name").eq("user_id", user.id).maybeSingle();
         if (data?.avatar_url) setAvatarUrl(data.avatar_url);
         if (data?.about) setAbout(data.about);
+        if (data?.display_name) setDisplayName(data.display_name);
       }
     })();
   }, []);
@@ -1153,7 +1220,7 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
               <ArrowLeft className="h-4 w-4" />
             </button>
           )}
-          <h1 className="text-lg font-black text-[#0a0a0a]">My Profile 👤</h1>
+          <h1 className="text-lg font-black text-[#0a0a0a]">{tr(lang, "My Profile 👤", "मेरी प्रोफ़ाइल 👤")}</h1>
         </div>
       </div>
 
@@ -1175,6 +1242,7 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-[#FCE314] text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]"
+              title="Change Profile Photo"
             >
               <Camera className="h-4 w-4" />
             </button>
@@ -1183,18 +1251,44 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
 
           <h2 className="mt-4 text-lg font-black text-[#0a0a0a]">@{username || "user"}</h2>
           <span className="mt-1 inline-block rounded-full border border-[#0a0a0a] bg-[#DCF4E4] px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
-            Verified Buzz Handle 🇮🇳
+            {tr(lang, "Verified Buzz Handle 🇮🇳", "वेरीफाइड बज़ यूज़र 🇮🇳")}
           </span>
         </div>
 
+        {/* Display Name Card */}
         <div className="bz-card p-4 shadow-[0_3px_0_0_#0a0a0a]">
           <div className="flex items-center justify-between mb-2">
-            <span className="bz-label">About / Bio</span>
+            <span className="bz-label">{tr(lang, "Display Name", "प्रदर्शित नाम")}</span>
+            <button
+              onClick={() => (editingName ? handleSaveName() : setEditingName(true))}
+              className="text-xs font-extrabold text-[#0a0a0a] underline"
+            >
+              {editingName ? tr(lang, "Save", "सेव") : tr(lang, "Edit", "बदलें")}
+            </button>
+          </div>
+          {editingName ? (
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveName()}
+              placeholder="Your full name"
+              className="w-full rounded-lg border-2 border-[#0a0a0a] bg-[#fffbec] p-2 text-xs font-bold outline-none"
+              autoFocus
+            />
+          ) : (
+            <p className="text-xs font-semibold text-[#0a0a0a]">{displayName || tr(lang, "Not set", "सेट नहीं है")}</p>
+          )}
+        </div>
+
+        {/* About / Bio Card */}
+        <div className="bz-card p-4 shadow-[0_3px_0_0_#0a0a0a]">
+          <div className="flex items-center justify-between mb-2">
+            <span className="bz-label">{tr(lang, "About / Bio", "परिचय (Bio)")}</span>
             <button
               onClick={() => (editingAbout ? handleSaveAbout() : setEditingAbout(true))}
               className="text-xs font-extrabold text-[#0a0a0a] underline"
             >
-              {editingAbout ? "Save" : "Edit"}
+              {editingAbout ? tr(lang, "Save", "सेव") : tr(lang, "Edit", "बदलें")}
             </button>
           </div>
           {editingAbout ? (
@@ -1209,6 +1303,38 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
             <p className="text-xs font-semibold text-[#0a0a0a]">{about}</p>
           )}
         </div>
+
+        {/* Personal QR Code Toggle */}
+        <div className="bz-card p-4 shadow-[0_3px_0_0_#0a0a0a]">
+          <button
+            onClick={() => setShowQR(!showQR)}
+            className="flex w-full items-center justify-between text-xs font-black text-[#0a0a0a]"
+          >
+            <span className="flex items-center gap-2">
+              <QrCode className="h-4 w-4" /> {tr(lang, "My Personal Invite QR", "मेरा पर्सनल इनवाइट QR")}
+            </span>
+            <span className="text-sm font-bold">{showQR ? "−" : "+"}</span>
+          </button>
+          {showQR && username && (
+            <div className="mt-3 flex flex-col items-center pt-3 border-t-2 border-[#0a0a0a]/15">
+              <div className="rounded-2xl border-2 border-[#0a0a0a] bg-white p-3 shadow-[0_3px_0_0_#0a0a0a]">
+                <QRCodeSVG value={`https://chat-without-digits.lovable.app/c/${username}`} size={130} level="H" />
+              </div>
+              <p className="mt-2 text-[10px] font-mono font-bold text-[#5b5b55]">Scan to chat with @{username}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Direct Logout */}
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut();
+            toast.success("Logged out");
+          }}
+          className="bz-btn bz-btn-ink w-full py-2.5 text-xs font-black uppercase text-red-300 hover:text-red-100"
+        >
+          <LogOut className="h-4 w-4" /> {tr(lang, "Log Out of Buzz", "लॉग आउट करें")}
+        </button>
       </div>
     </div>
   );
