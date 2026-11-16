@@ -25,13 +25,18 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            {/* Fix for /index 404: redirects cleanly to root */}
+            {/* Redirect /index to root */}
             <Route path="/index" element={<Navigate to="/" replace />} />
+            
+            {/* Public Marketing Long Pages */}
             <Route path="/features" element={<Index />} />
+            <Route path="/guest-chat" element={<Index />} />
             <Route path="/privacy" element={<Index />} />
             <Route path="/buzz-web" element={<Index />} />
             <Route path="/download" element={<Index />} />
             <Route path="/contact" element={<Index />} />
+
+            {/* Guest Chat, Auth & App Routes */}
             <Route path="/c/:username" element={<GuestChat />} />
             <Route path="/auth" element={<AuthPage onAuth={() => (window.location.href = "/")} />} />
             <Route path="/guests" element={<GuestInbox />} />
