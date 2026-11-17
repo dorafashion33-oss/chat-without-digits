@@ -28,9 +28,10 @@ const App = () => (
             {/* Redirect /index to root */}
             <Route path="/index" element={<Navigate to="/" replace />} />
             
-            {/* Public Marketing Long Pages */}
+            {/* 6 Public Long-Form Pages */}
             <Route path="/features" element={<Index />} />
             <Route path="/guest-chat" element={<Index />} />
+            <Route path="/made-in-india" element={<Index />} />
             <Route path="/privacy" element={<Index />} />
             <Route path="/buzz-web" element={<Index />} />
             <Route path="/download" element={<Index />} />
