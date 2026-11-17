@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowDownToLine, ArrowRight, Menu, X, Flag, Shield, Mic } from "lucide-react";
+import { ArrowDownToLine, ArrowRight, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
 import InstallAppDialog from "@/components/chat/InstallAppDialog";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
 import type { ComponentType } from "react";
 import BuzzPublicPage, * as BuzzPublicPageModule from "./BuzzPublicPage";
 
+// Namespace import avoids Rollup's strict named-export resolution error.
 const { publicPages } = BuzzPublicPageModule;
 const BuzzRealtimeChatSimulator =
   (BuzzPublicPageModule as unknown as { BuzzRealtimeChatSimulator: ComponentType }).BuzzRealtimeChatSimulator;
@@ -36,39 +38,37 @@ const LaunchCountdownBar = ({ onClaim }: { onClaim: () => void }) => {
       const seconds = Math.floor((diff / 1000) % 60);
       setTimeLeft({ days, hours, minutes, seconds, isLive: false });
     };
-
     calculate();
     const interval = setInterval(calculate, 1000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="sticky top-0 z-50 w-full border-b-2 border-[#0a0a0a] bg-[#FCE314] px-3 py-2 text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 text-xs font-black">
+    <div className="w-full border-b-2 border-[#0a0a0a] bg-[#FCE314] text-[#0a0a0a] px-3 py-2 text-center text-xs font-black shadow-sm">
+      <div className="mx-auto flex max-w-[1160px] flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#0a0a0a] bg-white px-2 py-0.5 text-[11px] shadow-[1px_1px_0_0_#0a0a0a]">
-            <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-            GRAND LAUNCH
-          </span>
-          <span className="hidden sm:inline">25th March 2027 at 10:30 AM IST</span>
+          <span className="inline-block animate-pulse">🚀</span>
+          <span className="uppercase tracking-wider">Public Launch: 25th March 2027 · 10:30 AM IST</span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 font-mono text-xs">
-            <span className="rounded border border-[#0a0a0a] bg-white px-1.5 py-0.5 shadow-[1px_1px_0_0_#0a0a0a]">{timeLeft.days}d</span>
-            <span>:</span>
-            <span className="rounded border border-[#0a0a0a] bg-white px-1.5 py-0.5 shadow-[1px_1px_0_0_#0a0a0a]">{timeLeft.hours}h</span>
-            <span>:</span>
-            <span className="rounded border border-[#0a0a0a] bg-white px-1.5 py-0.5 shadow-[1px_1px_0_0_#0a0a0a]">{timeLeft.minutes}m</span>
-            <span>:</span>
-            <span className="rounded border border-[#0a0a0a] bg-white px-1.5 py-0.5 shadow-[1px_1px_0_0_#0a0a0a]">{timeLeft.seconds}s</span>
-          </div>
+        <div className="flex items-center gap-2">
+          {!timeLeft.isLive ? (
+            <div className="flex items-center gap-1 font-mono text-[11px] bg-white px-2 py-0.5 rounded-lg border border-[#0a0a0a] shadow-[0_1px_0_0_#0a0a0a]">
+              <span>{timeLeft.days}d</span>:<span>{String(timeLeft.hours).padStart(2, "0")}h</span>:
+              <span>{String(timeLeft.minutes).padStart(2, "0")}m</span>:
+              <span className="text-red-600">{String(timeLeft.seconds).padStart(2, "0")}s</span>
+            </div>
+          ) : (
+            <span className="rounded-md border border-[#0a0a0a] bg-emerald-300 px-2 py-0.5 font-bold">
+              🎉 BUZZ IS OFFICIALLY LIVE!
+            </span>
+          )}
 
           <button
             onClick={onClaim}
-            className="rounded-lg border-2 border-[#0a0a0a] bg-[#0a0a0a] px-3 py-1 text-[11px] font-black uppercase text-white shadow-[2px_2px_0_0_#0a0a0a] hover:bg-[#222]"
+            className="rounded-lg border-2 border-[#0a0a0a] bg-white px-2.5 py-0.5 text-[11px] font-black hover:bg-[#FFF6B8] transition-colors"
           >
-            Claim @Handle
+            Claim Username ›
           </button>
         </div>
       </div>
@@ -76,251 +76,340 @@ const LaunchCountdownBar = ({ onClaim }: { onClaim: () => void }) => {
   );
 };
 
+const Logo = () => (
+  <a href="#top" className="flex items-center gap-2.5 group">
+    <div className="relative">
+      <img
+        src={buzzLogo}
+        alt="Buzz"
+        className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl border-2 border-[#0a0a0a] object-cover shadow-[0_2px_0_0_#0a0a0a] group-hover:scale-105 transition-transform"
+      />
+      <span className="absolute -bottom-1 -right-1 text-[11px] leading-none" title="Made in India">
+        🇮🇳
+      </span>
+    </div>
+    <div className="flex flex-col text-left">
+      <span className="font-extrabold text-xl sm:text-2xl leading-none tracking-tight text-[#0a0a0a]">
+        buzz<span className="text-[#FCE314] drop-shadow-[0_1px_0_#0a0a0a]">.</span>
+      </span>
+      <span className="text-[9px] font-bold font-mono tracking-wider text-[#5b5b55] uppercase">
+        Without Digits
+      </span>
+    </div>
+  </a>
+);
+
 export default function BuzzLanding({ page = "/" }: { page?: string }) {
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [installOpen, setInstallOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const openAuth = () => navigate("/auth");
 
-  const normalizedPage = page.replace(/^\//, "").toLowerCase();
+  const normalizedPage = page.startsWith("/") ? page.slice(1) : page;
   const isCustomPublicPage = publicPages.includes(normalizedPage as any);
 
-  const openAuth = (mode: "login" | "signup" = "login") => {
-    navigate(`/auth?mode=${mode}`);
-  };
-
   return (
-    <div className="min-h-screen bg-[#FFFDF7] text-[#0a0a0a] selection:bg-[#FCE314]">
-      <LaunchCountdownBar onClaim={() => openAuth("signup")} />
+    <div id="top" className="min-h-screen bz-grid-paper text-[#0a0a0a]">
+      <header className="sticky top-0 z-50 border-b-2 border-[#0a0a0a] bg-[#fffbec]/95 backdrop-blur">
+        <LaunchCountdownBar onClaim={openAuth} />
 
-      {/* Top Navbar */}
-      <header className="sticky top-[41px] z-40 border-b-2 border-[#0a0a0a] bg-[#FFFDF7]/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="overflow-hidden rounded-xl border-2 border-[#0a0a0a] bg-white shadow-[2px_2px_0_0_#0a0a0a]">
-              <img src={buzzLogo} alt="Buzz Logo" className="h-9 w-9 object-cover" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tight text-[#0a0a0a]">BUZZ</span>
-              <span className="text-[9px] font-black uppercase tracking-widest text-[#0a0a0a]/60">Made In India</span>
-            </div>
-          </Link>
+        <div className="mx-auto flex h-[68px] sm:h-[72px] max-w-[1160px] items-center justify-between px-4 sm:px-6">
+          <Logo />
 
-          {/* Desktop Nav - 6 Public Pages */}
-          <nav className="hidden lg:flex items-center gap-5 text-xs font-black uppercase">
-            <Link to="/features" className={`hover:underline ${normalizedPage === "features" ? "text-primary" : ""}`}>
+          {/* Desktop Nav: WhatsApp-style long pages navigation */}
+          <nav className="hidden items-center gap-6 lg:flex" aria-label="Main navigation">
+            <Link to="/features" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
               Features
             </Link>
-            <Link to="/guest-chat" className={`hover:underline ${normalizedPage === "guest-chat" ? "text-primary" : ""}`}>
-              Guest Chat
+            <Link
+              to="/guest-chat"
+              className="text-[13px] font-bold text-[#0a0a0a] hover:underline flex items-center gap-1.5"
+            >
+              Guest Chat <span className="rounded bg-[#FCE314] px-1 py-0.2 text-[10px] font-black border border-[#0a0a0a]">NEW</span>
             </Link>
-            <Link to="/made-in-india" className={`flex items-center gap-1 text-[#ff9933] hover:underline ${normalizedPage === "made-in-india" ? "font-black" : ""}`}>
-              <Flag className="h-3 w-3" /> Made In India
-            </Link>
-            <Link to="/privacy" className={`hover:underline ${normalizedPage === "privacy" ? "text-primary" : ""}`}>
+            <a href="#india" className="text-[13px] font-bold text-[#0a0a0a] hover:underline flex items-center gap-1">
+              Made in India 🇮🇳
+            </a>
+            <Link to="/privacy" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
               Privacy
             </Link>
-            <Link to="/buzz-web" className={`hover:underline ${normalizedPage === "buzz-web" ? "text-primary" : ""}`}>
+            <Link to="/buzz-web" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
               Buzz Web
             </Link>
-            <Link to="/download" className={`hover:underline ${normalizedPage === "download" ? "text-primary" : ""}`}>
+            <Link to="/download" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
               Download
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
-              onClick={() => openAuth("login")}
-              className="hidden sm:inline-flex rounded-xl border-2 border-[#0a0a0a] bg-white px-3.5 py-1.5 text-xs font-black uppercase text-[#0a0a0a] shadow-[2px_2px_0_0_#0a0a0a] hover:bg-[#FFF6B8]"
+              onClick={openAuth}
+              className="bz-btn bz-btn-white hidden px-4 py-2 text-xs sm:inline-flex"
             >
-              Sign In
+              Log In
             </button>
-            <button
-              onClick={() => openAuth("signup")}
-              className="rounded-xl border-2 border-[#0a0a0a] bg-[#FCE314] px-4 py-1.5 text-xs font-black uppercase text-[#0a0a0a] shadow-[3px_3px_0_0_#0a0a0a] hover:bg-[#FFF6B8]"
+            <InstallAppDialog
+              trigger={
+                <button className="bz-btn bz-btn-yellow px-4 sm:px-5 py-2 text-xs sm:text-sm">
+                  Get Buzz <ArrowDownToLine className="h-4 w-4" />
+                </button>
+              }
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="border-2 border-[#0a0a0a] rounded-xl lg:hidden h-9 w-9"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
             >
-              Get Buzz Free
-            </button>
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden grid h-9 w-9 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-white shadow-[2px_2px_0_0_#0a0a0a]"
-            >
-              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            </button>
+              {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </Button>
           </div>
         </div>
 
-        {/* Mobile Dropdown Nav */}
+        {/* Mobile Navigation Drawer */}
         <AnimatePresence>
-          {mobileMenuOpen && (
+          {menuOpen && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="border-t-2 border-[#0a0a0a] bg-[#FFFDF7] p-4 lg:hidden"
+              transition={{ duration: 0.2 }}
+              className="border-t-2 border-[#0a0a0a] bg-[#fffbec] p-5 lg:hidden overflow-hidden"
             >
-              <div className="flex flex-col gap-3 text-xs font-black uppercase">
-                <Link to="/features" onClick={() => setMobileMenuOpen(false)}>Features</Link>
-                <Link to="/guest-chat" onClick={() => setMobileMenuOpen(false)}>Guest Chat Link</Link>
-                <Link to="/made-in-india" onClick={() => setMobileMenuOpen(false)} className="text-[#ff9933] flex items-center gap-1">
-                  <Flag className="h-3.5 w-3.5" /> Made In India
+              <nav className="grid gap-2 text-sm" aria-label="Mobile navigation">
+                <Link to="/features" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
+                  Features & 100+ Tools
                 </Link>
-                <Link to="/privacy" onClick={() => setMobileMenuOpen(false)}>Privacy</Link>
-                <Link to="/buzz-web" onClick={() => setMobileMenuOpen(false)}>Buzz Web</Link>
-                <Link to="/download" onClick={() => setMobileMenuOpen(false)}>Download App</Link>
-                <div className="pt-2 border-t-2 border-[#0a0a0a]/10 flex gap-2">
-                  <button onClick={() => openAuth("login")} className="flex-1 rounded-xl border-2 border-[#0a0a0a] bg-white py-2 font-black">
-                    Sign In
-                  </button>
-                  <button onClick={() => openAuth("signup")} className="flex-1 rounded-xl border-2 border-[#0a0a0a] bg-[#FCE314] py-2 font-black">
-                    Claim @Handle
+                <Link to="/guest-chat" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10 flex items-center justify-between">
+                  <span>Guest Chat & Ghost Voice</span>
+                  <span className="rounded bg-[#FCE314] px-1.5 py-0.5 text-[10px] font-black border border-[#0a0a0a]">NEW</span>
+                </Link>
+                <a href="#india" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10 flex items-center gap-1">
+                  Made in India Story 🇮🇳
+                </a>
+                <Link to="/privacy" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
+                  Privacy & Zero-Number Guarantee
+                </Link>
+                <Link to="/buzz-web" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
+                  Buzz Web (No Phone Needed)
+                </Link>
+                <Link to="/download" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
+                  Download & Install PWA
+                </Link>
+                <div className="pt-3 flex gap-2">
+                  <button onClick={openAuth} className="bz-btn bz-btn-white flex-1 py-2.5 text-xs font-black">
+                    Log In / Sign Up
                   </button>
                 </div>
-              </div>
+              </nav>
             </motion.div>
           )}
         </AnimatePresence>
       </header>
 
-      {/* Main Content */}
       <main>
         {isCustomPublicPage ? (
-          <BuzzPublicPage page={normalizedPage as any} onLogin={() => openAuth("login")} />
+          <BuzzPublicPage page={normalizedPage as any} onLogin={openAuth} />
         ) : (
-          <div className="space-y-20 pb-20">
+          <>
             {/* HERO SECTION */}
-            <section className="border-b-3 border-[#0a0a0a] px-4 sm:px-6 py-16 sm:py-24 text-center bg-[#FFFDF7]">
-              <div className="mx-auto max-w-4xl space-y-6">
-                <div className="inline-flex items-center gap-2 rounded-full border-2 border-[#0a0a0a] bg-white px-4 py-1.5 text-xs font-black shadow-[3px_3px_0_0_#0a0a0a]">
-                  <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-                  No Phone Numbers · No Email Required · Zero Tracking
-                </div>
-
-                <h1 className="text-4xl sm:text-6xl md:text-7xl font-black uppercase tracking-tight text-[#0a0a0a]">
-                  The Sovereign Messenger <br />
-                  <span className="underline decoration-[#FCE314] decoration-8">For The New Internet.</span>
-                </h1>
-
-                <p className="max-w-2xl mx-auto text-sm sm:text-lg font-bold text-[#0a0a0a]/80 leading-relaxed">
-                  Connect without giving away your personal phone number. Claim your unique @username,
-                  send anonymous confessions, modulate Ghost Voice notes, and call peer-to-peer.
-                </p>
-
-                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                  <button
-                    onClick={() => openAuth("signup")}
-                    className="flex items-center gap-2 rounded-2xl border-3 border-[#0a0a0a] bg-[#FCE314] px-6 py-3.5 text-sm font-black uppercase text-[#0a0a0a] shadow-[4px_4px_0_0_#0a0a0a] hover:bg-[#FFF6B8] hover:-translate-y-0.5 transition-all"
-                  >
-                    Claim Your @Username Free <ArrowRight className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setInstallOpen(true)}
-                    className="flex items-center gap-2 rounded-2xl border-3 border-[#0a0a0a] bg-white px-6 py-3.5 text-sm font-black uppercase text-[#0a0a0a] shadow-[4px_4px_0_0_#0a0a0a] hover:bg-gray-100 transition-all"
-                  >
-                    <ArrowDownToLine className="h-4 w-4" /> Install App (PWA)
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            {/* LIVE CHAT SIMULATOR SHOWCASE */}
-            <section className="px-4 sm:px-6 max-w-5xl mx-auto text-center space-y-6">
-              <div className="space-y-2">
-                <span className="rounded-full border border-[#0a0a0a] bg-[#FFF6B8] px-3 py-1 text-xs font-black uppercase">
-                  Interactive Simulator
-                </span>
-                <h2 className="text-2xl sm:text-4xl font-black uppercase text-[#0a0a0a]">
-                  Experience Buzz Live Right Now
-                </h2>
-                <p className="text-xs sm:text-sm font-bold text-[#0a0a0a]/70">
-                  Type a test message below to see how fast and clean Buzz responds!
-                </p>
-              </div>
-              <BuzzRealtimeChatSimulator />
-            </section>
-
-            {/* 3 CORE PILLARS GRID */}
-            <section className="px-4 sm:px-6 max-w-6xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-                <div className="rounded-3xl border-3 border-[#0a0a0a] bg-white p-7 shadow-[6px_6px_0_0_#0a0a0a] space-y-3">
-                  <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#FCE314] shadow-[2px_2px_0_0_#0a0a0a]">
-                    <Shield className="h-6 w-6 text-[#0a0a0a]" />
-                  </div>
-                  <h3 className="text-lg font-black uppercase text-[#0a0a0a]">Zero Phone Identity</h3>
-                  <p className="text-xs font-bold leading-relaxed text-[#0a0a0a]/75">
-                    Never reveal your mobile number to strangers, colleges, or marketplace buyers. Your identity is your
-                    sovereign @handle.
-                  </p>
-                </div>
-
-                <div className="rounded-3xl border-3 border-[#0a0a0a] bg-white p-7 shadow-[6px_6px_0_0_#0a0a0a] space-y-3">
-                  <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#FFF6B8] shadow-[2px_2px_0_0_#0a0a0a]">
-                    <Mic className="h-6 w-6 text-[#0a0a0a]" />
-                  </div>
-                  <h3 className="text-lg font-black uppercase text-[#0a0a0a]">Ghost Voice Modulation</h3>
-                  <p className="text-xs font-bold leading-relaxed text-[#0a0a0a]/75">
-                    Disguise your real voice with Deep Mafia, Cyber Robot, Whisper Echo or Ghost pitch effects directly inside
-                    the browser.
-                  </p>
-                </div>
-
-                <div className="rounded-3xl border-3 border-[#0a0a0a] bg-white p-7 shadow-[6px_6px_0_0_#0a0a0a] space-y-3">
-                  <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#22c55e] text-white shadow-[2px_2px_0_0_#0a0a0a]">
-                    <Flag className="h-6 w-6 text-white" />
-                  </div>
-                  <h3 className="text-lg font-black uppercase text-[#0a0a0a]">Proudly Indian</h3>
-                  <p className="text-xs font-bold leading-relaxed text-[#0a0a0a]/75">
-                    Sovereign data principles, zero foreign ad surveillance, optimized for Indian network connectivity
-                    and Hindi localization.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            {/* CALL TO ACTION BANNER */}
-            <section className="px-4 sm:px-6 max-w-4xl mx-auto">
-              <div className="rounded-3xl border-3 border-[#0a0a0a] bg-[#FCE314] p-8 sm:p-12 text-center shadow-[8px_8px_0_0_#0a0a0a] space-y-6">
-                <h2 className="text-3xl sm:text-5xl font-black uppercase text-[#0a0a0a]">
-                  Ready To Buzz Without Giving Up Your Privacy?
-                </h2>
-                <p className="text-sm font-bold text-[#0a0a0a]/80 max-w-lg mx-auto">
-                  Claim your favorite username before someone else takes it. It only takes 10 seconds.
-                </p>
-                <button
-                  onClick={() => openAuth("signup")}
-                  className="rounded-2xl border-3 border-[#0a0a0a] bg-[#0a0a0a] px-8 py-4 text-sm font-black uppercase text-white shadow-[4px_4px_0_0_#0a0a0a] hover:bg-neutral-800"
+            <section className="relative border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center overflow-hidden">
+              <div className="mx-auto max-w-4xl">
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border-2 border-[#0a0a0a] bg-white px-3 sm:px-4 py-1.5 shadow-[0_3px_0_0_#0a0a0a] mb-6 text-xs font-black"
                 >
-                  Create My Free Buzz Handle Now
-                </button>
+                  <span className="bz-label">BUZZ MESSAGING</span>
+                  <span className="text-black/30">·</span>
+                  <span>No Phone Numbers</span>
+                  <span className="text-black/30">·</span>
+                  <span>Made in India 🇮🇳</span>
+                </motion.div>
+
+                <motion.h1
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="font-extrabold text-3xl sm:text-5xl md:text-7xl leading-[1.05] tracking-tight text-[#0a0a0a]"
+                >
+                  Message privately.<br />
+                  <span className="bz-squig">Without phone numbers.</span>
+                </motion.h1>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="mx-auto mt-6 max-w-2xl text-sm sm:text-base md:text-lg font-medium text-[#5b5b55] leading-relaxed"
+                >
+                  Simple, ultra-fast, private messaging and calling where your unique username is your identity. Share your personal guest link, send Ghost Voice notes, and talk freely.
+                </motion.p>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  className="mt-8 flex flex-wrap items-center justify-center gap-3"
+                >
+                  <InstallAppDialog
+                    trigger={
+                      <button className="bz-btn bz-btn-yellow px-6 sm:px-8 py-3.5 text-sm sm:text-base font-black">
+                        Get Buzz Messaging <ArrowRight className="h-4 w-4" />
+                      </button>
+                    }
+                  />
+                  <button onClick={openAuth} className="bz-btn bz-btn-white px-5 sm:px-6 py-3.5 text-sm sm:text-base font-bold">
+                    Claim Username (@handle)
+                  </button>
+                  <Link to="/guest-chat" className="bz-btn bz-btn-white px-5 py-3.5 text-sm sm:text-base font-bold flex items-center gap-1.5">
+                    Try Guest Chat 🤫
+                  </Link>
+                </motion.div>
               </div>
             </section>
-          </div>
+
+            {/* REAL-TIME LIVE BUZZ CHAT DEMO ON HOMEPAGE */}
+            <section className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-[#fffbec]">
+              <div className="mx-auto max-w-[1160px]">
+                <div className="text-center max-w-2xl mx-auto mb-10">
+                  <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] px-3 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a] mb-2">
+                    ⚡ LIVE INTERACTIVE EXPERIENCE
+                  </div>
+                  <h2 className="text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
+                    Experience Real Buzz Chatting Right Now
+                  </h2>
+                  <p className="mt-2 text-sm text-[#5b5b55] font-medium leading-relaxed">
+                    Type a message below or tap quick replies to see how instantaneous, private, and fun messaging feels on Buzz.
+                  </p>
+                </div>
+
+                <div className="max-w-2xl mx-auto">
+                  <BuzzRealtimeChatSimulator />
+                </div>
+              </div>
+            </section>
+
+            {/* 4 CORE ADVANTAGES (WHATSAPP COMPARISON) */}
+            <section className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white">
+              <div className="mx-auto max-w-[1160px]">
+                <div className="text-center max-w-2xl mx-auto mb-12">
+                  <span className="bz-label">THE BUZZ DIFFERENCE</span>
+                  <h2 className="mt-2 text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
+                    Why Millions Are Switching from Phone-Number Apps
+                  </h2>
+                </div>
+
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
+                    <div className="h-10 w-10 grid place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#FFF6B8] font-black text-xl mb-3">
+                      🛡️
+                    </div>
+                    <h3 className="text-base font-black text-[#0a0a0a]">No Number Leaks</h3>
+                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
+                      Never give out your mobile number to strangers, online sellers, or acquaintances. Chat with just your @handle.
+                    </p>
+                  </div>
+
+                  <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
+                    <div className="h-10 w-10 grid place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#E2ECFF] font-black text-xl mb-3">
+                      🤫
+                    </div>
+                    <h3 className="text-base font-black text-[#0a0a0a]">Guest Chat & Voice</h3>
+                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
+                      Share your secret link anywhere. Anyone can reply anonymously with fun Ghost Voice filters without downloading an app.
+                    </p>
+                  </div>
+
+                  <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
+                    <div className="h-10 w-10 grid place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#DCF4E4] font-black text-xl mb-3">
+                      💻
+                    </div>
+                    <h3 className="text-base font-black text-[#0a0a0a]">Independent Web App</h3>
+                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
+                      Buzz Web works standalone. Your laptop does not need your phone to be turned on or connected to Wi-Fi.
+                    </p>
+                  </div>
+
+                  <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
+                    <div className="h-10 w-10 grid place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#FFE0EB] font-black text-xl mb-3">
+                      ⚡
+                    </div>
+                    <h3 className="text-base font-black text-[#0a0a0a]">Ultra Lightweight</h3>
+                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
+                      Installs in seconds under 5MB. No 150MB bulky store updates or background battery drainage.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* MADE IN INDIA 🇮🇳 ATMANIRBHAR SECTION */}
+            <section id="india" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-[#fffbec]">
+              <div className="mx-auto max-w-[1160px]">
+                <div className="text-center max-w-2xl mx-auto mb-12">
+                  <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#DCF4E4] px-3 py-1 text-xs font-black text-emerald-900 shadow-[0_2px_0_0_#0a0a0a] mb-2">
+                    🇮🇳 DIGITAL ATMANIRBHAR BHARAT
+                  </div>
+                  <h2 className="text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
+                    Designed in India for True Digital Freedom
+                  </h2>
+                  <p className="mt-3 text-sm text-[#5b5b55] leading-relaxed">
+                    Why should 1.4 billion Indians share their mobile numbers with foreign Big Tech servers just to chat with friends and family?
+                  </p>
+                </div>
+
+                <div className="grid gap-6 sm:grid-cols-3">
+                  <div className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#FFF6B8] mb-4 text-2xl font-black">
+                      🇮🇳
+                    </div>
+                    <h3 className="text-base font-black text-[#0a0a0a]">100% Indian Data Sovereignty</h3>
+                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
+                      Your identity is safe. Built by Indian developers with zero contact-book scraping and zero advertising tracking.
+                    </p>
+                  </div>
+
+                  <div className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#E2ECFF] mb-4 text-2xl font-black">
+                      🛡️
+                    </div>
+                    <h3 className="text-base font-black text-[#0a0a0a]">Shield Your Bank & Aadhaar</h3>
+                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
+                      Your phone number links to bank accounts and UPI. Buzz keeps your daily chatting identity completely isolated.
+                    </p>
+                  </div>
+
+                  <div className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#DCF4E4] mb-4 text-2xl font-black">
+                      ⚡
+                    </div>
+                    <h3 className="text-base font-black text-[#0a0a0a]">Fast, Lightweight PWA</h3>
+                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
+                      Runs fast on 4G and 5G networks across India with no bulky 100MB downloads. Installs in under 3 seconds.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </>
         )}
       </main>
 
-      {/* FOOTER */}
-      <footer className="border-t-3 border-[#0a0a0a] bg-white py-12 px-4 sm:px-6">
-        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
-          <div className="flex items-center gap-2.5">
-            <img src={buzzLogo} alt="Buzz Logo" className="h-8 w-8 rounded-lg border border-[#0a0a0a]" />
-            <span className="text-base font-black text-[#0a0a0a]">BUZZ MESSENGER</span>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-5 text-xs font-black uppercase">
+      <footer className="border-t-2 border-[#0a0a0a] bg-[#FFF6B8] py-8 px-4 text-center text-xs font-bold text-[#0a0a0a]">
+        <div className="mx-auto max-w-[1160px] flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p>© 2026–2027 Buzz Messaging · Made in India 🇮🇳 · Chat Without Digits</p>
+          <div className="flex flex-wrap gap-4 justify-center">
             <Link to="/features" className="hover:underline">Features</Link>
             <Link to="/guest-chat" className="hover:underline">Guest Chat</Link>
-            <Link to="/made-in-india" className="text-[#ff9933] hover:underline">Made In India</Link>
             <Link to="/privacy" className="hover:underline">Privacy</Link>
             <Link to="/buzz-web" className="hover:underline">Buzz Web</Link>
             <Link to="/download" className="hover:underline">Download</Link>
+            <Link to="/contact" className="hover:underline">Contact</Link>
           </div>
-
-          <p className="text-[11px] font-bold text-[#0a0a0a]/60">
-            © 2027 Buzz Messenger. Zero Phone Number Identity.
-          </p>
         </div>
       </footer>
-
-      <InstallAppDialog open={installOpen} onOpenChange={setInstallOpen} />
     </div>
   );
 }
