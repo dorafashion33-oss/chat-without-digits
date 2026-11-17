@@ -1,17 +1,27 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowDownToLine, ArrowRight, Menu, X } from "lucide-react";
+import {
+  ArrowDownToLine,
+  ArrowRight,
+  Check,
+  Globe,
+  Lock,
+  Menu,
+  MessageCircle,
+  Phone,
+  Shield,
+  Smartphone,
+  Sparkles,
+  Users,
+  Video,
+  X,
+  Zap,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import InstallAppDialog from "@/components/chat/InstallAppDialog";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
-import type { ComponentType } from "react";
-import BuzzPublicPage, * as BuzzPublicPageModule from "./BuzzPublicPage";
-
-// Namespace import avoids Rollup's strict named-export resolution error.
-const { publicPages } = BuzzPublicPageModule;
-const BuzzRealtimeChatSimulator =
-  (BuzzPublicPageModule as unknown as { BuzzRealtimeChatSimulator: ComponentType }).BuzzRealtimeChatSimulator;
+import BuzzPublicPage, { publicPages } from "./BuzzPublicPage";
 
 const TARGET_LAUNCH_TIMESTAMP = new Date("2027-03-25T10:30:00+05:30").getTime();
 
@@ -104,9 +114,6 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const openAuth = () => navigate("/auth");
 
-  const normalizedPage = page.startsWith("/") ? page.slice(1) : page;
-  const isCustomPublicPage = publicPages.includes(normalizedPage as any);
-
   return (
     <div id="top" className="min-h-screen bz-grid-paper text-[#0a0a0a]">
       <header className="sticky top-0 z-50 border-b-2 border-[#0a0a0a] bg-[#fffbec]/95 backdrop-blur">
@@ -115,16 +122,10 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
         <div className="mx-auto flex h-[68px] sm:h-[72px] max-w-[1160px] items-center justify-between px-4 sm:px-6">
           <Logo />
 
-          {/* Desktop Nav: WhatsApp-style long pages navigation */}
+          {/* Desktop Nav */}
           <nav className="hidden items-center gap-6 lg:flex" aria-label="Main navigation">
             <Link to="/features" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
               Features
-            </Link>
-            <Link
-              to="/guest-chat"
-              className="text-[13px] font-bold text-[#0a0a0a] hover:underline flex items-center gap-1.5"
-            >
-              Guest Chat <span className="rounded bg-[#FCE314] px-1 py-0.2 text-[10px] font-black border border-[#0a0a0a]">NEW</span>
             </Link>
             <a href="#india" className="text-[13px] font-bold text-[#0a0a0a] hover:underline flex items-center gap-1">
               Made in India 🇮🇳
@@ -178,23 +179,19 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
             >
               <nav className="grid gap-2 text-sm" aria-label="Mobile navigation">
                 <Link to="/features" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
-                  Features & 100+ Tools
-                </Link>
-                <Link to="/guest-chat" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10 flex items-center justify-between">
-                  <span>Guest Chat & Ghost Voice</span>
-                  <span className="rounded bg-[#FCE314] px-1.5 py-0.5 text-[10px] font-black border border-[#0a0a0a]">NEW</span>
+                  Features & Capabilities
                 </Link>
                 <a href="#india" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10 flex items-center gap-1">
                   Made in India Story 🇮🇳
                 </a>
                 <Link to="/privacy" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
-                  Privacy & Zero-Number Guarantee
+                  Privacy Guarantee
                 </Link>
                 <Link to="/buzz-web" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
-                  Buzz Web (No Phone Needed)
+                  Buzz Web
                 </Link>
                 <Link to="/download" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
-                  Download & Install PWA
+                  Download & Install
                 </Link>
                 <div className="pt-3 flex gap-2">
                   <button onClick={openAuth} className="bz-btn bz-btn-white flex-1 py-2.5 text-xs font-black">
@@ -208,8 +205,8 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
       </header>
 
       <main>
-        {isCustomPublicPage ? (
-          <BuzzPublicPage page={normalizedPage as any} onLogin={openAuth} />
+        {publicPages.includes(page.slice(1) as typeof publicPages[number]) ? (
+          <BuzzPublicPage page={page.slice(1) as typeof publicPages[number]} onLogin={openAuth} />
         ) : (
           <>
             {/* HERO SECTION */}
@@ -244,7 +241,7 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
                   transition={{ duration: 0.5, delay: 0.2 }}
                   className="mx-auto mt-6 max-w-2xl text-sm sm:text-base md:text-lg font-medium text-[#5b5b55] leading-relaxed"
                 >
-                  Simple, ultra-fast, private messaging and calling where your unique username is your identity. Share your personal guest link, send Ghost Voice notes, and talk freely.
+                  Simple, reliable, private messaging and calling where your unique username is your identity. Share your personal link, record Ghost Voice notes, and talk freely.
                 </motion.p>
 
                 <motion.div
@@ -263,97 +260,19 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
                   <button onClick={openAuth} className="bz-btn bz-btn-white px-5 sm:px-6 py-3.5 text-sm sm:text-base font-bold">
                     Claim Username (@handle)
                   </button>
-                  <Link to="/guest-chat" className="bz-btn bz-btn-white px-5 py-3.5 text-sm sm:text-base font-bold flex items-center gap-1.5">
-                    Try Guest Chat 🤫
-                  </Link>
                 </motion.div>
               </div>
             </section>
 
-            {/* REAL-TIME LIVE BUZZ CHAT DEMO ON HOMEPAGE */}
-            <section className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-[#fffbec]">
-              <div className="mx-auto max-w-[1160px]">
-                <div className="text-center max-w-2xl mx-auto mb-10">
-                  <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] px-3 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a] mb-2">
-                    ⚡ LIVE INTERACTIVE EXPERIENCE
-                  </div>
-                  <h2 className="text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
-                    Experience Real Buzz Chatting Right Now
-                  </h2>
-                  <p className="mt-2 text-sm text-[#5b5b55] font-medium leading-relaxed">
-                    Type a message below or tap quick replies to see how instantaneous, private, and fun messaging feels on Buzz.
-                  </p>
-                </div>
-
-                <div className="max-w-2xl mx-auto">
-                  <BuzzRealtimeChatSimulator />
-                </div>
-              </div>
-            </section>
-
-            {/* 4 CORE ADVANTAGES (WHATSAPP COMPARISON) */}
-            <section className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white">
-              <div className="mx-auto max-w-[1160px]">
-                <div className="text-center max-w-2xl mx-auto mb-12">
-                  <span className="bz-label">THE BUZZ DIFFERENCE</span>
-                  <h2 className="mt-2 text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
-                    Why Millions Are Switching from Phone-Number Apps
-                  </h2>
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
-                    <div className="h-10 w-10 grid place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#FFF6B8] font-black text-xl mb-3">
-                      🛡️
-                    </div>
-                    <h3 className="text-base font-black text-[#0a0a0a]">No Number Leaks</h3>
-                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
-                      Never give out your mobile number to strangers, online sellers, or acquaintances. Chat with just your @handle.
-                    </p>
-                  </div>
-
-                  <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
-                    <div className="h-10 w-10 grid place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#E2ECFF] font-black text-xl mb-3">
-                      🤫
-                    </div>
-                    <h3 className="text-base font-black text-[#0a0a0a]">Guest Chat & Voice</h3>
-                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
-                      Share your secret link anywhere. Anyone can reply anonymously with fun Ghost Voice filters without downloading an app.
-                    </p>
-                  </div>
-
-                  <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
-                    <div className="h-10 w-10 grid place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#DCF4E4] font-black text-xl mb-3">
-                      💻
-                    </div>
-                    <h3 className="text-base font-black text-[#0a0a0a]">Independent Web App</h3>
-                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
-                      Buzz Web works standalone. Your laptop does not need your phone to be turned on or connected to Wi-Fi.
-                    </p>
-                  </div>
-
-                  <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a]">
-                    <div className="h-10 w-10 grid place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#FFE0EB] font-black text-xl mb-3">
-                      ⚡
-                    </div>
-                    <h3 className="text-base font-black text-[#0a0a0a]">Ultra Lightweight</h3>
-                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
-                      Installs in seconds under 5MB. No 150MB bulky store updates or background battery drainage.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
-
             {/* MADE IN INDIA 🇮🇳 ATMANIRBHAR SECTION */}
-            <section id="india" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-[#fffbec]">
+            <section id="india" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white">
               <div className="mx-auto max-w-[1160px]">
                 <div className="text-center max-w-2xl mx-auto mb-12">
                   <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#DCF4E4] px-3 py-1 text-xs font-black text-emerald-900 shadow-[0_2px_0_0_#0a0a0a] mb-2">
                     🇮🇳 DIGITAL ATMANIRBHAR BHARAT
                   </div>
                   <h2 className="text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
-                    Designed in India for True Digital Freedom
+                    Designed in India for Digital Freedom
                   </h2>
                   <p className="mt-3 text-sm text-[#5b5b55] leading-relaxed">
                     Why should 1.4 billion Indians share their mobile numbers with foreign Big Tech servers just to chat with friends and family?
@@ -400,11 +319,9 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
       <footer className="border-t-2 border-[#0a0a0a] bg-[#FFF6B8] py-8 px-4 text-center text-xs font-bold text-[#0a0a0a]">
         <div className="mx-auto max-w-[1160px] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© 2026–2027 Buzz Messaging · Made in India 🇮🇳 · Chat Without Digits</p>
-          <div className="flex flex-wrap gap-4 justify-center">
+          <div className="flex gap-4">
             <Link to="/features" className="hover:underline">Features</Link>
-            <Link to="/guest-chat" className="hover:underline">Guest Chat</Link>
             <Link to="/privacy" className="hover:underline">Privacy</Link>
-            <Link to="/buzz-web" className="hover:underline">Buzz Web</Link>
             <Link to="/download" className="hover:underline">Download</Link>
             <Link to="/contact" className="hover:underline">Contact</Link>
           </div>
