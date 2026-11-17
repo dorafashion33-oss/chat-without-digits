@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Phone, Video, Send, ArrowLeft, Image, Smile, Trash2, Edit2, Reply, X, Paperclip, Check, CheckCheck } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { Phone, Video, Send, ArrowLeft, Smile, Trash2, Reply, X, Paperclip, Check, CheckCheck } from "lucide-react";
 import { type ChatThread, type DbMessage, type DbProfile } from "@/hooks/useRealtimeMessages";
 import MessageReactions from "./MessageReactions";
 import EmojiPicker from "./EmojiPicker";
@@ -162,9 +162,16 @@ const ChatWindow = ({
     setShowProfile(true);
   };
 
+  // Filter profiles for forward: only contacts with whom user has active thread
+  const chattedProfiles = useMemo(() => {
+    return profiles.filter(
+      (p) => p.user_id !== currentUserId && (p.user_id === thread.id || thread.messages.length > 0)
+    );
+  }, [profiles, currentUserId, thread.id, thread.messages.length]);
+
   return (
     <div className="flex h-full flex-col bg-white">
-      {/* Neo-Brutalist Chat Header */}
+      {/* Header */}
       <div className="flex items-center justify-between border-b-2 border-[#0a0a0a] bg-[#fffbec] px-4 py-3 shadow-sm">
         <div className="flex items-center gap-3">
           {onBack && (
@@ -176,7 +183,6 @@ const ChatWindow = ({
             </button>
           )}
 
-          {/* Profile Trigger button */}
           <button
             type="button"
             onClick={handleOpenProfile}
@@ -223,7 +229,7 @@ const ChatWindow = ({
         </div>
       </div>
 
-      {/* Messages Feed */}
+      {/* Messages Shell */}
       <div
         ref={messagesContainerRef}
         className="chat-messages-shell flex-1 overflow-y-auto px-4 py-4 space-y-3 bz-grid-paper"
@@ -264,7 +270,7 @@ const ChatWindow = ({
                 </div>
               </div>
 
-              {/* Message Context Controls */}
+              {/* Action Buttons */}
               <div className="opacity-0 group-hover/msg:opacity-100 flex items-center gap-1 mt-1 transition-opacity">
                 <button
                   onClick={() => setReplyTo(msg)}
@@ -303,7 +309,7 @@ const ChatWindow = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Bar */}
+      {/* Input Bar with Voice Modes */}
       <div className="border-t-2 border-[#0a0a0a] bg-[#fffbec] p-3">
         {replyTo && (
           <div className="mb-2 flex items-center justify-between rounded-xl border-2 border-[#0a0a0a] bg-white px-3 py-1.5 text-xs font-semibold">
@@ -350,7 +356,17 @@ const ChatWindow = ({
             />
           </div>
 
-          <VoiceMessageButton receiverId={thread.id} onSendVoice={(url, dur) => onSendMessage(thread.id, `[voice]${url}|${dur}[/voice]`)} />
+          {/* Voice Button supporting all 5 Ghost Modes */}
+          <VoiceMessageButton
+            receiverId={thread.id}
+            onSendVoice={(voiceUrl, effect) => {
+              if (effect && effect !== "normal") {
+                onSendMessage(thread.id, `[voice:${effect}]${voiceUrl}`);
+              } else {
+                onSendMessage(thread.id, `[voice]${voiceUrl}[/voice]`);
+              }
+            }}
+          />
 
           <button
             onClick={handleSend}
@@ -362,13 +378,13 @@ const ChatWindow = ({
         </div>
       </div>
 
-      {/* Forward Modal */}
+      {/* Forward Modal - Shows only Chatted Contacts */}
       {forwardMessage && (
         <MessageForwardDialog
           open={!!forwardMessage}
           onOpenChange={(o) => !o && setForwardMessage(null)}
           messageText={forwardMessage.text}
-          profiles={profiles}
+          profiles={chattedProfiles}
           onForward={(toId, text) => {
             onSendMessage(toId, text);
             setForwardMessage(null);
@@ -377,7 +393,7 @@ const ChatWindow = ({
         />
       )}
 
-      {/* Partner User Profile Dialog with guaranteed fallback */}
+      {/* Partner User Profile Dialog */}
       {showProfile && (
         <UserProfileDialog
           profile={
