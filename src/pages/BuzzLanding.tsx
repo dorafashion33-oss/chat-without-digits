@@ -209,7 +209,7 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
           <BuzzPublicPage page={page.slice(1) as typeof publicPages[number]} onLogin={openAuth} />
         ) : (
           <>
-            {/* HERO SECTION */}
+            {/* HERO SECTION WITH GUEST MODE MENTION */}
             <section className="relative border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center overflow-hidden">
               <div className="mx-auto max-w-4xl">
                 <motion.div
@@ -221,6 +221,8 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
                   <span className="bz-label">BUZZ MESSAGING</span>
                   <span className="text-black/30">·</span>
                   <span>No Phone Numbers</span>
+                  <span className="text-black/30">·</span>
+                  <span>Guest Mode 🤫</span>
                   <span className="text-black/30">·</span>
                   <span>Made in India 🇮🇳</span>
                 </motion.div>
@@ -241,7 +243,7 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
                   transition={{ duration: 0.5, delay: 0.2 }}
                   className="mx-auto mt-6 max-w-2xl text-sm sm:text-base md:text-lg font-medium text-[#5b5b55] leading-relaxed"
                 >
-                  Simple, reliable, private messaging and calling where your unique username is your identity. Share your personal link, record Ghost Voice notes, and talk freely.
+                  Simple, reliable, private messaging and calling where your unique username is your identity. Share your personal Guest Mode link, record Ghost Voice notes, and talk freely.
                 </motion.p>
 
                 <motion.div
@@ -280,7 +282,7 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
                 </div>
 
                 <div className="grid gap-6 sm:grid-cols-3">
-                  <div className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
+                  <motion.div whileHover={{ y: -4 }} className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
                     <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#FFF6B8] mb-4 text-2xl font-black">
                       🇮🇳
                     </div>
@@ -288,9 +290,9 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
                     <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
                       Your identity is safe. Built by Indian developers with zero contact-book scraping and zero advertising tracking.
                     </p>
-                  </div>
+                  </motion.div>
 
-                  <div className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
+                  <motion.div whileHover={{ y: -4 }} className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
                     <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#E2ECFF] mb-4 text-2xl font-black">
                       🛡️
                     </div>
@@ -298,9 +300,9 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
                     <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
                       Your phone number links to bank accounts and UPI. Buzz keeps your daily chatting identity completely isolated.
                     </p>
-                  </div>
+                  </motion.div>
 
-                  <div className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
+                  <motion.div whileHover={{ y: -4 }} className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a]">
                     <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#DCF4E4] mb-4 text-2xl font-black">
                       ⚡
                     </div>
@@ -308,7 +310,7 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
                     <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
                       Runs fast on 4G and 5G networks across India with no bulky 100MB downloads. Installs in under 3 seconds.
                     </p>
-                  </div>
+                  </motion.div>
                 </div>
               </div>
             </section>
