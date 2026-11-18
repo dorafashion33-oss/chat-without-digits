@@ -474,6 +474,35 @@
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='10' viewBox='0 0 40 10'%3E%3Cpath d='M0 5 Q5 0 10 5 T20 5 T30 5 T40 5' fill='none' stroke='%23FCE314' stroke-width='4'/%3E%3C/svg%3E") 0 100% / 40px 10px repeat-x;
   padding-bottom: 6px;
 }
+/* ────────── SARVAM.AI DYNAMIC TEXT & MARQUEE EFFECTS ────────── */
+@keyframes sarvamGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.sarvam-gradient-text {
+  background: linear-gradient(90deg, #ff6b00, #7c3aed, #e11d48, #059669, #ff6b00);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: sarvamGradient 6s ease infinite;
+}
+
+@keyframes marqueeScroll {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.bz-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marqueeScroll 25s linear infinite;
+}
+
+.bz-marquee-track:hover {
+  animation-play-state: paused;
+}
 
 .bz-squig-purple {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='10' viewBox='0 0 40 10'%3E%3Cpath d='M0 5 Q5 0 10 5 T20 5 T30 5 T40 5' fill='none' stroke='%238B5CF6' stroke-width='4'/%3E%3C/svg%3E") 0 100% / 40px 10px repeat-x;
