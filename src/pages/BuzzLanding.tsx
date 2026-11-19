@@ -249,139 +249,112 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
     return () => clearInterval(interval);
   }, [rotatingWords.length]);
 
-  const cleanPage = page.startsWith("/") ? page.slice(1) : page;
-  const isCustomSubPage = publicPages.includes(cleanPage as any);
+  const cleanPath = page.replace(/^\//, "");
+  const isPublicSubpage = publicPages.includes(cleanPath as any);
 
   return (
-    <div id="top" className="min-h-screen bz-grid-paper text-[#0a0a0a]">
-      <header className="sticky top-0 z-50 border-b-2 border-[#0a0a0a] bg-[#fffbec]/95 backdrop-blur">
-        <LaunchCountdownBar onClaim={openAuth} />
+    <div className="min-h-screen bg-[#FFFDF5] text-[#0a0a0a] font-sans selection:bg-[#FCE314] selection:text-black">
+      {/* 1. STICKY LAUNCH COUNTDOWN */}
+      <LaunchCountdownBar onClaim={openAuth} />
 
-        <div className="mx-auto flex h-[68px] sm:h-[72px] max-w-[1160px] items-center justify-between px-4 sm:px-6">
+      {/* 2. SARVAM-STYLE INFINITE MARQUEE TICKER */}
+      <MarqueeRibbon />
+
+      {/* 3. NEO-EDITORIAL MAIN NAVBAR */}
+      <header className="sticky top-0 z-40 border-b-2 border-[#0a0a0a] bg-white/95 backdrop-blur-md px-4 sm:px-6 py-3">
+        <div className="mx-auto flex max-w-[1160px] items-center justify-between gap-4">
           <Logo />
 
-          {/* Desktop Nav */}
-          <nav className="hidden items-center gap-6 lg:flex" aria-label="Main navigation">
-            <Link to="/features" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
-              Features
-            </Link>
-            <Link to="/guest-chat" className="text-[13px] font-bold text-[#0a0a0a] hover:underline flex items-center gap-1">
-              Guest Chat <span className="bg-[#FCE314] px-1 py-0.2 rounded text-[10px] font-black border border-[#0a0a0a]">NEW</span>
-            </Link>
-            <Link to="/security" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
-              Security
-            </Link>
-            <Link to="/compare" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
-              Compare
-            </Link>
-            <a href="#india" className="text-[13px] font-bold text-[#0a0a0a] hover:underline flex items-center gap-1">
-              Made in India 🇮🇳
-            </a>
-            <Link to="/privacy" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
-              Privacy
-            </Link>
-            <Link to="/download" className="text-[13px] font-bold text-[#0a0a0a] hover:underline">
-              Download
-            </Link>
+          {/* Desktop Nav Links */}
+          <nav className="hidden lg:flex items-center gap-5 text-xs font-black uppercase tracking-wider text-[#0a0a0a]">
+            <Link to="/features" className="hover:text-purple-600 transition-colors">Features</Link>
+            <Link to="/guest-chat" className="hover:text-purple-600 transition-colors">Guest Chat</Link>
+            <Link to="/security" className="hover:text-purple-600 transition-colors">Security</Link>
+            <Link to="/compare" className="hover:text-purple-600 transition-colors">Compare</Link>
+            <Link to="/privacy" className="hover:text-purple-600 transition-colors">Privacy</Link>
+            <Link to="/buzz-web" className="hover:text-purple-600 transition-colors">Buzz Web</Link>
+            <Link to="/download" className="hover:text-purple-600 transition-colors">Download</Link>
+            <Link to="/contact" className="hover:text-purple-600 transition-colors">Contact</Link>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={openAuth}
-              className="bz-btn bz-btn-white hidden px-4 py-2 text-xs sm:inline-flex"
-            >
-              Log In
-            </button>
+          {/* Action CTAs */}
+          <div className="hidden sm:flex items-center gap-2.5">
             <InstallAppDialog
               trigger={
-                <button className="bz-btn bz-btn-yellow px-4 sm:px-5 py-2 text-xs sm:text-sm">
-                  Get Buzz <ArrowDownToLine className="h-4 w-4" />
+                <button className="bz-btn bz-btn-white px-3.5 py-2 text-xs font-bold">
+                  <ArrowDownToLine className="h-3.5 w-3.5 mr-1 inline" /> Install
                 </button>
               }
             />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="border-2 border-[#0a0a0a] rounded-xl lg:hidden h-9 w-9"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Toggle menu"
+            <button
+              onClick={openAuth}
+              className="bz-btn bz-btn-yellow px-4 py-2 text-xs font-black tracking-wide"
             >
-              {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            </Button>
+              Log In / Claim ›
+            </button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="lg:hidden grid h-9 w-9 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-white shadow-[0_2px_0_0_#0a0a0a]"
+            aria-label="Toggle Menu"
+          >
+            {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
         </div>
 
-        {/* Mobile Navigation Drawer */}
+        {/* Mobile Dropdown Drawer */}
         <AnimatePresence>
           {menuOpen && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="border-t-2 border-[#0a0a0a] bg-[#fffbec] p-5 lg:hidden overflow-hidden"
+              className="lg:hidden border-t-2 border-[#0a0a0a] bg-[#FFF6B8] mt-3 py-4 px-4 flex flex-col gap-3 text-xs font-black uppercase text-left"
             >
-              <nav className="grid gap-2 text-sm" aria-label="Mobile navigation">
-                <Link to="/features" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
-                  Features & Capabilities
-                </Link>
-                <Link to="/guest-chat" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10 flex items-center justify-between">
-                  <span>Guest Chat & Ghost Voice</span>
-                  <span className="bg-[#FCE314] px-1 py-0.2 rounded text-[10px] font-black border border-[#0a0a0a]">NEW</span>
-                </Link>
-                <Link to="/security" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
-                  Security Architecture (RLS)
-                </Link>
-                <Link to="/compare" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
-                  Buzz vs WhatsApp vs Telegram
-                </Link>
-                <a href="#india" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10 flex items-center gap-1">
-                  Made in India Story 🇮🇳
-                </a>
-                <Link to="/privacy" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
-                  Privacy Guarantee
-                </Link>
-                <Link to="/download" onClick={() => setMenuOpen(false)} className="font-bold py-1.5 border-b border-[#0a0a0a]/10">
-                  Download & Install
-                </Link>
-                <div className="pt-3 flex gap-2">
-                  <button onClick={openAuth} className="bz-btn bz-btn-white flex-1 py-2.5 text-xs font-black">
-                    Log In / Sign Up
-                  </button>
-                </div>
-              </nav>
+              <Link to="/features" onClick={() => setMenuOpen(false)}>Features</Link>
+              <Link to="/guest-chat" onClick={() => setMenuOpen(false)}>Guest Chat</Link>
+              <Link to="/security" onClick={() => setMenuOpen(false)}>Security</Link>
+              <Link to="/compare" onClick={() => setMenuOpen(false)}>Compare</Link>
+              <Link to="/privacy" onClick={() => setMenuOpen(false)}>Privacy</Link>
+              <Link to="/buzz-web" onClick={() => setMenuOpen(false)}>Buzz Web</Link>
+              <Link to="/download" onClick={() => setMenuOpen(false)}>Download</Link>
+              <Link to="/contact" onClick={() => setMenuOpen(false)}>Contact</Link>
+
+              <div className="pt-2 flex flex-col gap-2">
+                <button onClick={openAuth} className="bz-btn bz-btn-ink w-full py-2.5 text-xs font-black">
+                  Claim Username / Log In
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </header>
 
+      {/* 4. MAIN ROUTED CONTENT */}
       <main>
-        {isCustomSubPage ? (
-          <BuzzPublicPage page={cleanPage as any} onLogin={openAuth} />
+        {isPublicSubpage ? (
+          <BuzzPublicPage page={cleanPath as any} onLogin={openAuth} />
         ) : (
           <>
-            {/* Sarvam Marquee Moving Ribbon */}
-            <MarqueeRibbon />
-
-            {/* HERO SECTION: SARVAM KINETIC TEXT + BUZZMESSAGING.AI PAPER */}
-            <section className="relative border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 md:py-24 text-center overflow-hidden">
-              <div className="mx-auto max-w-4xl">
+            {/* HERO SECTION WITH SPECTRUM GRADIENT */}
+            <section className="relative px-4 sm:px-6 pt-12 pb-16 sm:pt-20 sm:pb-24 border-b-2 border-[#0a0a0a] bz-grid-paper text-center">
+              <div className="mx-auto max-w-[960px]">
+                {/* Atmanirbhar Saffron Pill */}
                 <motion.div
-                  initial={{ opacity: 0, y: 15 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
-                  className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border-2 border-[#0a0a0a] bg-white px-3 sm:px-4 py-1.5 shadow-[0_3px_0_0_#0a0a0a] mb-6 text-xs font-black"
+                  className="inline-flex items-center gap-2 rounded-full border-2 border-[#0a0a0a] bg-white px-3.5 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a] mb-6"
                 >
-                  <span className="bz-label">BUZZ INDIA</span>
-                  <span className="text-black/30">·</span>
-                  <span>Zero Digits</span>
-                  <span className="text-black/30">·</span>
-                  <span>Guest Mode 🤫</span>
+                  <span className="h-2 w-2 rounded-full bg-emerald-600 animate-pulse" />
+                  <span>No Phone Numbers Required</span>
                   <span className="text-black/30">·</span>
                   <span>Atmanirbhar Bharat 🇮🇳</span>
                 </motion.div>
 
-                {/* Sarvam-style Animated Color-Shifting Gradient Headline */}
+                {/* Sarvam-style Animated Multi-Spectrum Gradient Headline */}
                 <motion.h1
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -389,7 +362,7 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
                   className="font-extrabold text-3xl sm:text-5xl md:text-7xl leading-[1.08] tracking-tight text-[#0a0a0a]"
                 >
                   Apne number ko bank ke liye rakhein.<br />
-                  <span className="sarvam-gradient-text bz-squig">Chatting ke liye Buzz.</span>
+                  <span className="sarvam-gradient-spectrum bz-squig">Chatting ke liye Buzz.</span>
                 </motion.h1>
 
                 {/* Rotating Kinetic Subtitle */}
@@ -434,13 +407,13 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
               </div>
             </section>
 
-            {/* BENTO GRID: 4 REAL INDIAN PILLARS (BUZZMESSAGING.AI PASTEL STYLE) */}
+            {/* BENTO GRID: 4 REAL INDIAN PILLARS WITH OCEAN GRADIENT */}
             <section className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white text-left">
               <div className="mx-auto max-w-[1160px]">
                 <div className="text-center max-w-2xl mx-auto mb-12">
                   <span className="bz-label">BUZZ CORE ADVANTAGES</span>
                   <h2 className="mt-2 text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
-                    Designed for Indian Daily Realities
+                    Designed for Indian <span className="sarvam-gradient-ocean">Daily Realities</span>
                   </h2>
                   <p className="mt-2 text-xs sm:text-sm text-[#5b5b55]">
                     Why give out your 10-digit phone number to online buyers, college groups, or acquaintances?
@@ -495,13 +468,13 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
               </div>
             </section>
 
-            {/* 3-STEP EDITORIAL WORKFLOW */}
+            {/* 3-STEP EDITORIAL WORKFLOW WITH SUNSET GRADIENT */}
             <section className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-[#fffbec] text-left">
               <div className="mx-auto max-w-[1160px]">
                 <div className="text-center max-w-2xl mx-auto mb-12">
                   <span className="bz-label">SIMPLE AS 1-2-3</span>
                   <h2 className="mt-2 text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
-                    How Buzz Works in 3 Steps
+                    How Buzz Works in <span className="sarvam-gradient-sunset">3 Simple Steps</span>
                   </h2>
                 </div>
 
@@ -547,7 +520,7 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
                     🇮🇳 DIGITAL ATMANIRBHAR BHARAT
                   </div>
                   <h2 className="text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
-                    Designed in India for True Digital Freedom
+                    Designed in India for <span className="sarvam-gradient-sunset">True Digital Freedom</span>
                   </h2>
                   <p className="mt-3 text-sm text-[#5b5b55] leading-relaxed">
                     Why should 1.4 billion Indians share their mobile numbers with foreign Big Tech servers just to chat with friends and family?
@@ -588,13 +561,13 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
               </div>
             </section>
 
-            {/* COMPARISON MATRIX TABLE */}
+            {/* COMPARISON MATRIX TABLE WITH BERRY GRADIENT */}
             <section className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-[#fffbec] text-left">
               <div className="mx-auto max-w-[1160px]">
                 <div className="text-center max-w-2xl mx-auto mb-10">
                   <span className="bz-label">HONEST COMPARISON</span>
                   <h2 className="mt-2 text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
-                    How Buzz Compares to Legacy Messengers
+                    How Buzz Compares to <span className="sarvam-gradient-berry">Legacy Messengers</span>
                   </h2>
                 </div>
 
@@ -645,13 +618,13 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
               </div>
             </section>
 
-            {/* BHARTIYA FAQS ACCORDION */}
+            {/* BHARTIYA FAQS ACCORDION WITH OCEAN GRADIENT */}
             <section className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white">
               <div className="mx-auto max-w-3xl space-y-4">
                 <div className="text-center mb-8">
                   <span className="bz-label">QUESTIONS & ANSWERS</span>
                   <h2 className="mt-2 text-2xl sm:text-4xl font-black text-[#0a0a0a]">
-                    Frequently Asked Questions
+                    Frequently Asked <span className="sarvam-gradient-ocean">Questions (FAQs)</span>
                   </h2>
                 </div>
 
@@ -674,11 +647,11 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
               </div>
             </section>
 
-            {/* PRE-FOOTER GRAND CTA */}
+            {/* PRE-FOOTER GRAND CTA WITH SPECTRUM GRADIENT */}
             <section className="px-4 sm:px-6 py-14 sm:py-20 bg-[#FCE314] text-center border-b-2 border-[#0a0a0a]">
               <div className="mx-auto max-w-2xl">
                 <h2 className="text-3xl sm:text-5xl font-black text-[#0a0a0a] tracking-tight">
-                  Join Digital Atmanirbhar Bharat Movement 🇮🇳
+                  Join Digital <span className="sarvam-gradient-spectrum bz-squig">Atmanirbhar Bharat Movement</span> 🇮🇳
                 </h2>
                 <p className="mt-4 text-sm sm:text-base font-bold text-[#0a0a0a]/80">
                   Claim your rare @handle today before official public launch on 25th March 2027!
