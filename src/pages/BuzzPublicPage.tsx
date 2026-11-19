@@ -126,7 +126,7 @@ export default function BuzzPublicPage({
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
 
-  /* ────────── 1. FEATURES PAGE ────────── */
+  /* ────────── 1. FEATURES PAGE (MULTI-SPECTRUM) ────────── */
   if (page === "features") {
     const categories = [
       {
@@ -170,7 +170,7 @@ export default function BuzzPublicPage({
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
               Stay close.<br />
-              <span className="bz-squig">Your rules.</span>
+              <span className="sarvam-gradient-spectrum bz-squig">Your rules.</span>
             </h1>
             <p className="mt-5 text-base sm:text-lg text-[#5b5b55] font-medium leading-relaxed">
               Buzz combines the immediacy of modern messaging with the privacy of anonymous handles, Guest Mode secret links, and Ghost Voice. No numbers leaked. No contact-book uploads.
@@ -191,7 +191,6 @@ export default function BuzzPublicPage({
           <PreviewCard />
         </div>
 
-        {/* Categories Matrix */}
         <div className="grid gap-6 md:grid-cols-3">
           {categories.map((cat, i) => (
             <motion.div key={i} whileHover={{ y: -4 }} className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a] bg-white">
@@ -213,7 +212,7 @@ export default function BuzzPublicPage({
     );
   }
 
-  /* ────────── 2. GUEST CHAT PAGE ────────── */
+  /* ────────── 2. GUEST CHAT PAGE (NEON BERRY) ────────── */
   if (page === "guest-chat") {
     return (
       <div className="mx-auto max-w-6xl px-5 py-12 md:py-20 space-y-12 text-left">
@@ -224,7 +223,7 @@ export default function BuzzPublicPage({
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
               Secret confessions.<br />
-              <span className="bz-squig">Zero login required.</span>
+              <span className="sarvam-gradient-berry bz-squig">Zero login required.</span>
             </h1>
             <p className="mt-5 text-base sm:text-lg text-[#5b5b55] font-medium leading-relaxed">
               Every Buzz user gets a permanent personal link: <code className="bg-[#FFF6B8] px-2 py-0.5 rounded font-black border border-[#0a0a0a]">buzz.app/c/@yourname</code>. Share it on your Instagram bio or WhatsApp status. Anyone can message you without an account!
@@ -238,7 +237,6 @@ export default function BuzzPublicPage({
           <PreviewCard />
         </div>
 
-        {/* 4 Ghost Voice Filters Bento */}
         <div className="grid gap-6 sm:grid-cols-4">
           <div className="bz-card p-5 bg-[#FFF6B8] shadow-[0_4px_0_0_#0a0a0a]">
             <span className="text-2xl">🐿️</span>
@@ -265,7 +263,7 @@ export default function BuzzPublicPage({
     );
   }
 
-  /* ────────── 3. SECURITY PAGE ────────── */
+  /* ────────── 3. SECURITY PAGE (BANK-GRADE EMERALD) ────────── */
   if (page === "security") {
     return (
       <div className="mx-auto max-w-6xl px-5 py-12 md:py-20 space-y-12 text-left">
@@ -276,7 +274,7 @@ export default function BuzzPublicPage({
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
               Cryptographic<br />
-              <span className="bz-squig">Data Isolation.</span>
+              <span className="sarvam-gradient-emerald bz-squig">Data Isolation.</span>
             </h1>
             <p className="mt-5 text-base sm:text-lg text-[#5b5b55] font-medium leading-relaxed">
               Every message, push token, and call signal is strictly gated by database-level Row-Level Security policies. No user can read another person's data without cryptographic session match.
@@ -299,21 +297,21 @@ export default function BuzzPublicPage({
           </div>
           <div className="bz-card p-6 bg-white shadow-[0_4px_0_0_#0a0a0a]">
             <h3 className="text-sm font-black text-[#0a0a0a]">Ephemeral Auto-Cleanup</h3>
-            <p className="mt-1 text-xs text-[#5b5b55]">24-hour Momemts and inactive guest messages are automatically purged.</p>
+            <p className="mt-1 text-xs text-[#5b5b55]">24-hour Moments and inactive guest messages are automatically purged.</p>
           </div>
         </div>
       </div>
     );
   }
 
-  /* ────────── 4. COMPARE PAGE ────────── */
+  /* ────────── 4. COMPARE PAGE (SUNSET SAFFRON) ────────── */
   if (page === "compare") {
     return (
       <div className="mx-auto max-w-6xl px-5 py-12 md:py-20 space-y-12 text-left">
         <div>
           <span className="bz-label">TRANSPARENT BREAKDOWN</span>
           <h1 className="mt-2 text-3xl sm:text-5xl font-black text-[#0a0a0a] tracking-tight">
-            Buzz vs Traditional Phone Messengers
+            Buzz vs <span className="sarvam-gradient-sunset">Traditional Messengers</span>
           </h1>
           <p className="mt-2 text-sm text-[#5b5b55]">
             Why switching to zero-digit messaging protects your UPI, bank accounts, and daily peace of mind.
@@ -362,7 +360,7 @@ export default function BuzzPublicPage({
     );
   }
 
-  /* ────────── 5. PRIVACY PAGE ────────── */
+  /* ────────── 5. PRIVACY PAGE (EMERALD GREEN) ────────── */
   if (page === "privacy") {
     return (
       <div className="mx-auto max-w-6xl px-5 py-12 md:py-20 space-y-16 text-left">
@@ -373,7 +371,7 @@ export default function BuzzPublicPage({
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
               Your conversations.<br />
-              <span className="bz-squig">100% Private.</span>
+              <span className="sarvam-gradient-emerald bz-squig">100% Private.</span>
             </h1>
             <p className="mt-5 text-base sm:text-lg text-[#5b5b55] font-medium leading-relaxed">
               Traditional chat apps ask for your phone number, upload your entire contact book, and link you to advertisers. Buzz asks for none of that.
@@ -420,7 +418,7 @@ export default function BuzzPublicPage({
     );
   }
 
-  /* ────────── 6. BUZZ WEB PAGE ────────── */
+  /* ────────── 6. BUZZ WEB PAGE (OCEAN BLUE) ────────── */
   if (page === "buzz-web") {
     return (
       <div className="mx-auto max-w-6xl px-5 py-12 md:py-20 space-y-16 text-left">
@@ -431,7 +429,7 @@ export default function BuzzPublicPage({
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
               Buzz on your<br />
-              <span className="bz-squig">Big Screen.</span>
+              <span className="sarvam-gradient-ocean bz-squig">Big Screen.</span>
             </h1>
             <p className="mt-5 text-base sm:text-lg text-[#5b5b55] font-medium leading-relaxed">
               Send messages, share large media files, make voice/video calls, and manage groups directly in Chrome, Safari, or Edge without linking your phone.
@@ -469,7 +467,7 @@ export default function BuzzPublicPage({
     );
   }
 
-  /* ────────── 7. DOWNLOAD PAGE ────────── */
+  /* ────────── 7. DOWNLOAD PAGE (SUNSET FIRE) ────────── */
   if (page === "download") {
     return (
       <div className="mx-auto max-w-6xl px-5 py-12 md:py-20 space-y-16 text-left">
@@ -480,7 +478,7 @@ export default function BuzzPublicPage({
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
               Buzz on every<br />
-              <span className="bz-squig">single device.</span>
+              <span className="sarvam-gradient-sunset bz-squig">single device.</span>
             </h1>
             <p className="mt-5 text-base sm:text-lg text-[#5b5b55] font-medium leading-relaxed">
               Install Buzz directly from your browser. Ultra-lightweight (under 5MB), instant updates, and zero Play Store / App Store tracking.
@@ -537,13 +535,13 @@ export default function BuzzPublicPage({
     );
   }
 
-  /* ────────── 8. CONTACT PAGE ────────── */
+  /* ────────── 8. CONTACT PAGE (NEON BERRY) ────────── */
   return (
     <div className="mx-auto max-w-4xl px-5 py-12 md:py-20 text-left">
       <div className="bz-card p-6 md:p-10 shadow-[0_8px_0_0_#0a0a0a] bg-white">
         <span className="bz-label">BUZZ SUPPORT</span>
         <h1 className="mt-2 text-3xl sm:text-5xl font-black text-[#0a0a0a] tracking-tight">
-          Contact Buzz Team 📬
+          Contact <span className="sarvam-gradient-berry">Buzz Team</span> 📬
         </h1>
         <p className="mt-3 text-sm text-[#5b5b55] font-medium">
           Have feedback, feature requests, or questions? Send us a direct note at{" "}
