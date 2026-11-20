@@ -14,6 +14,7 @@ import {
   Mic,
   Phone,
   QrCode,
+  Send,
   Shield,
   ShieldCheck,
   Smartphone,
@@ -24,13 +25,14 @@ import {
   Zap,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import InstallAppDialog from "@/components/chat/InstallAppDialog";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
+import { QRCodeSVG } from "qrcode.react";
 import BuzzPublicPage, { publicPages } from "./BuzzPublicPage";
 
 const TARGET_LAUNCH_TIMESTAMP = new Date("2027-03-25T10:30:00+05:30").getTime();
 
+/* 1. Sticky Countdown Bar */
 const LaunchCountdownBar = ({ onClaim }: { onClaim: () => void }) => {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
@@ -42,22 +44,19 @@ const LaunchCountdownBar = ({ onClaim }: { onClaim: () => void }) => {
 
   useEffect(() => {
     const calculateTime = () => {
-      const now = Date.now();
-      const difference = TARGET_LAUNCH_TIMESTAMP - now;
-
+      const difference = TARGET_LAUNCH_TIMESTAMP - Date.now();
       if (difference <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isLive: true });
         return;
       }
-
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((difference / 1000 / 60) % 60);
-      const seconds = Math.floor((difference / 1000) % 60);
-
-      setTimeLeft({ days, hours, minutes, seconds, isLive: false });
+      setTimeLeft({
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+        isLive: false,
+      });
     };
-
     calculateTime();
     const timer = setInterval(calculateTime, 1000);
     return () => clearInterval(timer);
@@ -67,7 +66,7 @@ const LaunchCountdownBar = ({ onClaim }: { onClaim: () => void }) => {
     <div className="sticky top-0 z-[60] w-full border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-3 py-2 text-xs font-black shadow-[0_2px_0_0_#0a0a0a]">
       <div className="mx-auto flex max-w-[1160px] flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="grid h-5 w-5 place-items-center rounded border border-[#0a0a0a] bg-white text-[10px] shadow-[0_1px_0_0_#0a0a0a]">
+          <span className="grid h-5 w-5 place-items-center rounded border border-[#0a0a0a] bg-white text-[10px]">
             🚀
           </span>
           <span className="tracking-wide text-[#0a0a0a]">
@@ -81,21 +80,13 @@ const LaunchCountdownBar = ({ onClaim }: { onClaim: () => void }) => {
         <div className="flex items-center gap-3">
           {!timeLeft.isLive ? (
             <div className="flex items-center gap-1 font-mono text-[11px] font-black text-[#0a0a0a]">
-              <span className="rounded border border-[#0a0a0a] bg-white px-1.5 py-0.5 shadow-[0_1px_0_0_#0a0a0a]">
-                {timeLeft.days}d
-              </span>
+              <span className="rounded border border-[#0a0a0a] bg-white px-1.5 py-0.5">{timeLeft.days}d</span>
               <span>:</span>
-              <span className="rounded border border-[#0a0a0a] bg-white px-1.5 py-0.5 shadow-[0_1px_0_0_#0a0a0a]">
-                {String(timeLeft.hours).padStart(2, "0")}h
-              </span>
+              <span className="rounded border border-[#0a0a0a] bg-white px-1.5 py-0.5">{String(timeLeft.hours).padStart(2, "0")}h</span>
               <span>:</span>
-              <span className="rounded border border-[#0a0a0a] bg-white px-1.5 py-0.5 shadow-[0_1px_0_0_#0a0a0a]">
-                {String(timeLeft.minutes).padStart(2, "0")}m
-              </span>
+              <span className="rounded border border-[#0a0a0a] bg-white px-1.5 py-0.5">{String(timeLeft.minutes).padStart(2, "0")}m</span>
               <span>:</span>
-              <span className="rounded border border-[#0a0a0a] bg-[#FCE314] px-1.5 py-0.5 shadow-[0_1px_0_0_#0a0a0a]">
-                {String(timeLeft.seconds).padStart(2, "0")}s
-              </span>
+              <span className="rounded border border-[#0a0a0a] bg-[#FCE314] px-1.5 py-0.5">{String(timeLeft.seconds).padStart(2, "0")}s</span>
             </div>
           ) : (
             <span className="rounded border border-[#0a0a0a] bg-emerald-300 px-2 py-0.5 text-[10px] uppercase">
@@ -105,7 +96,7 @@ const LaunchCountdownBar = ({ onClaim }: { onClaim: () => void }) => {
 
           <button
             onClick={onClaim}
-            className="rounded border-2 border-[#0a0a0a] bg-[#0a0a0a] px-2.5 py-1 text-[11px] font-black text-white shadow-[0_2px_0_0_#0a0a0a] transition hover:bg-white hover:text-[#0a0a0a]"
+            className="rounded border-2 border-[#0a0a0a] bg-[#0a0a0a] px-2.5 py-1 text-[11px] font-black text-white hover:bg-white hover:text-[#0a0a0a] transition"
           >
             Claim Username ›
           </button>
@@ -115,9 +106,9 @@ const LaunchCountdownBar = ({ onClaim }: { onClaim: () => void }) => {
   );
 };
 
-/* Marquee News Ticker Ribbon */
+/* 2. Marquee Ticker */
 const MarqueeTicker = () => {
-  const tickerItems = [
+  const items = [
     "🇮🇳 100% INDIAN DATA SOVEREIGNTY",
     "🛡️ SHIELD YOUR BANK ACCOUNT & UPI",
     "🤫 GUEST CHAT & GHOST VOICE",
@@ -130,7 +121,7 @@ const MarqueeTicker = () => {
   return (
     <div className="overflow-hidden border-b-2 border-[#0a0a0a] bg-[#0a0a0a] py-2 text-white">
       <div className="flex w-max animate-marquee space-x-8 text-xs font-black tracking-widest uppercase">
-        {[...tickerItems, ...tickerItems].map((item, idx) => (
+        {[...items, ...items].map((item, idx) => (
           <span key={idx} className="flex items-center gap-3">
             <span className="sarvam-gradient-spectrum">{item}</span>
             <span className="text-[#FCE314]">·</span>
@@ -141,7 +132,7 @@ const MarqueeTicker = () => {
   );
 };
 
-/* Tactile Interactive Chat Mockup */
+/* 3. Hero Chat Mockup */
 const HeroChatPreview = () => (
   <motion.div
     initial={{ opacity: 0, y: 25 }}
@@ -211,7 +202,7 @@ const HeroChatPreview = () => (
   </motion.div>
 );
 
-/* Interactive FAQ Accordion Card */
+/* FAQ Accordion Card */
 const FaqCard = ({ q, a, accentGradient = "sarvam-gradient-ocean" }: { q: string; a: string; accentGradient?: string }) => {
   const [open, setOpen] = useState(false);
 
@@ -225,9 +216,7 @@ const FaqCard = ({ q, a, accentGradient = "sarvam-gradient-ocean" }: { q: string
           <span className={accentGradient}>{q}</span>
         </span>
         <ChevronDown
-          className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-            open ? "rotate-180" : ""
-          }`}
+          className={`h-4 w-4 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         />
       </button>
       <AnimatePresence>
@@ -268,22 +257,19 @@ export default function BuzzLanding() {
 
   return (
     <div id="top" className="min-h-screen bz-grid-paper text-[#0a0a0a]">
-      {/* 1. TOP ANNOUNCEMENT BAR */}
+      {/* 1. ANNOUNCEMENT & MARQUEE */}
       <LaunchCountdownBar onClaim={openAuth} />
-
-      {/* 2. TICKER RIBBON */}
       <MarqueeTicker />
 
-      {/* 3. TACTILE EDITORIAL HEADER */}
+      {/* 2. MAIN HEADER */}
       <header className="sticky top-11 z-50 border-b-2 border-[#0a0a0a] bg-[#fffbec]/95 backdrop-blur px-4 sm:px-6">
         <div className="mx-auto flex h-[68px] sm:h-[72px] max-w-[1160px] items-center justify-between">
-          {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="relative">
               <img
                 src={buzzLogo}
                 alt="Buzz"
-                className="h-10 w-10 rounded-xl border-2 border-[#0a0a0a] object-cover shadow-[0_2px_0_0_#0a0a0a] group-hover:translate-x-0.5 group-hover:translate-y-0.5 group-hover:shadow-none transition-all"
+                className="h-10 w-10 rounded-xl border-2 border-[#0a0a0a] object-cover shadow-[0_2px_0_0_#0a0a0a]"
               />
               <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-[#0a0a0a] bg-[#FCE314] text-[8px] font-black">
                 🇮🇳
@@ -299,19 +285,18 @@ export default function BuzzLanding() {
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* In-page Anchor Navigation */}
           <nav className="hidden lg:flex items-center gap-6 text-xs font-black uppercase tracking-wider text-[#0a0a0a]">
-            <Link to="/features" className="hover:text-purple-600 transition-colors">Features</Link>
-            <Link to="/guest-chat" className="hover:text-purple-600 transition-colors">Guest Chat</Link>
-            <Link to="/security" className="hover:text-purple-600 transition-colors">Security</Link>
-            <Link to="/compare" className="hover:text-purple-600 transition-colors">Compare</Link>
-            <Link to="/privacy" className="hover:text-purple-600 transition-colors">Privacy</Link>
-            <Link to="/buzz-web" className="hover:text-purple-600 transition-colors">Buzz Web</Link>
-            <Link to="/download" className="hover:text-purple-600 transition-colors">Download</Link>
+            <a href="#features" className="hover:text-purple-600 transition-colors">Features</a>
+            <a href="#guest-chat" className="hover:text-purple-600 transition-colors">Guest Chat</a>
+            <a href="#security" className="hover:text-purple-600 transition-colors">Security</a>
+            <a href="#compare" className="hover:text-purple-600 transition-colors">Compare</a>
+            <a href="#india" className="hover:text-purple-600 transition-colors">Made in India 🇮🇳</a>
+            <a href="#web" className="hover:text-purple-600 transition-colors">Buzz Web</a>
+            <a href="#download" className="hover:text-purple-600 transition-colors">Download</a>
             <Link to="/contact" className="hover:text-purple-600 transition-colors">Contact</Link>
           </nav>
 
-          {/* Action CTAs */}
           <div className="hidden sm:flex items-center gap-2.5">
             <InstallAppDialog
               trigger={
@@ -328,7 +313,6 @@ export default function BuzzLanding() {
             </button>
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="lg:hidden grid h-9 w-9 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-white shadow-[0_2px_0_0_#0a0a0a]"
@@ -338,7 +322,7 @@ export default function BuzzLanding() {
           </button>
         </div>
 
-        {/* Mobile Dropdown Drawer */}
+        {/* Mobile Drawer */}
         <AnimatePresence>
           {menuOpen && (
             <motion.div
@@ -347,13 +331,13 @@ export default function BuzzLanding() {
               exit={{ height: 0, opacity: 0 }}
               className="lg:hidden border-t-2 border-[#0a0a0a] bg-[#FFF6B8] mt-3 py-4 px-4 flex flex-col gap-3 text-xs font-black uppercase text-left"
             >
-              <Link to="/features" onClick={() => setMenuOpen(false)}>Features</Link>
-              <Link to="/guest-chat" onClick={() => setMenuOpen(false)}>Guest Chat</Link>
-              <Link to="/security" onClick={() => setMenuOpen(false)}>Security</Link>
-              <Link to="/compare" onClick={() => setMenuOpen(false)}>Compare</Link>
-              <Link to="/privacy" onClick={() => setMenuOpen(false)}>Privacy</Link>
-              <Link to="/buzz-web" onClick={() => setMenuOpen(false)}>Buzz Web</Link>
-              <Link to="/download" onClick={() => setMenuOpen(false)}>Download</Link>
+              <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
+              <a href="#guest-chat" onClick={() => setMenuOpen(false)}>Guest Chat</a>
+              <a href="#security" onClick={() => setMenuOpen(false)}>Security</a>
+              <a href="#compare" onClick={() => setMenuOpen(false)}>Compare</a>
+              <a href="#india" onClick={() => setMenuOpen(false)}>Made in India 🇮🇳</a>
+              <a href="#web" onClick={() => setMenuOpen(false)}>Buzz Web</a>
+              <a href="#download" onClick={() => setMenuOpen(false)}>Download</a>
               <Link to="/contact" onClick={() => setMenuOpen(false)}>Contact</Link>
 
               <div className="pt-2 flex flex-col gap-2">
@@ -366,16 +350,15 @@ export default function BuzzLanding() {
         </AnimatePresence>
       </header>
 
-      {/* 4. MAIN ROUTED CONTENT */}
+      {/* 3. MAIN CONTENT */}
       <main>
         {isPublicSubpage ? (
           <BuzzPublicPage page={cleanPath as any} onLogin={openAuth} />
         ) : (
           <>
-            {/* HERO SECTION WITH DYNAMIC GRADIENTS */}
+            {/* HERO SECTION */}
             <section className="relative px-4 sm:px-6 pt-12 pb-16 sm:pt-20 sm:pb-24 border-b-2 border-[#0a0a0a] bz-grid-paper text-center">
               <div className="mx-auto max-w-[960px]">
-                {/* Atmanirbhar Saffron Pill */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -388,7 +371,6 @@ export default function BuzzLanding() {
                   <span className="sarvam-gradient-spectrum font-black">Atmanirbhar Bharat 🇮🇳</span>
                 </motion.div>
 
-                {/* Challenger Headline with Multi-Color Shifting Gradients */}
                 <motion.h1
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -399,10 +381,9 @@ export default function BuzzLanding() {
                   <br />
                   <span className="sarvam-gradient-berry">WhatsApp, Telegram par leak mat karo.</span>
                   <br />
-                  <span className="sarvam-gradient-spectrum bz-squig">Chatting ke liye Buzz.</span>
+                  <span className="sarvam-gradient-spectrum">Chatting ke liye Buzz.</span>
                 </motion.h1>
 
-                {/* Rotating Kinetic Subtitle */}
                 <motion.div
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -432,141 +413,287 @@ export default function BuzzLanding() {
                       </button>
                     }
                   />
-                  <Link to="/guest-chat" className="bz-btn bz-btn-white px-5 py-3.5 text-sm sm:text-base font-bold">
+                  <a href="#guest-chat" className="bz-btn bz-btn-white px-5 py-3.5 text-sm sm:text-base font-bold">
                     Try Guest Mode 🤫
-                  </Link>
+                  </a>
                 </motion.div>
               </div>
 
-              {/* Chat Mockup Under Hero */}
               <div className="mt-12 max-w-lg mx-auto">
                 <HeroChatPreview />
               </div>
             </section>
 
-            {/* BENTO GRID: 4 REAL INDIAN PILLARS WITH SARVAM GRADIENTS */}
-            <section className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white text-left">
+            {/* SECTION 1: 100+ FEATURES SHOWCASE */}
+            <section id="features" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white text-left">
               <div className="mx-auto max-w-[1160px]">
                 <div className="text-center max-w-2xl mx-auto mb-12">
-                  <span className="bz-label">BUZZ CORE ADVANTAGES</span>
-                  <h2 className="mt-2 text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
-                    Designed for Indian <span className="sarvam-gradient-ocean">Daily Realities</span>
+                  <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] px-3 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a] mb-3">
+                    <Zap className="h-3.5 w-3.5" />
+                    <span className="sarvam-gradient-spectrum">100+ FEATURES UNLOCKED</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
+                    Stay Close. <span className="sarvam-gradient-sunset">Your Rules.</span>
                   </h2>
                   <p className="mt-2 text-xs sm:text-sm text-[#5b5b55]">
-                    <span className="sarvam-gradient-berry font-bold">
-                      Why give out your 10-digit phone number to online buyers, college groups, or acquaintances?
-                    </span>
+                    Zero phone number leaks, zero contact book scraping, and military-grade privacy.
+                  </p>
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-3">
+                  <motion.div whileHover={{ y: -4 }} className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a] bg-white">
+                    <h3 className="text-base font-black text-[#0a0a0a] mb-4 border-b-2 border-[#0a0a0a]/15 pb-2">
+                      <span className="sarvam-gradient-emerald">🛡️ Privacy & Identity</span>
+                    </h3>
+                    <ul className="space-y-2.5 text-xs font-medium text-[#0a0a0a]">
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>Zero Phone Numbers: Connect solely via unique @username</span></li>
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>Guest Mode Secret Links: confession-chat without account</span></li>
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>Ghost Voice: 4 Web Audio filters (Robot, Demon, Chipmunk)</span></li>
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>End-to-end encrypted 1-on-1 conversations</span></li>
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>Biometric & PIN App Lock with 2-step verification</span></li>
+                    </ul>
+                  </motion.div>
+
+                  <motion.div whileHover={{ y: -4 }} className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a] bg-white">
+                    <h3 className="text-base font-black text-[#0a0a0a] mb-4 border-b-2 border-[#0a0a0a]/15 pb-2">
+                      <span className="sarvam-gradient-sunset">⚡ Messaging & Content</span>
+                    </h3>
+                    <ul className="space-y-2.5 text-xs font-medium text-[#0a0a0a]">
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>24-Hour Moments with live view counters</span></li>
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>7 Curated Chat Themes with persistent wallpapers</span></li>
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>Direct & Group message forwarding with single dialog</span></li>
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>Instant multi-device browser sync via PWA</span></li>
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>Voice messages with in-browser waveform compression</span></li>
+                    </ul>
+                  </motion.div>
+
+                  <motion.div whileHover={{ y: -4 }} className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a] bg-white">
+                    <h3 className="text-base font-black text-[#0a0a0a] mb-4 border-b-2 border-[#0a0a0a]/15 pb-2">
+                      <span className="sarvam-gradient-ocean">📞 Realtime Calls & Discovery</span>
+                    </h3>
+                    <ul className="space-y-2.5 text-xs font-medium text-[#0a0a0a]">
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>Low-latency P2P WebRTC HD Voice and Video calling</span></li>
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>Network-aware Ringing (Online) vs Calling (Offline) states</span></li>
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>Group calls with multi-party audio/video mixing</span></li>
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>Discovery via username search & personal QR code scan</span></li>
+                      <li className="flex items-start gap-2"><span className="text-emerald-700 font-bold">✓</span><span>Automated ephemeral cleanup preserving account data</span></li>
+                    </ul>
+                  </motion.div>
+                </div>
+              </div>
+            </section>
+
+            {/* SECTION 2: GUEST CHAT & 4 GHOST VOICE FILTERS */}
+            <section id="guest-chat" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-[#fffbec] text-left">
+              <div className="mx-auto max-w-[1160px]">
+                <div className="text-center max-w-2xl mx-auto mb-12">
+                  <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#DCF4E4] px-3 py-1 text-xs font-black text-emerald-900 shadow-[0_2px_0_0_#0a0a0a] mb-3">
+                    🤫 <span className="sarvam-gradient-berry">SECRET ANONYMOUS CHAT</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
+                    Secret Confessions. <span className="sarvam-gradient-berry">Zero Login Required.</span>
+                  </h2>
+                  <p className="mt-2 text-xs sm:text-sm text-[#5b5b55]">
+                    Every Buzz user gets a permanent personal link: <code className="bg-[#FFF6B8] px-2 py-0.5 rounded font-black border border-[#0a0a0a]">buzz.app/c/@yourname</code>. Anyone can send secret confessions and ghost voice notes!
                   </p>
                 </div>
 
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                  {/* Card 1: Haldi Yellow */}
-                  <motion.div whileHover={{ y: -4 }} className="bz-card p-6 bg-[#FFF6B8] shadow-[0_6px_0_0_#0a0a0a]">
-                    <div className="h-11 w-11 grid place-items-center rounded-xl border-2 border-[#0a0a0a] bg-white text-xl font-black mb-4 shadow-[0_2px_0_0_#0a0a0a]">
-                      🛡️
-                    </div>
-                    <h3 className="text-base font-black text-[#0a0a0a]">
-                      <span className="sarvam-gradient-sunset">Shield Your Bank & UPI</span>
-                    </h3>
-                    <p className="mt-2 text-xs text-[#0a0a0a]/80 leading-relaxed font-medium">
-                      Your phone number links to PhonePe, GPay, Aadhaar and bank accounts. Buzz keeps your daily chatting identity 100% isolated.
-                    </p>
-                  </motion.div>
-
-                  {/* Card 2: Aakash Sky Blue */}
-                  <motion.div whileHover={{ y: -4 }} className="bz-card p-6 bg-[#E2ECFF] shadow-[0_6px_0_0_#0a0a0a]">
-                    <div className="h-11 w-11 grid place-items-center rounded-xl border-2 border-[#0a0a0a] bg-white text-xl font-black mb-4 shadow-[0_2px_0_0_#0a0a0a]">
-                      🤫
-                    </div>
-                    <h3 className="text-base font-black text-[#0a0a0a]">
-                      <span className="sarvam-gradient-berry">Guest Mode & Ghost Voice</span>
-                    </h3>
-                    <p className="mt-2 text-xs text-[#0a0a0a]/80 leading-relaxed font-medium">
-                      Put your <code className="font-bold">/c/@username</code> link in Instagram bio. Friends can reply anonymously with Chipmunk or Demon voice filters without creating an account!
-                    </p>
-                  </motion.div>
-
-                  {/* Card 3: Pista Mint */}
-                  <motion.div whileHover={{ y: -4 }} className="bz-card p-6 bg-[#DCF4E4] shadow-[0_6px_0_0_#0a0a0a]">
-                    <div className="h-11 w-11 grid place-items-center rounded-xl border-2 border-[#0a0a0a] bg-white text-xl font-black mb-4 shadow-[0_2px_0_0_#0a0a0a]">
-                      💻
-                    </div>
-                    <h3 className="text-base font-black text-[#0a0a0a]">
-                      <span className="sarvam-gradient-emerald">Independent Buzz Web</span>
-                    </h3>
-                    <p className="mt-2 text-xs text-[#0a0a0a]/80 leading-relaxed font-medium">
-                      WhatsApp Web requires your phone nearby and charged. Buzz Web works independently on any laptop even if your phone battery is dead.
-                    </p>
-                  </motion.div>
-
-                  {/* Card 4: Gulabi Peach */}
-                  <motion.div whileHover={{ y: -4 }} className="bz-card p-6 bg-[#FFE0EB] shadow-[0_6px_0_0_#0a0a0a]">
-                    <div className="h-11 w-11 grid place-items-center rounded-xl border-2 border-[#0a0a0a] bg-white text-xl font-black mb-4 shadow-[0_2px_0_0_#0a0a0a]">
-                      📞
-                    </div>
-                    <h3 className="text-base font-black text-[#0a0a0a]">
-                      <span className="sarvam-gradient-ocean">24h Moments & HD Calls</span>
-                    </h3>
-                    <p className="mt-2 text-xs text-[#0a0a0a]/80 leading-relaxed font-medium">
-                      Vanish after 24 hours with live view counters. Direct peer-to-peer WebRTC voice and video calls with zero middleman recording.
-                    </p>
-                  </motion.div>
+                  <div className="bz-card p-5 bg-[#FFF6B8] shadow-[0_4px_0_0_#0a0a0a]">
+                    <span className="text-2xl">🐿️</span>
+                    <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">
+                      <span className="sarvam-gradient-sunset">Chipmunk Filter</span>
+                    </h4>
+                    <p className="mt-1 text-xs text-[#0a0a0a]/80">Playful high-pitch voice disguise for fun and funny anonymous banter.</p>
+                  </div>
+                  <div className="bz-card p-5 bg-[#E2ECFF] shadow-[0_4px_0_0_#0a0a0a]">
+                    <span className="text-2xl">🤖</span>
+                    <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">
+                      <span className="sarvam-gradient-ocean">Cyborg Robot</span>
+                    </h4>
+                    <p className="mt-1 text-xs text-[#0a0a0a]/80">Metallic ring modulation giving futuristic anonymous robotic tone.</p>
+                  </div>
+                  <div className="bz-card p-5 bg-[#FFE0EB] shadow-[0_4px_0_0_#0a0a0a]">
+                    <span className="text-2xl">😈</span>
+                    <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">
+                      <span className="sarvam-gradient-berry">Deep Demon</span>
+                    </h4>
+                    <p className="mt-1 text-xs text-[#0a0a0a]/80">Sub-bass low pitch shifting for unrecognizable deep confession voice notes.</p>
+                  </div>
+                  <div className="bz-card p-5 bg-[#DCF4E4] shadow-[0_4px_0_0_#0a0a0a]">
+                    <span className="text-2xl">🌌</span>
+                    <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">
+                      <span className="sarvam-gradient-emerald">Cosmic Echo</span>
+                    </h4>
+                    <p className="mt-1 text-xs text-[#0a0a0a]/80">Spatial reverberation for mysterious atmospheric confessions.</p>
+                  </div>
                 </div>
               </div>
             </section>
 
-            {/* 3-STEP EDITORIAL WORKFLOW WITH SUNSET GRADIENT */}
-            <section className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-[#fffbec] text-left">
+            {/* SECTION 3: BANK-GRADE SECURITY & RLS */}
+            <section id="security" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white text-left">
               <div className="mx-auto max-w-[1160px]">
                 <div className="text-center max-w-2xl mx-auto mb-12">
-                  <span className="bz-label">SIMPLE AS 1-2-3</span>
+                  <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#DCF4E4] px-3 py-1 text-xs font-black text-emerald-900 shadow-[0_2px_0_0_#0a0a0a] mb-3">
+                    🔒 <span className="sarvam-gradient-emerald">ROW-LEVEL SECURITY (RLS)</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
+                    Cryptographic <span className="sarvam-gradient-emerald">Data Isolation</span>
+                  </h2>
+                  <p className="mt-2 text-xs sm:text-sm text-[#5b5b55]">
+                    Your chats, media files, and calls are strictly gated by database-level policies.
+                  </p>
+                </div>
+
+                <div className="grid gap-6 sm:grid-cols-3">
+                  <div className="bz-card p-6 bg-white shadow-[0_6px_0_0_#0a0a0a]">
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#FFF6B8] mb-4">
+                      <LockKeyhole className="h-6 w-6 text-[#0a0a0a]" />
+                    </div>
+                    <h3 className="text-base font-black text-[#0a0a0a]">
+                      <span className="sarvam-gradient-sunset">0 Address Book Scraping</span>
+                    </h3>
+                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
+                      Buzz never asks for permission to read, scan, or upload your private contact list to third-party ad servers.
+                    </p>
+                  </div>
+
+                  <div className="bz-card p-6 bg-white shadow-[0_6px_0_0_#0a0a0a]">
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#E2ECFF] mb-4">
+                      <Shield className="h-6 w-6 text-[#0a0a0a]" />
+                    </div>
+                    <h3 className="text-base font-black text-[#0a0a0a]">
+                      <span className="sarvam-gradient-ocean">P2P WebRTC HD Calling</span>
+                    </h3>
+                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
+                      Audio and video streams connect directly browser-to-browser with peer-to-peer encryption and zero server recording.
+                    </p>
+                  </div>
+
+                  <div className="bz-card p-6 bg-white shadow-[0_6px_0_0_#0a0a0a]">
+                    <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#DCF4E4] mb-4">
+                      <Sparkles className="h-6 w-6 text-emerald-800" />
+                    </div>
+                    <h3 className="text-base font-black text-[#0a0a0a]">
+                      <span className="sarvam-gradient-emerald">Ephemeral Auto-Cleanup</span>
+                    </h3>
+                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
+                      24-hour Moments and expired guest messages vanish automatically to keep your digital storage footprint lightweight.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* SECTION 4: COMPARISON MATRIX */}
+            <section id="compare" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-[#fffbec] text-left">
+              <div className="mx-auto max-w-[1160px]">
+                <div className="text-center max-w-2xl mx-auto mb-10">
+                  <span className="bz-label">
+                    <span className="sarvam-gradient-spectrum">HONEST BREAKDOWN</span>
+                  </span>
                   <h2 className="mt-2 text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
-                    How Buzz Works in <span className="sarvam-gradient-sunset">3 Simple Steps</span>
+                    How Buzz Compares to <span className="sarvam-gradient-berry">Legacy Messengers</span>
                   </h2>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-3">
-                  <div className="bz-card p-6 bg-white shadow-[0_6px_0_0_#0a0a0a]">
-                    <span className="inline-block rounded-lg border-2 border-[#0a0a0a] bg-[#FCE314] px-2.5 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a]">
-                      STEP 01
-                    </span>
-                    <h3 className="mt-4 text-base font-black text-[#0a0a0a]">
-                      <span className="sarvam-gradient-spectrum">Claim Unique @handle</span>
+                <div className="bz-card p-6 md:p-8 bg-white shadow-[0_8px_0_0_#0a0a0a] overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b-2 border-[#0a0a0a] bg-[#fffbec]">
+                        <th className="p-3 font-black">Security & Feature Standard</th>
+                        <th className="p-3 font-black text-[#0a0a0a] bg-[#FFF6B8]">
+                          <span className="sarvam-gradient-spectrum">Buzz Messaging 🇮🇳</span>
+                        </th>
+                        <th className="p-3 font-black text-[#5b5b55]">WhatsApp</th>
+                        <th className="p-3 font-black text-[#5b5b55]">Telegram</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y border-b-2 border-[#0a0a0a]">
+                      <tr>
+                        <td className="p-3 font-bold">Mandatory Mobile Number?</td>
+                        <td className="p-3 font-black text-emerald-800 bg-[#FFF6B8]/40">NO (Zero Digits)</td>
+                        <td className="p-3 text-red-600 font-bold">YES (Mandatory)</td>
+                        <td className="p-3 text-red-600 font-bold">YES (Mandatory)</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-bold">Anonymous Guest Chat Links?</td>
+                        <td className="p-3 font-black text-emerald-800 bg-[#FFF6B8]/40">YES (No login needed)</td>
+                        <td className="p-3 text-red-600 font-bold">NO</td>
+                        <td className="p-3 text-red-600 font-bold">NO</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-bold">Ghost Voice Pitch Modulators?</td>
+                        <td className="p-3 font-black text-emerald-800 bg-[#FFF6B8]/40">YES (4 Pitch Filters)</td>
+                        <td className="p-3 text-red-600 font-bold">NO</td>
+                        <td className="p-3 text-red-600 font-bold">NO</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-bold">Web Works Without Phone Battery?</td>
+                        <td className="p-3 font-black text-emerald-800 bg-[#FFF6B8]/40">YES (100% Independent)</td>
+                        <td className="p-3 text-yellow-700 font-bold">Linked multi-device</td>
+                        <td className="p-3 text-emerald-800 font-bold">YES</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-bold">Uploads Entire Address Book?</td>
+                        <td className="p-3 font-black text-emerald-800 bg-[#FFF6B8]/40">NEVER (Zero Scraping)</td>
+                        <td className="p-3 text-red-600 font-bold">YES (Mandatory sync)</td>
+                        <td className="p-3 text-red-600 font-bold">YES (Sync prompt)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+
+            {/* SECTION 5: INDEPENDENT BUZZ WEB */}
+            <section id="web" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white text-left">
+              <div className="mx-auto max-w-[1160px]">
+                <div className="text-center max-w-2xl mx-auto mb-12">
+                  <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#E2ECFF] px-3 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a] mb-3">
+                    <Globe className="h-3.5 w-3.5" />
+                    <span className="sarvam-gradient-ocean">BROWSER MESSAGING</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
+                    Buzz on your <span className="sarvam-gradient-ocean">Big Screen</span>
+                  </h2>
+                  <p className="mt-2 text-xs sm:text-sm text-[#5b5b55]">
+                    Independent browser messaging with zero phone tethering.
+                  </p>
+                </div>
+
+                <div className="grid gap-6 sm:grid-cols-3">
+                  <div className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a] bg-white">
+                    <h3 className="font-black text-base text-[#0a0a0a] mb-2">
+                      <span className="sarvam-gradient-sunset">⚡ Keyboard Productivity</span>
                     </h3>
-                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
-                      Pick any username and password. No SIM OTP, no Aadhaar number, and no SMS verification required.
+                    <p className="text-xs text-[#5b5b55] leading-relaxed">
+                      Enter to send, Shift+Enter for new lines, smooth momentum scrolling, and instant handle search.
                     </p>
                   </div>
-
-                  <div className="bz-card p-6 bg-white shadow-[0_6px_0_0_#0a0a0a]">
-                    <span className="inline-block rounded-lg border-2 border-[#0a0a0a] bg-[#E2ECFF] px-2.5 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a]">
-                      STEP 02
-                    </span>
-                    <h3 className="mt-4 text-base font-black text-[#0a0a0a]">
-                      <span className="sarvam-gradient-berry">Share Link or Scan QR</span>
+                  <div className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a] bg-white">
+                    <h3 className="font-black text-base text-[#0a0a0a] mb-2">
+                      <span className="sarvam-gradient-ocean">📹 In-Browser HD Calls</span>
                     </h3>
-                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
-                      Show your personal QR card in person or post your link on social stories. Friends connect without seeing your mobile digits.
+                    <p className="text-xs text-[#5b5b55] leading-relaxed">
+                      WebRTC voice and video calls directly through your laptop's mic and camera without downloading extra software.
                     </p>
                   </div>
-
-                  <div className="bz-card p-6 bg-white shadow-[0_6px_0_0_#0a0a0a]">
-                    <span className="inline-block rounded-lg border-2 border-[#0a0a0a] bg-[#DCF4E4] px-2.5 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a]">
-                      STEP 03
-                    </span>
-                    <h3 className="mt-4 text-base font-black text-[#0a0a0a]">
-                      <span className="sarvam-gradient-emerald">Encrypted Chat & Free Calls</span>
+                  <div className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a] bg-white">
+                    <h3 className="font-black text-base text-[#0a0a0a] mb-2">
+                      <span className="sarvam-gradient-berry">🔒 Zero Phone Dependency</span>
                     </h3>
-                    <p className="mt-2 text-xs text-[#5b5b55] leading-relaxed">
-                      Enjoy 1-on-1 encrypted chats, group chats, 7 custom wallpaper themes, and low-latency P2P HD audio/video calling.
+                    <p className="text-xs text-[#5b5b55] leading-relaxed">
+                      Unlike WhatsApp Web, Buzz Web runs independently. Your laptop works even if your mobile battery is 0%.
                     </p>
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* PRESERVED: MADE IN INDIA 🇮🇳 ATMANIRBHAR SECTION */}
-            <section id="india" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white text-left">
+            {/* SECTION 6: DIGITAL ATMANIRBHAR BHARAT */}
+            <section id="india" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-[#fffbec] text-left">
               <div className="mx-auto max-w-[1160px]">
                 <div className="text-center max-w-2xl mx-auto mb-12">
                   <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#DCF4E4] px-3 py-1 text-xs font-black text-emerald-900 shadow-[0_2px_0_0_#0a0a0a] mb-2">
@@ -620,67 +747,52 @@ export default function BuzzLanding() {
               </div>
             </section>
 
-            {/* COMPARISON MATRIX TABLE WITH BERRY GRADIENT */}
-            <section className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-[#fffbec] text-left">
+            {/* SECTION 7: DOWNLOAD & QR CODE */}
+            <section id="download" className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white text-left">
               <div className="mx-auto max-w-[1160px]">
-                <div className="text-center max-w-2xl mx-auto mb-10">
-                  <span className="bz-label">HONEST COMPARISON</span>
-                  <h2 className="mt-2 text-2xl sm:text-4xl font-black text-[#0a0a0a] tracking-tight">
-                    How Buzz Compares to <span className="sarvam-gradient-berry">Legacy Messengers</span>
-                  </h2>
-                </div>
+                <div className="grid gap-12 lg:grid-cols-2 items-center">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] px-3 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a] mb-4">
+                      <Smartphone className="h-3.5 w-3.5" />
+                      <span className="sarvam-gradient-sunset">PWA FOR ALL PLATFORMS</span>
+                    </div>
+                    <h2 className="text-3xl sm:text-5xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
+                      Buzz on every <span className="sarvam-gradient-sunset">single device.</span>
+                    </h2>
+                    <p className="mt-4 text-sm sm:text-base text-[#5b5b55] font-medium leading-relaxed">
+                      Install Buzz directly from your browser. Ultra-lightweight (under 5MB), instant updates, and zero Play Store tracking.
+                    </p>
+                    <div className="mt-8 flex gap-3">
+                      <InstallAppDialog
+                        trigger={
+                          <button className="bz-btn bz-btn-yellow px-7 py-3.5 text-sm font-black">
+                            <ArrowDownToLine className="h-4 w-4 mr-1 inline" /> Install Buzz Now
+                          </button>
+                        }
+                      />
+                      <button onClick={openAuth} className="bz-btn bz-btn-white px-6 py-3.5 text-sm font-bold">
+                        Open in Browser
+                      </button>
+                    </div>
+                  </div>
 
-                <div className="bz-card p-6 md:p-8 bg-white shadow-[0_8px_0_0_#0a0a0a] overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b-2 border-[#0a0a0a] bg-[#fffbec]">
-                        <th className="p-3 font-black">Security & Feature Standard</th>
-                        <th className="p-3 font-black text-[#0a0a0a] bg-[#FFF6B8]">
-                          <span className="sarvam-gradient-spectrum">Buzz Messaging 🇮🇳</span>
-                        </th>
-                        <th className="p-3 font-black text-[#5b5b55]">WhatsApp</th>
-                        <th className="p-3 font-black text-[#5b5b55]">Telegram</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y border-b-2 border-[#0a0a0a]">
-                      <tr>
-                        <td className="p-3 font-bold">Mandatory Mobile Number?</td>
-                        <td className="p-3 font-black text-emerald-800 bg-[#FFF6B8]/40">NO (Zero Digits)</td>
-                        <td className="p-3 text-red-600 font-bold">YES (Mandatory)</td>
-                        <td className="p-3 text-red-600 font-bold">YES (Mandatory)</td>
-                      </tr>
-                      <tr>
-                        <td className="p-3 font-bold">Anonymous Guest Chat Links?</td>
-                        <td className="p-3 font-black text-emerald-800 bg-[#FFF6B8]/40">YES (No login needed)</td>
-                        <td className="p-3 text-red-600 font-bold">NO</td>
-                        <td className="p-3 text-red-600 font-bold">NO</td>
-                      </tr>
-                      <tr>
-                        <td className="p-3 font-bold">Ghost Voice Pitch Modulators?</td>
-                        <td className="p-3 font-black text-emerald-800 bg-[#FFF6B8]/40">YES (4 In-Browser Filters)</td>
-                        <td className="p-3 text-red-600 font-bold">NO</td>
-                        <td className="p-3 text-red-600 font-bold">NO</td>
-                      </tr>
-                      <tr>
-                        <td className="p-3 font-bold">Web Works Without Phone Battery?</td>
-                        <td className="p-3 font-black text-emerald-800 bg-[#FFF6B8]/40">YES (100% Independent)</td>
-                        <td className="p-3 text-yellow-700 font-bold">Linked multi-device</td>
-                        <td className="p-3 text-emerald-800 font-bold">YES</td>
-                      </tr>
-                      <tr>
-                        <td className="p-3 font-bold">Uploads Full Address Book?</td>
-                        <td className="p-3 font-black text-emerald-800 bg-[#FFF6B8]/40">NEVER (Zero Scraping)</td>
-                        <td className="p-3 text-red-600 font-bold">YES (Entire book)</td>
-                        <td className="p-3 text-red-600 font-bold">YES (Sync prompt)</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div className="bz-card p-6 text-center max-w-md mx-auto shadow-[0_8px_0_0_#0a0a0a] bg-white">
+                    <h3 className="text-sm font-black text-[#0a0a0a] mb-2">
+                      <span className="sarvam-gradient-spectrum">Scan with Phone to Install</span>
+                    </h3>
+                    <div className="inline-block rounded-2xl border-2 border-[#0a0a0a] bg-white p-4 shadow-[0_4px_0_0_#0a0a0a]">
+                      <QRCodeSVG value="https://chat-without-digits.lovable.app" size={160} level="H" />
+                    </div>
+                    <p className="mt-3 text-[11px] font-mono font-bold text-[#5b5b55]">
+                      https://chat-without-digits.lovable.app
+                    </p>
+                  </div>
                 </div>
               </div>
             </section>
 
-            {/* BHARTIYA FAQS ACCORDION WITH OCEAN GRADIENT */}
-            <section className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-white">
+            {/* SECTION 8: FAQS */}
+            <section className="border-b-2 border-[#0a0a0a] px-4 sm:px-6 py-14 sm:py-20 bg-[#fffbec]">
               <div className="mx-auto max-w-3xl space-y-4">
                 <div className="text-center mb-8">
                   <span className="bz-label">QUESTIONS & ANSWERS</span>
@@ -712,16 +824,16 @@ export default function BuzzLanding() {
               </div>
             </section>
 
-            {/* PRE-FOOTER GRAND CTA WITH SPECTRUM GRADIENT */}
+            {/* SECTION 9: PRE-FOOTER GRAND CTA (FIXED VISIBILITY) */}
             <section className="px-4 sm:px-6 py-14 sm:py-20 bg-[#FCE314] text-center border-b-2 border-[#0a0a0a]">
               <div className="mx-auto max-w-2xl">
                 <h2 className="text-3xl sm:text-5xl font-black text-[#0a0a0a] tracking-tight">
-                  <span className="sarvam-gradient-spectrum bz-squig">Join Digital Atmanirbhar Bharat Movement 🇮🇳</span>
-                </h2>
-                <p className="mt-4 text-sm sm:text-base font-bold text-[#0a0a0a]/80">
-                  <span className="sarvam-gradient-sunset">
-                    Claim your rare @handle today before official public launch on 25th March 2027!
+                  <span className="sarvam-gradient-spectrum">
+                    Join Digital Atmanirbhar Bharat Movement 🇮🇳
                   </span>
+                </h2>
+                <p className="mt-4 text-sm sm:text-base font-black text-[#0a0a0a]">
+                  Claim your rare @handle today before official public launch on 25th March 2027!
                 </p>
                 <div className="mt-8 flex flex-wrap justify-center gap-3">
                   <button onClick={openAuth} className="bz-btn bz-btn-white px-7 py-3.5 text-sm font-black shadow-[0_4px_0_0_#0a0a0a]">
@@ -741,17 +853,18 @@ export default function BuzzLanding() {
         )}
       </main>
 
+      {/* FOOTER */}
       <footer className="border-t-2 border-[#0a0a0a] bg-[#FFF6B8] py-8 px-4 text-center text-xs font-bold text-[#0a0a0a]">
         <div className="mx-auto max-w-[1160px] flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© 2026–2027 Buzz Messaging · Made in India 🇮🇳 · Chat Without Digits</p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link to="/features" className="hover:underline">Features</Link>
-            <Link to="/guest-chat" className="hover:underline">Guest Chat</Link>
-            <Link to="/security" className="hover:underline">Security</Link>
-            <Link to="/compare" className="hover:underline">Compare</Link>
-            <Link to="/privacy" className="hover:underline">Privacy</Link>
-            <Link to="/buzz-web" className="hover:underline">Buzz Web</Link>
-            <Link to="/download" className="hover:underline">Download</Link>
+            <a href="#features" className="hover:underline">Features</a>
+            <a href="#guest-chat" className="hover:underline">Guest Chat</a>
+            <a href="#security" className="hover:underline">Security</a>
+            <a href="#compare" className="hover:underline">Compare</a>
+            <a href="#india" className="hover:underline">Made in India 🇮🇳</a>
+            <a href="#web" className="hover:underline">Buzz Web</a>
+            <a href="#download" className="hover:underline">Download</a>
             <Link to="/contact" className="hover:underline">Contact</Link>
           </div>
         </div>
