@@ -81,7 +81,7 @@ const PreviewCard = () => (
       </div>
     </div>
 
-    <div className="space-y-3 bz-grid-paper p-4 text-xs font-medium">
+    <div className="space-y-3 bz-grid-paper p-4 text-xs font-medium bg-[#fffdf5]">
       <div className="w-fit max-w-[80%] rounded-xl border-2 border-[#0a0a0a] bg-white p-2.5 shadow-[0_2px_0_0_#0a0a0a]">
         Hey! Are we meeting this evening? ☕
       </div>
@@ -131,26 +131,29 @@ export default function BuzzPublicPage({
     const categories = [
       {
         title: "🛡️ Privacy & Identity",
+        gradientClass: "sarvam-gradient-emerald",
         items: [
           "Zero Phone Numbers: Connect solely via unique @username",
           "Guest Mode Secret Links: anyone can confession-chat without an account",
-          "Ghost Voice: In-browser Web Audio filters (Robot, Demon, Chipmunk, Deep)",
+          "Ghost Voice: In-browser Web Audio filters (Robot, Demon, Chipmunk, Echo)",
           "End-to-end encrypted 1-on-1 conversations",
           "Biometric & PIN App Lock with 2-step verification",
         ],
       },
       {
         title: "⚡ Messaging & Content",
+        gradientClass: "sarvam-gradient-sunset",
         items: [
           "24-Hour Moments with live view counters",
           "7 Curated Chat Themes with persistent wallpaper rendering",
           "Direct & Group message forwarding with single dialog",
-          "Multi-device instant browser sync via PWA",
+          "Multi-device instant browser sync via lightweight PWA",
           "Voice messages with browser waveform compression",
         ],
       },
       {
         title: "📞 Realtime Calls & Discovery",
+        gradientClass: "sarvam-gradient-ocean",
         items: [
           "Low-latency P2P WebRTC HD Voice and Video calling",
           "Network-aware Ringing (Online) vs Calling (Offline) states",
@@ -166,14 +169,15 @@ export default function BuzzPublicPage({
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] px-3 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a] mb-4">
-              <Zap className="h-3.5 w-3.5" /> 100+ FEATURES UNLOCKED
+              <Zap className="h-3.5 w-3.5" />
+              <span className="sarvam-gradient-spectrum">100+ FEATURES UNLOCKED</span>
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
               Stay close.<br />
               <span className="sarvam-gradient-spectrum bz-squig">Your rules.</span>
             </h1>
             <p className="mt-5 text-base sm:text-lg text-[#5b5b55] font-medium leading-relaxed">
-              Buzz combines the immediacy of modern messaging with the privacy of anonymous handles, Guest Mode secret links, and Ghost Voice. No numbers leaked. No contact-book uploads.
+              Buzz combines the speed of modern messaging with the privacy of anonymous handles, Guest Mode secret links, and Ghost Voice filters. No numbers leaked. No contact-book uploads.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <button onClick={onLogin} className="bz-btn bz-btn-yellow px-6 py-3 text-sm font-black">
@@ -195,7 +199,7 @@ export default function BuzzPublicPage({
           {categories.map((cat, i) => (
             <motion.div key={i} whileHover={{ y: -4 }} className="bz-card p-6 shadow-[0_6px_0_0_#0a0a0a] bg-white">
               <h3 className="text-base font-black text-[#0a0a0a] mb-4 border-b-2 border-[#0a0a0a]/15 pb-2">
-                {cat.title}
+                <span className={cat.gradientClass}>{cat.title}</span>
               </h3>
               <ul className="space-y-2.5">
                 {cat.items.map((it, idx) => (
@@ -219,7 +223,7 @@ export default function BuzzPublicPage({
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#DCF4E4] px-3 py-1 text-xs font-black text-emerald-900 shadow-[0_2px_0_0_#0a0a0a] mb-4">
-              🤫 SECRET ANONYMOUS CHAT
+              🤫 <span className="sarvam-gradient-berry">SECRET ANONYMOUS CHAT</span>
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
               Secret confessions.<br />
@@ -240,22 +244,30 @@ export default function BuzzPublicPage({
         <div className="grid gap-6 sm:grid-cols-4">
           <div className="bz-card p-5 bg-[#FFF6B8] shadow-[0_4px_0_0_#0a0a0a]">
             <span className="text-2xl">🐿️</span>
-            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">Chipmunk Filter</h4>
+            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-sunset">Chipmunk Filter</span>
+            </h4>
             <p className="mt-1 text-xs text-[#0a0a0a]/80">Playful high-pitch voice disguise for funny banter.</p>
           </div>
           <div className="bz-card p-5 bg-[#E2ECFF] shadow-[0_4px_0_0_#0a0a0a]">
             <span className="text-2xl">🤖</span>
-            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">Cyborg Robot</h4>
+            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-ocean">Cyborg Robot</span>
+            </h4>
             <p className="mt-1 text-xs text-[#0a0a0a]/80">Metallic ring modulation giving futuristic anonymous tone.</p>
           </div>
           <div className="bz-card p-5 bg-[#FFE0EB] shadow-[0_4px_0_0_#0a0a0a]">
             <span className="text-2xl">😈</span>
-            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">Deep Demon</h4>
+            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-berry">Deep Demon</span>
+            </h4>
             <p className="mt-1 text-xs text-[#0a0a0a]/80">Sub-bass low pitch shifting for unrecognizable voice notes.</p>
           </div>
           <div className="bz-card p-5 bg-[#DCF4E4] shadow-[0_4px_0_0_#0a0a0a]">
             <span className="text-2xl">🌌</span>
-            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">Cosmic Echo</h4>
+            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-emerald">Cosmic Echo</span>
+            </h4>
             <p className="mt-1 text-xs text-[#0a0a0a]/80">Spatial reverberation for atmospheric confessions.</p>
           </div>
         </div>
@@ -270,7 +282,7 @@ export default function BuzzPublicPage({
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#DCF4E4] px-3 py-1 text-xs font-black text-emerald-900 shadow-[0_2px_0_0_#0a0a0a] mb-4">
-              🔒 ROW-LEVEL SECURITY (RLS)
+              🔒 <span className="sarvam-gradient-emerald">ROW-LEVEL SECURITY (RLS)</span>
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
               Cryptographic<br />
@@ -288,15 +300,21 @@ export default function BuzzPublicPage({
 
         <div className="grid gap-6 sm:grid-cols-3">
           <div className="bz-card p-6 bg-white shadow-[0_4px_0_0_#0a0a0a]">
-            <h3 className="text-sm font-black text-[#0a0a0a]">0 Address Book Scraping</h3>
+            <h3 className="text-sm font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-sunset">0 Address Book Scraping</span>
+            </h3>
             <p className="mt-1 text-xs text-[#5b5b55]">Buzz never requests permission to read or upload your contact list.</p>
           </div>
           <div className="bz-card p-6 bg-white shadow-[0_4px_0_0_#0a0a0a]">
-            <h3 className="text-sm font-black text-[#0a0a0a]">P2P WebRTC HD Calling</h3>
+            <h3 className="text-sm font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-ocean">P2P WebRTC HD Calling</span>
+            </h3>
             <p className="mt-1 text-xs text-[#5b5b55]">Browser-to-browser direct media streams with no audio/video recording servers.</p>
           </div>
           <div className="bz-card p-6 bg-white shadow-[0_4px_0_0_#0a0a0a]">
-            <h3 className="text-sm font-black text-[#0a0a0a]">Ephemeral Auto-Cleanup</h3>
+            <h3 className="text-sm font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-emerald">Ephemeral Auto-Cleanup</span>
+            </h3>
             <p className="mt-1 text-xs text-[#5b5b55]">24-hour Moments and inactive guest messages are automatically purged.</p>
           </div>
         </div>
@@ -309,7 +327,9 @@ export default function BuzzPublicPage({
     return (
       <div className="mx-auto max-w-6xl px-5 py-12 md:py-20 space-y-12 text-left">
         <div>
-          <span className="bz-label">TRANSPARENT BREAKDOWN</span>
+          <span className="bz-label">
+            <span className="sarvam-gradient-spectrum">TRANSPARENT BREAKDOWN</span>
+          </span>
           <h1 className="mt-2 text-3xl sm:text-5xl font-black text-[#0a0a0a] tracking-tight">
             Buzz vs <span className="sarvam-gradient-sunset">Traditional Messengers</span>
           </h1>
@@ -323,7 +343,9 @@ export default function BuzzPublicPage({
             <thead>
               <tr className="border-b-2 border-[#0a0a0a] bg-[#fffbec]">
                 <th className="p-3 font-black">Security Standard</th>
-                <th className="p-3 font-black text-[#0a0a0a] bg-[#FFF6B8]">Buzz Messaging 🇮🇳</th>
+                <th className="p-3 font-black text-[#0a0a0a] bg-[#FFF6B8]">
+                  <span className="sarvam-gradient-sunset">Buzz Messaging 🇮🇳</span>
+                </th>
                 <th className="p-3 font-black text-[#5b5b55]">WhatsApp</th>
                 <th className="p-3 font-black text-[#5b5b55]">Telegram</th>
               </tr>
@@ -367,7 +389,8 @@ export default function BuzzPublicPage({
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#DCF4E4] px-3 py-1 text-xs font-black text-emerald-900 shadow-[0_2px_0_0_#0a0a0a] mb-4">
-              <ShieldCheck className="h-3.5 w-3.5" /> ZERO-PHONE-NUMBER PRIVACY
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span className="sarvam-gradient-emerald">ZERO-PHONE-NUMBER PRIVACY</span>
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
               Your conversations.<br />
@@ -388,7 +411,9 @@ export default function BuzzPublicPage({
             <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#FFF6B8] mb-4">
               <LockKeyhole className="h-6 w-6 text-[#0a0a0a]" />
             </div>
-            <h2 className="text-base font-black text-[#0a0a0a]">No Phone Number Identity</h2>
+            <h2 className="text-base font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-sunset">No Phone Number Identity</span>
+            </h2>
             <p className="mt-2 text-xs text-[#5b5b55] font-medium leading-relaxed">
               Sign up with just a username and password. You will never receive spam calls, SIM-swap attacks, or phone-linked data leaks.
             </p>
@@ -398,7 +423,9 @@ export default function BuzzPublicPage({
             <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#E2ECFF] mb-4">
               <Shield className="h-6 w-6 text-[#0a0a0a]" />
             </div>
-            <h2 className="text-base font-black text-[#0a0a0a]">Row-Level Security (RLS)</h2>
+            <h2 className="text-base font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-ocean">Row-Level Security (RLS)</span>
+            </h2>
             <p className="mt-2 text-xs text-[#5b5b55] font-medium leading-relaxed">
               Messages and push tokens are strictly gated by database-level cryptographic policies. Only you and your chat partner can read your messages.
             </p>
@@ -408,7 +435,9 @@ export default function BuzzPublicPage({
             <div className="grid h-12 w-12 place-items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#DCF4E4] mb-4">
               <Sparkles className="h-6 w-6 text-emerald-800" />
             </div>
-            <h2 className="text-base font-black text-[#0a0a0a]">Ephemeral Secret Chats</h2>
+            <h2 className="text-base font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-emerald">Ephemeral Secret Chats</span>
+            </h2>
             <p className="mt-2 text-xs text-[#5b5b55] font-medium leading-relaxed">
               Guest chats are tokenized and automatically expire. Moments vanish after 24 hours. Your digital footprint remains clean.
             </p>
@@ -425,7 +454,8 @@ export default function BuzzPublicPage({
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#E2ECFF] px-3 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a] mb-4">
-              <Globe className="h-3.5 w-3.5" /> BROWSER MESSAGING
+              <Globe className="h-3.5 w-3.5" />
+              <span className="sarvam-gradient-ocean">BROWSER MESSAGING</span>
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
               Buzz on your<br />
@@ -445,19 +475,25 @@ export default function BuzzPublicPage({
 
         <div className="grid gap-6 sm:grid-cols-3">
           <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a] bg-white">
-            <h3 className="font-black text-sm text-[#0a0a0a]">⚡ Keyboard Productivity</h3>
+            <h3 className="font-black text-sm text-[#0a0a0a]">
+              <span className="sarvam-gradient-sunset">⚡ Keyboard Productivity</span>
+            </h3>
             <p className="mt-1 text-xs text-[#5b5b55] leading-relaxed">
               Enter to send, Shift+Enter for new lines, smooth momentum scrolling, and instant search.
             </p>
           </div>
           <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a] bg-white">
-            <h3 className="font-black text-sm text-[#0a0a0a]">📹 In-Browser HD Calls</h3>
+            <h3 className="font-black text-sm text-[#0a0a0a]">
+              <span className="sarvam-gradient-ocean">📹 In-Browser HD Calls</span>
+            </h3>
             <p className="mt-1 text-xs text-[#5b5b55] leading-relaxed">
               WebRTC voice and video calls directly through your browser's mic and camera.
             </p>
           </div>
           <div className="bz-card p-6 shadow-[0_4px_0_0_#0a0a0a] bg-white">
-            <h3 className="font-black text-sm text-[#0a0a0a]">🔒 Zero Phone Dependency</h3>
+            <h3 className="font-black text-sm text-[#0a0a0a]">
+              <span className="sarvam-gradient-berry">🔒 Zero Phone Dependency</span>
+            </h3>
             <p className="mt-1 text-xs text-[#5b5b55] leading-relaxed">
               Unlike other web messengers, Buzz Web runs independently. Your laptop doesn't need a connected phone.
             </p>
@@ -474,7 +510,8 @@ export default function BuzzPublicPage({
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] px-3 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a] mb-4">
-              <Smartphone className="h-3.5 w-3.5" /> PWA FOR ALL PLATFORMS
+              <Smartphone className="h-3.5 w-3.5" />
+              <span className="sarvam-gradient-sunset">PWA FOR ALL PLATFORMS</span>
             </div>
             <h1 className="text-4xl sm:text-6xl font-black text-[#0a0a0a] leading-[1.05] tracking-tight">
               Buzz on every<br />
@@ -498,7 +535,9 @@ export default function BuzzPublicPage({
           </motion.div>
 
           <div className="bz-card p-6 text-center max-w-md mx-auto shadow-[0_8px_0_0_#0a0a0a] bg-white">
-            <h3 className="text-sm font-black text-[#0a0a0a] mb-2">Scan with Phone to Install</h3>
+            <h3 className="text-sm font-black text-[#0a0a0a] mb-2">
+              <span className="sarvam-gradient-spectrum">Scan with Phone to Install</span>
+            </h3>
             <div className="inline-block rounded-2xl border-3 border-[#0a0a0a] bg-white p-4 shadow-[0_4px_0_0_#0a0a0a]">
               <QRCodeSVG value="https://chat-without-digits.lovable.app" size={160} level="H" />
             </div>
@@ -511,21 +550,27 @@ export default function BuzzPublicPage({
         <div className="grid gap-6 sm:grid-cols-3">
           <div className="bz-card p-5 shadow-[0_4px_0_0_#0a0a0a] bg-white">
             <span className="bz-label">ANDROID</span>
-            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">Chrome or Brave</h4>
+            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-sunset">Chrome or Brave</span>
+            </h4>
             <p className="mt-1 text-xs text-[#5b5b55]">
               Tap 3 dots in Chrome, select <strong>"Install app"</strong> or tap the yellow Install banner.
             </p>
           </div>
           <div className="bz-card p-5 shadow-[0_4px_0_0_#0a0a0a] bg-white">
             <span className="bz-label">APPLE iOS</span>
-            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">Safari on iPhone / iPad</h4>
+            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-berry">Safari on iPhone / iPad</span>
+            </h4>
             <p className="mt-1 text-xs text-[#5b5b55]">
               Open in Safari, tap <strong>Share</strong>, and choose <strong>"Add to Home Screen"</strong>.
             </p>
           </div>
           <div className="bz-card p-5 shadow-[0_4px_0_0_#0a0a0a] bg-white">
             <span className="bz-label">DESKTOP</span>
-            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">Windows / Mac / Linux</h4>
+            <h4 className="mt-2 text-sm font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-ocean">Windows / Mac / Linux</span>
+            </h4>
             <p className="mt-1 text-xs text-[#5b5b55]">
               Click the install icon in address bar for a standalone desktop window.
             </p>
@@ -561,7 +606,9 @@ export default function BuzzPublicPage({
           }}
         >
           <div>
-            <label className="text-xs font-black text-[#0a0a0a]">Your Name</label>
+            <label className="text-xs font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-sunset">Your Name</span>
+            </label>
             <input
               required
               value={name}
@@ -571,7 +618,9 @@ export default function BuzzPublicPage({
             />
           </div>
           <div>
-            <label className="text-xs font-black text-[#0a0a0a]">Your Email</label>
+            <label className="text-xs font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-ocean">Your Email</span>
+            </label>
             <input
               required
               type="email"
@@ -582,7 +631,9 @@ export default function BuzzPublicPage({
             />
           </div>
           <div>
-            <label className="text-xs font-black text-[#0a0a0a]">Message or Feedback</label>
+            <label className="text-xs font-black text-[#0a0a0a]">
+              <span className="sarvam-gradient-berry">Message or Feedback</span>
+            </label>
             <textarea
               required
               rows={5}
