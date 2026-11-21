@@ -360,15 +360,18 @@
    (buzzmessaging.ai texture, ink borders & tactile styling)
    ========================================================= */
 :root {
-  --bz-cream: #fffbec;
-  --bz-ink: #0a0a0a;
-  --bz-primary: #fce314;
-  --bz-muted: #5b5b55;
-  --bz-sky: #e2ecff;
-  --bz-mint: #dcf4e4;
-  --bz-lilac: #eee5ff;
-  --bz-peach: #ffe4cc;
-  --bz-y-soft: #fff6b8;
+  --bz-cream: #FAF9F6;
+  --bz-ink: #0B192C;
+  --bz-primary: #E85A1C;
+  --bz-saffron: #E85A1C;
+  --bz-navy: #0B192C;
+  --bz-gold: #FCE314;
+  --bz-muted: #4A5568;
+  --bz-sky: #EBF3FE;
+  --bz-mint: #E3F7EB;
+  --bz-lilac: #F0EAFE;
+  --bz-peach: #FFF0E5;
+  --bz-y-soft: #FFF8C5;
 }
 
 /* 28px Graph paper grid texture */
