@@ -110,12 +110,12 @@ const ChatSidebar = ({
   };
 
   return (
-    <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0">
-      {/* Neo-Brutalist Header */}
-      <div className="flex items-center justify-between border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-4 py-3.5 shadow-sm">
+        <div className="flex h-full flex-col border-r-2 border-[#0B192C] bg-[#FAF9F6] pb-16 lg:pb-0">
+      {/* Arattai x Buzz Header */}
+      <div className="flex items-center justify-between border-b-2 border-[#0B192C] bg-[#FFF8C5] px-4 py-3.5 shadow-sm">
         <div className="flex items-center gap-2">
-          <img src={buzzLogo} alt="Buzz" className="h-8 w-8 rounded-lg border border-[#0a0a0a] object-cover lg:hidden" />
-          <h1 className="text-lg font-black text-[#0a0a0a] tracking-tight flex items-center gap-1.5">
+          <img src={buzzLogo} alt="Buzz" className="h-8 w-8 rounded-lg border-2 border-[#0B192C] object-cover lg:hidden" />
+          <h1 className="text-lg font-black text-[#0B192C] tracking-tight flex items-center gap-1.5">
             Buzz Streams <span className="text-xs">🇮🇳</span>
           </h1>
         </div>
@@ -139,16 +139,16 @@ const ChatSidebar = ({
         </div>
       </div>
 
-      {/* Tactile Search Bar */}
-      <div className="p-3 border-b-2 border-[#0a0a0a]/15 bg-white">
-        <div className="flex items-center gap-2 rounded-xl border-2 border-[#0a0a0a] bg-[#fffbec] px-3 py-2 shadow-[0_2px_0_0_#0a0a0a]">
-          <Search className="h-4 w-4 text-[#0a0a0a]/60 flex-shrink-0" />
+          {/* Arattai Clean Search Bar */}
+      <div className="p-3 border-b-2 border-[#0B192C]/10 bg-white">
+        <div className="flex items-center gap-2 rounded-xl border-2 border-[#0B192C] bg-[#FAF9F6] px-3 py-2 shadow-[0_2px_0_0_#0B192C]">
+          <Search className="h-4 w-4 text-[#0B192C]/60 flex-shrink-0" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search conversations..."
-            className="w-full bg-transparent text-xs font-semibold text-[#0a0a0a] outline-none placeholder:text-[#0a0a0a]/40"
+            placeholder="Search chats, contacts (@handle)..."
+            className="w-full bg-transparent text-xs font-semibold text-[#0B192C] outline-none placeholder:text-[#0B192C]/40"
           />
         </div>
       </div>
