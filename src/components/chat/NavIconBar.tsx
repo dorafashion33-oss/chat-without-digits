@@ -23,7 +23,7 @@ interface NavIconBarProps {
 
 const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
   return (
-    <div className="flex h-full w-[56px] md:w-[68px] flex-shrink-0 flex-col items-center justify-between border-r-2 border-[#0a0a0a] bg-[#fffbec] py-4">
+     <div className="flex h-full w-[56px] md:w-[68px] flex-shrink-0 flex-col items-center justify-between border-r-2 border-[#0B192C] bg-[#FAF9F6] py-4">
       <div className="flex flex-col items-center gap-5">
         {/* Brand Logo with Tactile Border */}
         <div className="relative">
@@ -47,10 +47,10 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
                 <button
                   onClick={() => onNavigate(item.id)}
                   aria-label={item.label}
-                  className={`relative flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-xl transition-all duration-200 ${
+                                   className={`relative flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-xl transition-all duration-200 ${
                     isActive
-                      ? "border-2 border-[#0a0a0a] bg-[#FCE314] text-[#0a0a0a] shadow-[0_3px_0_0_#0a0a0a]"
-                      : "text-[#0a0a0a]/70 hover:bg-white hover:border-2 hover:border-[#0a0a0a] hover:text-[#0a0a0a] hover:shadow-[0_2px_0_0_#0a0a0a]"
+                      ? "border-2 border-[#0B192C] bg-[#E85A1C] text-white shadow-[0_3px_0_0_#0B192C]"
+                      : "text-[#0B192C]/70 hover:bg-white hover:border-2 hover:border-[#0B192C] hover:text-[#0B192C] hover:shadow-[0_2px_0_0_#0B192C]"
                   }`}
                 >
                   <Icon
