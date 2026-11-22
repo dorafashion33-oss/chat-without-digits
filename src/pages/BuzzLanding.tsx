@@ -710,6 +710,7 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
             <Link to="/security" className="hover:underline">Security</Link>
             <Link to="/compare" className="hover:underline">Compare</Link>
             <Link to="/privacy" className="hover:underline">Privacy</Link>
+            <Link to="/terms" className="hover:underline">Terms</Link>
             <Link to="/buzz-web" className="hover:underline">Buzz Web</Link>
             <Link to="/download" className="hover:underline">Download</Link>
             <Link to="/contact" className="hover:underline">Contact</Link>
