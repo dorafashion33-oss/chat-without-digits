@@ -1015,8 +1015,9 @@ const SecurityView = ({ onBack }: { onBack: () => void }) => {
 const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?: string }) => {
   const lang = useAppLanguage();
   const [devices, setDevices] = useState<BuzzDevice[]>([]);
-  const [showPairModal, setShowPairModal] = useState(false);
-  const [pairCode, setPairCode] = useState("");
+  const [showScannerModal, setShowScannerModal] = useState(false);
+  const [inputPin, setInputPin] = useState("");
+  const [authorizing, setAuthorizing] = useState(false);
 
   const refreshDevices = () => {
     setDevices(getLinkedDevices(username));
@@ -1029,10 +1030,46 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
     return () => window.removeEventListener("buzz:devices-changed", handler);
   }, [username]);
 
-  const handleStartPairing = () => {
-    const code = "BUZZ-" + Math.floor(100000 + Math.random() * 900000);
-    setPairCode(code);
-    setShowPairModal(true);
+  // Phone se computer ko authorize karna
+  const handleAuthorizeWeb = async () => {
+    if (!inputPin.trim()) {
+      toast.error(tr(lang, "Enter the PIN shown on your computer screen", "कंप्यूटर स्क्रीन पर दिख रहा PIN डालें"));
+      return;
+    }
+
+    setAuthorizing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("No active session. Please log in first.");
+        setAuthorizing(false);
+        return;
+      }
+
+      const cleanPin = inputPin.trim().toLowerCase();
+      const channel = supabase.channel(`buzz-web-pair:${cleanPin}`);
+      await channel.subscribe();
+
+      // Realtime signal to computer screen
+      await channel.send({
+        type: "broadcast",
+        event: "auth-grant",
+        payload: {
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          username: username || "user",
+        },
+      });
+
+      toast.success(tr(lang, "Computer authorized! Logging in... 🚀", "कंप्यूटर अधिकृत हो गया! लॉगिन हो रहा है... 🚀"));
+      setShowScannerModal(false);
+      setInputPin("");
+      refreshDevices();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to link device");
+    } finally {
+      setAuthorizing(false);
+    }
   };
 
   const handleRevokeSingle = (devId: string, name: string) => {
@@ -1068,57 +1105,77 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bz-grid-paper">
-        {/* Zero Phone Number Multi-Device Card */}
+        {/* Zero Phone Number Card */}
         <div className="bz-card p-4 bg-white space-y-2 border-2 border-[#0a0a0a] shadow-[0_4px_0_0_#0a0a0a]">
           <div className="flex items-center gap-2">
             <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#FAF089] border border-[#0a0a0a] text-xs">🔒</span>
             <p className="text-xs font-black text-[#0a0a0a]">
-              {tr(lang, "Multi-Device Without Phone Numbers", "बिना फोन नंबर मल्टी-डिवाइस कनेक्ट")}
+              {tr(lang, "Link Computer or Tablet", "कंप्यूटर या टैबलेट लिंक करें")}
             </p>
           </div>
           <p className="text-[11px] font-semibold text-[#5b5b55] leading-relaxed">
             {tr(
               lang,
-              "Pair your laptop, tablet, or secondary phone securely using your @username or QR Code. Phone numbers are never required.",
-              "अपने लैपटॉप, टैबलेट या दूसरे फोन को @username या QR कोड से सुरक्षित रूप से लिंक करें। फोन नंबर की कोई ज़रूरत नहीं।"
+              "Pair your laptop or secondary browser instantly using QR Scanner or Pairing PIN. No phone numbers ever required.",
+              "अपने लैपटॉप या दूसरे ब्राउज़र को QR स्कैनर या PIN से तुरंत लिंक करें। फोन नंबर की कोई ज़रूरत नहीं।"
             )}
           </p>
           <button
-            onClick={handleStartPairing}
+            onClick={() => setShowScannerModal(true)}
             className="bz-btn bz-btn-yellow w-full py-2.5 text-xs font-black uppercase flex items-center justify-center gap-2 mt-2"
           >
-            <QrCode className="h-4 w-4" /> {tr(lang, "Link a New Device", "नया डिवाइस लिंक करें")}
+            <Camera className="h-4 w-4" /> {tr(lang, "Link a New Device", "नया डिवाइस लिंक करें")}
           </button>
         </div>
 
-        {/* Device Pairing Dialog */}
-        <Dialog open={showPairModal} onOpenChange={setShowPairModal}>
+        {/* WhatsApp-Style Scanner & Authorize Dialog */}
+        <Dialog open={showScannerModal} onOpenChange={setShowScannerModal}>
           <DialogContent className="max-w-sm border-2 border-[#0a0a0a] bg-[#FFFBEA] p-5">
-            <DialogTitle className="text-base font-black text-[#0a0a0a] text-center">
-              {tr(lang, "Link via Buzz QR", "Buzz QR से लिंक करें")}
+            <DialogTitle className="text-base font-black text-[#0a0a0a] text-center flex items-center justify-center gap-2">
+              <Camera className="h-5 w-5" />
+              {tr(lang, "Scan Computer QR Code", "कंप्यूटर QR कोड स्कैन करें")}
             </DialogTitle>
-            <div className="mt-2 flex flex-col items-center space-y-3">
-              <div className="rounded-2xl border-2 border-[#0a0a0a] bg-white p-4 shadow-[0_4px_0_0_#0a0a0a]">
-                <QRCodeSVG
-                  value={`https://chat-without-digits.lovable.app/buzz-web?pair=${pairCode}&u=${username || "user"}`}
-                  size={150}
-                  level="H"
-                />
-              </div>
-              <div className="text-center">
-                <p className="text-[11px] font-bold text-[#5b5b55]">
-                  {tr(lang, "Scan with your secondary phone or open", "अपने दूसरे फोन से स्कैन करें या खोलें")}
+
+            <div className="mt-2 flex flex-col items-center space-y-4">
+              {/* WhatsApp-Style Camera Viewfinder */}
+              <div className="relative h-44 w-full rounded-2xl border-2 border-[#0a0a0a] bg-black overflow-hidden flex flex-col items-center justify-center shadow-[0_4px_0_0_#0a0a0a]">
+                <div className="relative h-32 w-32 border-2 border-emerald-400 rounded-xl overflow-hidden flex items-center justify-center">
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse"></div>
+                  <Camera className="h-8 w-8 text-white/40" />
+                </div>
+                <p className="mt-2 text-[10px] font-bold text-white/80">
+                  {tr(lang, "Point camera at your computer screen", "कंप्यूटर स्क्रीन के QR पर कैमरा रखें")}
                 </p>
-                <p className="text-xs font-mono font-black text-[#0a0a0a] mt-0.5">chat-without-digits.lovable.app/buzz-web</p>
-                <div className="mt-2 rounded-lg border border-[#0a0a0a] bg-[#FAF089] px-3 py-1 text-center font-mono text-xs font-black">
-                  Pairing PIN: {pairCode}
+              </div>
+
+              {/* Enter Computer PIN Option */}
+              <div className="w-full space-y-2">
+                <p className="text-[11px] font-bold text-[#5b5b55] text-center">
+                  {tr(lang, "Or enter the Pairing PIN shown on screen:", "या कंप्यूटर पर दिख रहा Pairing PIN डालें:")}
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. BZ_8A3F"
+                    value={inputPin}
+                    onChange={(e) => setInputPin(e.target.value.toLowerCase().trim())}
+                    className="flex-1 rounded-xl border-2 border-[#0a0a0a] bg-white px-3 py-2 text-xs font-mono font-black uppercase outline-none"
+                  />
+                  <button
+                    onClick={handleAuthorizeWeb}
+                    disabled={authorizing || !inputPin}
+                    className="bz-btn bz-btn-yellow px-4 py-2 text-xs font-black uppercase disabled:opacity-50"
+                  >
+                    {authorizing ? tr(lang, "Linking...", "लिंक हो रहा है...") : tr(lang, "Authorize", "लॉगिन करें")}
+                  </button>
                 </div>
               </div>
+
               <button
-                onClick={() => setShowPairModal(false)}
-                className="bz-btn bz-btn-ink w-full py-2 text-xs font-bold text-white mt-2"
+                onClick={() => setShowScannerModal(false)}
+                className="bz-btn bz-btn-white w-full py-2 text-xs font-bold"
               >
-                {tr(lang, "Done", "हो गया")}
+                {tr(lang, "Cancel", "रद्द करें")}
               </button>
             </div>
           </DialogContent>
