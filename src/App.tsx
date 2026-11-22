@@ -32,8 +32,9 @@ const App = () => (
             <Route path="/features" element={<Index />} />
             <Route path="/guest-chat" element={<Index />} />
             <Route path="/security" element={<Index />} />
-            <Route path="/compare" element={<Index />} />
+            <Route path="/compare" element={<Index />} />          
             <Route path="/privacy" element={<Index />} />
+            <Route path="/terms" element={<Index />} />
             <Route path="/buzz-web" element={<Index />} />
             <Route path="/download" element={<Index />} />
             <Route path="/contact" element={<Index />} />
