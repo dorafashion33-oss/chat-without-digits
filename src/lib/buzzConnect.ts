@@ -120,3 +120,24 @@ export const revokeAllOtherDevices = (username?: string) => {
   localStorage.setItem("buzz:remote-logout-signal", JSON.stringify({ deviceId: "ALL_OTHERS", except: currentId, time: Date.now() }));
   window.dispatchEvent(new CustomEvent("buzz:devices-changed"));
 };
+// Remote Logout Realtime Listener for Buzz Connect
+export const listenForRemoteLogout = (onLogout: (reason: string) => void) => {
+  const checkSignal = (e: StorageEvent) => {
+    if (e.key === "buzz:remote-logout-signal" && e.newValue) {
+      try {
+        const data = JSON.parse(e.newValue);
+        const myId = getCurrentDeviceId();
+        if (data.deviceId === "ALL_OTHERS" && data.except !== myId) {
+          onLogout("This device was remotely logged out by your primary Buzz session.");
+        } else if (data.deviceId === myId) {
+          onLogout("This device was disconnected remotely from Buzz Settings.");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  window.addEventListener("storage", checkSignal);
+  return () => window.removeEventListener("storage", checkSignal);
+};
