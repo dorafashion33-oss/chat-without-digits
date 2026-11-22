@@ -1,7 +1,7 @@
 // src/pages/AuthPage.tsx
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, User, Lock, Eye, EyeOff, Sparkles, QrCode, KeyRound, RefreshCw, Smartphone } from "lucide-react";
+import { ArrowRight, User, Lock, Eye, EyeOff, Sparkles, QrCode, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import buzzLogo from "@/assets/buzz-logo.jpeg";
 import { QRCodeSVG } from "qrcode.react";
@@ -15,7 +15,7 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
   const params = new URLSearchParams(window.location.search);
   const initialUsername = embedded ? "" : (params.get("username") || "").replace(/^@/, "");
   const startSignup = !embedded && (params.get("mode") === "signup" || !!initialUsername);
-  
+
   const [isLogin, setIsLogin] = useState(!startSignup);
   const [authMethod, setAuthMethod] = useState<"password" | "qr">("password");
   const [username, setUsername] = useState(initialUsername);
@@ -24,17 +24,16 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // QR Session ID generation for WhatsApp-Web style login
-  const [sessionId, setSessionId] = useState<string>(() => "bz_" + Math.random().toString(36).substring(2, 10));
+  // Unique session token for this computer screen
+  const [sessionId, setSessionId] = useState<string>(() => "bz_" + Math.random().toString(36).substring(2, 8));
   const [qrCountdown, setQrCountdown] = useState(120);
 
-  // Auto-generate fresh QR code
   const refreshQR = () => {
-    setSessionId("bz_" + Math.random().toString(36).substring(2, 10));
+    setSessionId("bz_" + Math.random().toString(36).substring(2, 8));
     setQrCountdown(120);
   };
 
-  // Realtime WebSocket Listener for WhatsApp Web QR Pairing
+  // Realtime WebSocket Listener: Phone scan karte hi computer par instant login
   useEffect(() => {
     if (!isLogin || authMethod !== "qr") return;
 
@@ -43,7 +42,7 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
     channel
       .on("broadcast", { event: "auth-grant" }, async ({ payload }) => {
         if (payload?.access_token && payload?.refresh_token) {
-          toast.success("Phone paired successfully! Logging in... 🚀");
+          toast.success("Phone paired successfully! Welcome to Buzz 🚀");
           const { error: sessionErr } = await supabase.auth.setSession({
             access_token: payload.access_token,
             refresh_token: payload.refresh_token,
@@ -58,7 +57,6 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
       })
       .subscribe();
 
-    // 2-minute countdown timer
     const interval = setInterval(() => {
       setQrCountdown((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
@@ -138,107 +136,135 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
   const pairingPayload = JSON.stringify({
     type: "buzz-web-login",
     sessionId,
-    url: `https://chat-without-digits.lovable.app/pair?s=${sessionId}`,
+    url: `https://buzzofficial.vercel.app/pair?s=${sessionId}`,
   });
 
   return (
-    <div className={`flex w-full items-center justify-center bz-grid-paper p-6 ${embedded ? "min-h-[580px] rounded-2xl" : "min-h-screen"}`}>
-      <div className="w-full max-w-sm rounded-3xl border-4 border-[#0a0a0a] bg-white p-7 shadow-[0_10px_0_0_#0a0a0a] animate-fade-in">
-        <div className="flex flex-col items-center text-center mb-5">
-          <div className="relative">
-            <img
-              src={buzzLogo}
-              alt="Buzz"
-              className="h-16 w-16 rounded-2xl border-2 border-[#0a0a0a] object-cover shadow-[0_4px_0_0_#0a0a0a]"
-            />
-            <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#0a0a0a] bg-[#FCE314] shadow-[0_2px_0_0_#0a0a0a]">
-              <Sparkles className="h-3 w-3 text-[#0a0a0a]" />
+    <div className={`flex w-full items-center justify-center bz-grid-paper p-4 md:p-8 ${embedded ? "min-h-[580px] rounded-2xl" : "min-h-screen"}`}>
+      
+      {/* ── 1. DEDICATED DESKTOP WHATSAPP-WEB STYLE TERMINAL (Only on Desktop) ── */}
+      {isLogin && authMethod === "qr" ? (
+        <div className="hidden md:flex w-full max-w-4xl rounded-3xl border-4 border-[#0a0a0a] bg-white p-10 shadow-[0_12px_0_0_#0a0a0a] animate-fade-in gap-10 items-center justify-between">
+          <div className="flex-1 space-y-6">
+            <div className="flex items-center gap-3">
+              <img
+                src={buzzLogo}
+                alt="Buzz"
+                className="h-14 w-14 rounded-2xl border-2 border-[#0a0a0a] object-cover shadow-[0_3px_0_0_#0a0a0a]"
+              />
+              <div>
+                <h1 className="text-2xl font-black text-[#0a0a0a] flex items-center gap-2">
+                  Use Buzz on your <span className="bz-squig">Computer</span> 🇮🇳
+                </h1>
+                <p className="text-xs font-mono font-bold text-[#5b5b55] uppercase">
+                  Zero Phone Numbers · 100% Private Web Messaging
+                </p>
+              </div>
+            </div>
+
+            <ol className="space-y-4 text-sm font-bold text-[#0a0a0a] pt-2">
+              <li className="flex items-start gap-3">
+                <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] text-xs font-black">
+                  1
+                </span>
+                <span>Open <strong>Buzz</strong> on your mobile phone</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] text-xs font-black">
+                  2
+                </span>
+                <span>Go to <strong>Settings ⚙️ ➔ Linked Devices (Buzz Connect)</strong></span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] text-xs font-black">
+                  3
+                </span>
+                <span>Tap <strong>"Link a New Device"</strong> and scan this QR code or enter PIN</span>
+              </li>
+            </ol>
+
+            <div className="pt-4 border-t-2 border-[#0a0a0a]/10">
+              <button
+                onClick={() => setAuthMethod("password")}
+                className="text-xs font-black text-[#0a0a0a] underline hover:text-[#E85A1C]"
+              >
+                ← Or Log in with @username & password
+              </button>
             </div>
           </div>
-          <h1 className="mt-3 text-2xl font-black text-[#0a0a0a] flex items-center gap-1.5 tracking-tight">
-            {isLogin ? "Log in to " : "Join "}
-            <span className="bz-squig">Buzz</span>
-            <span className="text-xl" title="Made in India">🇮🇳</span>
-          </h1>
-          <p className="mt-0.5 text-xs font-mono font-bold text-[#5b5b55] uppercase tracking-wider">
-            {isLogin ? "Username & QR Login" : "Claim your unique identity"} · Zero Digits
-          </p>
-        </div>
 
-        {/* WhatsApp Web Style Tab Switcher */}
-        {isLogin && (
-          <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#FAF9F6] border-2 border-[#0a0a0a] rounded-xl mb-4 shadow-[0_2px_0_0_#0a0a0a]">
-            <button
-              type="button"
-              onClick={() => setAuthMethod("password")}
-              className={`py-1.5 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                authMethod === "password"
-                  ? "bg-[#FCE314] text-[#0a0a0a] border-2 border-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]"
-                  : "text-[#5b5b55] hover:text-[#0a0a0a]"
-              }`}
-            >
-              <KeyRound className="h-3.5 w-3.5" /> Password
-            </button>
+          <div className="flex flex-col items-center justify-center border-l-2 border-[#0a0a0a]/10 pl-10 space-y-4">
+            <div className="relative rounded-3xl border-3 border-[#0a0a0a] bg-white p-5 shadow-[0_6px_0_0_#0a0a0a]">
+              {qrCountdown > 0 ? (
+                <QRCodeSVG value={pairingPayload} size={220} level="H" />
+              ) : (
+                <div className="h-[220px] w-[220px] flex flex-col items-center justify-center bg-[#FAF9F6] rounded-2xl text-center p-4">
+                  <p className="text-sm font-black text-red-600 mb-2">QR Code Expired</p>
+                  <button
+                    onClick={refreshQR}
+                    className="bz-btn bz-btn-yellow px-4 py-2 text-xs font-black uppercase flex items-center gap-1.5"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" /> Reload QR
+                  </button>
+                </div>
+              )}
+              <span className="absolute -bottom-2 -right-2 text-lg" title="Made in India">
+                🇮🇳
+              </span>
+            </div>
+
+            {qrCountdown > 0 && (
+              <div className="text-center space-y-1.5">
+                <div className="rounded-lg border-2 border-[#0a0a0a] bg-[#FFFBEA] py-1 px-3 font-mono text-xs font-black text-[#0a0a0a]">
+                  Pairing PIN: {sessionId.toUpperCase()}
+                </div>
+                <p className="text-[11px] font-semibold text-[#5b5b55] flex items-center justify-center gap-1.5">
+                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Listening for mobile scan ({qrCountdown}s)
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* ── 2. STANDARD LOGIN CARD (Mobile par clean, Desktop par QR switch button ke sath) ── */
+        <div className="w-full max-w-sm rounded-3xl border-4 border-[#0a0a0a] bg-white p-7 shadow-[0_10px_0_0_#0a0a0a] animate-fade-in">
+          <div className="flex flex-col items-center text-center mb-5">
+            <div className="relative">
+              <img
+                src={buzzLogo}
+                alt="Buzz"
+                className="h-16 w-16 rounded-2xl border-2 border-[#0a0a0a] object-cover shadow-[0_4px_0_0_#0a0a0a]"
+              />
+              <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#0a0a0a] bg-[#FCE314] shadow-[0_2px_0_0_#0a0a0a]">
+                <Sparkles className="h-3 w-3 text-[#0a0a0a]" />
+              </div>
+            </div>
+            <h1 className="mt-3 text-2xl font-black text-[#0a0a0a] flex items-center gap-1.5 tracking-tight">
+              {isLogin ? "Log in to " : "Join "}
+              <span className="bz-squig">Buzz</span>
+              <span className="text-xl" title="Made in India">🇮🇳</span>
+            </h1>
+            <p className="mt-0.5 text-xs font-mono font-bold text-[#5b5b55] uppercase tracking-wider">
+              {isLogin ? "Username Identity" : "Claim your unique identity"} · Zero Digits
+            </p>
+          </div>
+
+          {/* Desktop Only QR Switcher Button */}
+          {isLogin && (
             <button
               type="button"
               onClick={() => {
                 setAuthMethod("qr");
                 refreshQR();
               }}
-              className={`py-1.5 text-xs font-black rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                authMethod === "qr"
-                  ? "bg-[#FCE314] text-[#0a0a0a] border-2 border-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]"
-                  : "text-[#5b5b55] hover:text-[#0a0a0a]"
-              }`}
+              className="hidden md:flex w-full mb-4 py-2 px-3 items-center justify-center gap-2 rounded-xl border-2 border-[#0a0a0a] bg-[#FFFBEA] text-xs font-black text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] hover:bg-[#FFF6B8]"
             >
-              <QrCode className="h-3.5 w-3.5" /> Scan QR
+              <QrCode className="h-4 w-4" /> Scan QR with Phone (Buzz Web) ➔
             </button>
-          </div>
-        )}
+          )}
 
-        {/* Tab 1: Scan to Log In (WhatsApp Web Style) */}
-        {isLogin && authMethod === "qr" ? (
-          <div className="flex flex-col items-center space-y-4 animate-fade-in">
-            <div className="relative rounded-2xl border-2 border-[#0a0a0a] bg-white p-3 shadow-[0_4px_0_0_#0a0a0a]">
-              {qrCountdown > 0 ? (
-                <QRCodeSVG value={pairingPayload} size={160} level="H" />
-              ) : (
-                <div className="h-[160px] w-[160px] flex flex-col items-center justify-center bg-[#FAF9F6] rounded-xl text-center p-2">
-                  <p className="text-xs font-black text-red-600 mb-2">QR Code Expired</p>
-                  <button
-                    onClick={refreshQR}
-                    className="bz-btn bz-btn-yellow px-3 py-1.5 text-[11px] font-black uppercase flex items-center gap-1"
-                  >
-                    <RefreshCw className="h-3 w-3" /> Refresh
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {qrCountdown > 0 && (
-              <div className="w-full text-center space-y-2">
-                <div className="rounded-lg border border-[#0a0a0a] bg-[#FFFBEA] py-1 px-2 font-mono text-xs font-black text-[#0a0a0a]">
-                  Pairing PIN: {sessionId.toUpperCase()}
-                </div>
-
-                <div className="text-[11px] font-semibold text-[#5b5b55] text-left space-y-1 bg-[#FAF9F6] p-2.5 rounded-xl border border-[#0a0a0a]/15">
-                  <p className="font-black text-[#0a0a0a] flex items-center gap-1">
-                    <Smartphone className="h-3.5 w-3.5" /> To log in from phone:
-                  </p>
-                  <p>1. Open Buzz on your mobile phone</p>
-                  <p>2. Go to <strong>Settings ⚙️ ➔ Linked Devices</strong></p>
-                  <p>3. Tap <strong>Authorize Web</strong> & enter PIN / scan</p>
-                </div>
-
-                <p className="text-[10px] text-[#5b5b55] flex items-center justify-center gap-1">
-                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Listening for phone authorization ({qrCountdown}s)
-                </p>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Tab 2: Username & Password */
+          {/* Username & Password Form */}
           <div className="space-y-3.5">
             <div className="flex items-center gap-3 rounded-xl border-2 border-[#0a0a0a] bg-white px-3.5 py-3 shadow-[0_2px_0_0_#0a0a0a] transition-all focus-within:shadow-[0_4px_0_0_#0a0a0a] focus-within:bg-[#fffdf6]">
               <User className="h-4 w-4 text-[#0a0a0a] flex-shrink-0" />
@@ -302,23 +328,23 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
               )}
             </button>
           </div>
-        )}
 
-        <p className="mt-5 text-center text-xs font-bold text-[#5b5b55]">
-          {isLogin ? "Don't have a Buzz handle?" : "Already have an account?"}{" "}
-          <button
-            onClick={() => {
-              setIsLogin(!isLogin);
-              setError("");
-              setPassword("");
-              setAuthMethod("password");
-            }}
-            className="text-[#0a0a0a] underline underline-offset-4 hover:text-black font-extrabold"
-          >
-            {isLogin ? "Claim @username" : "Sign In"}
-          </button>
-        </p>
-      </div>
+          <p className="mt-5 text-center text-xs font-bold text-[#5b5b55]">
+            {isLogin ? "Don't have a Buzz handle?" : "Already have an account?"}{" "}
+            <button
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError("");
+                setPassword("");
+                setAuthMethod("password");
+              }}
+              className="text-[#0a0a0a] underline underline-offset-4 hover:text-black font-extrabold"
+            >
+              {isLogin ? "Claim @username" : "Sign In"}
+            </button>
+          </p>
+        </div>
+      )}
     </div>
   );
 };
