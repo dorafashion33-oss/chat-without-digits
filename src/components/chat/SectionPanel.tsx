@@ -27,7 +27,18 @@ import {
   KeyRound,
   Edit2,
   Share2,
+  Laptop,
+  Smartphone,
+  Radio,
+  ShieldAlert,
 } from "lucide-react";
+import {
+  getLinkedDevices,
+  revokeDevice,
+  revokeAllOtherDevices,
+  getCurrentDeviceId,
+  type BuzzDevice,
+} from "@/lib/buzzConnect";
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
@@ -620,7 +631,7 @@ const DiscoverPanel = ({
 };
 
 /* ─── Settings Panel ─── */
-type SettingsView = "main" | "account" | "privacy" | "security" | "notifications" | "language" | "help" | "chat-themes";
+type SettingsView = "main" | "account" | "privacy" | "security" | "notifications" | "language" | "help" | "chat-themes" | "devices";
 
 const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
   const lang = useAppLanguage();
@@ -635,16 +646,18 @@ const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
   if (view === "account") return <AccountView onBack={() => setView("main")} />;
   if (view === "privacy") return <PrivacyView onBack={() => setView("main")} />;
   if (view === "security") return <SecurityView onBack={() => setView("main")} />;
+  if (view === "devices") return <LinkedDevicesView onBack={() => setView("main")} username={username} />;
   if (view === "notifications") return <NotificationsView onBack={() => setView("main")} />;
   if (view === "language") return <LanguageView onBack={() => setView("main")} />;
   if (view === "help") return <HelpView onBack={() => setView("main")} />;
   if (view === "chat-themes") return <ChatThemesPanel onBack={() => setView("main")} />;
-
+  
   const settingGroups = [
-    {
+        {
       title: tr(lang, "Account & Security", "खाता और सुरक्षा"),
       items: [
         { icon: User, label: tr(lang, "Account Info", "खाता विवरण"), desc: tr(lang, "Username, display name, about", "यूज़रनेम, नाम, परिचय"), view: "account" as SettingsView },
+        { icon: Laptop, label: tr(lang, "Linked Devices (Buzz Connect)", "लिंक्ड डिवाइसेस (Buzz Connect)"), desc: tr(lang, "Multi-device QR login & remote logout", "मल्टी-डिवाइस QR लॉगिन और रिमोट लॉगआउट"), view: "devices" as SettingsView },
         { icon: Lock, label: tr(lang, "Privacy", "गोपनीयता (Privacy)"), desc: tr(lang, "Last seen, read receipts, typing", "लास्ट सीन, ब्लू टिक, टाइपिंग"), view: "privacy" as SettingsView },
         { icon: Shield, label: tr(lang, "Security & PIN Lock", "सुरक्षा और पिन लॉक"), desc: tr(lang, "4-Digit PIN, app lock, password", "4-अंकों का पिन, ऐप लॉक, पासवर्ड"), view: "security" as SettingsView },
       ],
@@ -991,6 +1004,174 @@ const SecurityView = ({ onBack }: { onBack: () => void }) => {
             {saving ? tr(lang, "Updating...", "अपडेट हो रहा है...") : tr(lang, "Update Password", "पासवर्ड अपडेट करें")}
           </button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── Linked Devices (Buzz Connect) View ─── */
+const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?: string }) => {
+  const lang = useAppLanguage();
+  const [devices, setDevices] = useState<BuzzDevice[]>([]);
+  const [showPairModal, setShowPairModal] = useState(false);
+  const [pairCode, setPairCode] = useState("");
+
+  const refreshDevices = () => {
+    setDevices(getLinkedDevices(username));
+  };
+
+  useEffect(() => {
+    refreshDevices();
+    const handler = () => refreshDevices();
+    window.addEventListener("buzz:devices-changed", handler);
+    return () => window.removeEventListener("buzz:devices-changed", handler);
+  }, [username]);
+
+  const handleStartPairing = () => {
+    const code = "BUZZ-" + Math.floor(100000 + Math.random() * 900000);
+    setPairCode(code);
+    setShowPairModal(true);
+  };
+
+  const handleRevokeSingle = (devId: string, name: string) => {
+    if (confirm(tr(lang, `Disconnect ${name}?`, `क्या आप ${name} को डिस्कनेक्ट करना चाहते हैं?`))) {
+      revokeDevice(devId, username);
+      toast.success(tr(lang, "Device disconnected remotely", "डिवाइस सफलतापूर्वक डिस्कनेक्ट हो गया"));
+      refreshDevices();
+    }
+  };
+
+  const handleRevokeAllOthers = () => {
+    if (confirm(tr(lang, "Disconnect all other linked devices?", "क्या आप बाकी सभी लिंक्ड डिवाइसेस को डिस्कनेक्ट करना चाहते हैं?"))) {
+      revokeAllOtherDevices(username);
+      toast.success(tr(lang, "All other sessions logged out!", "बाकी सभी सेशन्स लॉग आउट हो गए!"));
+      refreshDevices();
+    }
+  };
+
+  const otherDevicesCount = devices.filter((d) => !d.isCurrent).length;
+
+  return (
+    <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
+      <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-5 py-3.5 shadow-sm text-[#0a0a0a]">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onBack}
+            className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h1 className="text-lg font-black text-[#0a0a0a]">{tr(lang, "Buzz Connect (Devices)", "Buzz Connect (डिवाइसेस)")}</h1>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bz-grid-paper">
+        {/* Zero Phone Number Multi-Device Card */}
+        <div className="bz-card p-4 bg-white space-y-2 border-2 border-[#0a0a0a] shadow-[0_4px_0_0_#0a0a0a]">
+          <div className="flex items-center gap-2">
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#FAF089] border border-[#0a0a0a] text-xs">🔒</span>
+            <p className="text-xs font-black text-[#0a0a0a]">
+              {tr(lang, "Multi-Device Without Phone Numbers", "बिना फोन नंबर मल्टी-डिवाइस कनेक्ट")}
+            </p>
+          </div>
+          <p className="text-[11px] font-semibold text-[#5b5b55] leading-relaxed">
+            {tr(
+              lang,
+              "Pair your laptop, tablet, or secondary phone securely using your @username or QR Code. Phone numbers are never required.",
+              "अपने लैपटॉप, टैबलेट या दूसरे फोन को @username या QR कोड से सुरक्षित रूप से लिंक करें। फोन नंबर की कोई ज़रूरत नहीं।"
+            )}
+          </p>
+          <button
+            onClick={handleStartPairing}
+            className="bz-btn bz-btn-yellow w-full py-2.5 text-xs font-black uppercase flex items-center justify-center gap-2 mt-2"
+          >
+            <QrCode className="h-4 w-4" /> {tr(lang, "Link a New Device", "नया डिवाइस लिंक करें")}
+          </button>
+        </div>
+
+        {/* Device Pairing Dialog */}
+        <Dialog open={showPairModal} onOpenChange={setShowPairModal}>
+          <DialogContent className="max-w-sm border-2 border-[#0a0a0a] bg-[#FFFBEA] p-5">
+            <DialogTitle className="text-base font-black text-[#0a0a0a] text-center">
+              {tr(lang, "Link via Buzz QR", "Buzz QR से लिंक करें")}
+            </DialogTitle>
+            <div className="mt-2 flex flex-col items-center space-y-3">
+              <div className="rounded-2xl border-2 border-[#0a0a0a] bg-white p-4 shadow-[0_4px_0_0_#0a0a0a]">
+                <QRCodeSVG
+                  value={`https://chat-without-digits.lovable.app/buzz-web?pair=${pairCode}&u=${username || "user"}`}
+                  size={150}
+                  level="H"
+                />
+              </div>
+              <div className="text-center">
+                <p className="text-[11px] font-bold text-[#5b5b55]">
+                  {tr(lang, "Scan with your secondary phone or open", "अपने दूसरे फोन से स्कैन करें या खोलें")}
+                </p>
+                <p className="text-xs font-mono font-black text-[#0a0a0a] mt-0.5">chat-without-digits.lovable.app/buzz-web</p>
+                <div className="mt-2 rounded-lg border border-[#0a0a0a] bg-[#FAF089] px-3 py-1 text-center font-mono text-xs font-black">
+                  Pairing PIN: {pairCode}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPairModal(false)}
+                className="bz-btn bz-btn-ink w-full py-2 text-xs font-bold text-white mt-2"
+              >
+                {tr(lang, "Done", "हो गया")}
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Active Devices List */}
+        <div className="space-y-2">
+          <p className="text-xs font-black uppercase tracking-wider text-[#5b5b55]">
+            {tr(lang, "Active Linked Sessions", "सक्रिय लिंक्ड सेशन्स")}
+          </p>
+
+          {devices.map((dev) => (
+            <div key={dev.id} className="bz-card p-3 flex items-center justify-between bg-white">
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#E2E8F0] shadow-[0_2px_0_0_#0a0a0a]">
+                  {dev.type === "mobile" ? <Smartphone className="h-5 w-5 text-[#0a0a0a]" /> : <Laptop className="h-5 w-5 text-[#0a0a0a]" />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-black text-[#0a0a0a]">{dev.name}</p>
+                    {dev.isCurrent && (
+                      <span className="rounded-full bg-emerald-100 border border-emerald-500 px-1.5 py-0.2 text-[9px] font-black text-emerald-800">
+                        {tr(lang, "This Device", "यह डिवाइस")}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] font-semibold text-[#5b5b55]">
+                    {dev.isCurrent ? tr(lang, "Active now 🟢", "अभी सक्रिय 🟢") : tr(lang, "Last active recently", "हाल ही में सक्रिय")}
+                  </p>
+                </div>
+              </div>
+
+              {!dev.isCurrent && (
+                <button
+                  onClick={() => handleRevokeSingle(dev.id, dev.name)}
+                  className="rounded-lg border-2 border-red-500 bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100"
+                  title="Remote Logout"
+                >
+                  {tr(lang, "Disconnect", "हटाएं")}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Emergency Remote Logout All Button */}
+        {otherDevicesCount > 0 && (
+          <button
+            onClick={handleRevokeAllOthers}
+            className="bz-btn bz-btn-ink w-full py-2.5 text-xs font-black uppercase text-red-300 hover:text-red-100 flex items-center justify-center gap-2 mt-4"
+          >
+            <ShieldAlert className="h-4 w-4" />
+            {tr(lang, "Disconnect All Other Devices", "बाकी सभी डिवाइसेस को डिस्कनेक्ट करें")}
+          </button>
+        )}
       </div>
     </div>
   );
