@@ -31,6 +31,7 @@ import { QRCodeSVG } from "qrcode.react";
 export type PublicPage =
   | "features"
   | "privacy"
+  | "terms"
   | "buzz-web"
   | "download"
   | "guest-chat"
@@ -41,6 +42,7 @@ export type PublicPage =
 export const publicPages: PublicPage[] = [
   "features",
   "privacy",
+  "terms",
   "buzz-web",
   "download",
   "guest-chat",
@@ -442,6 +444,107 @@ export default function BuzzPublicPage({
               Guest chats are tokenized and automatically expire. Moments vanish after 24 hours. Your digital footprint remains clean.
             </p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+    /* ────────── TERMS OF SERVICE PAGE (LEGAL & COMPLIANCE) ────────── */
+  if (page === "terms") {
+    return (
+      <div className="mx-auto max-w-5xl px-5 py-12 md:py-20 space-y-12 text-left">
+        {/* Header */}
+        <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] px-3.5 py-1 text-xs font-black shadow-[0_2px_0_0_#0a0a0a]">
+            <Shield className="h-3.5 w-3.5" />
+            <span className="sarvam-gradient-berry">LEGAL & COMMUNITY TRUST</span>
+          </div>
+          <h1 className="text-3xl sm:text-5xl font-black text-[#0a0a0a] tracking-tight">
+            Terms of <span className="sarvam-gradient-sunset bz-squig">Service</span>
+          </h1>
+          <p className="text-xs sm:text-sm text-[#5b5b55] font-semibold">
+            Simple, honest terms. Buzz is built on privacy, username identity, and zero tracking.
+          </p>
+        </div>
+
+        {/* Legal Clauses Bento Cards */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* 1. Identity & Zero Phone Numbers */}
+          <div className="bz-card p-6 bg-white border-2 border-[#0a0a0a] shadow-[0_4px_0_0_#0a0a0a]">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#FAF089] border border-[#0a0a0a] text-xs font-black">1</span>
+              <h3 className="font-black text-sm text-[#0a0a0a]">Zero-Phone-Number Identity</h3>
+            </div>
+            <p className="text-xs text-[#5b5b55] leading-relaxed font-medium">
+              Buzz creates accounts exclusively with unique <strong>@usernames</strong> and passwords. We will never ask for, store, or sell your phone number, SIM identifier, or personal address book.
+            </p>
+          </div>
+
+          {/* 2. Age & Eligibility */}
+          <div className="bz-card p-6 bg-white border-2 border-[#0a0a0a] shadow-[0_4px_0_0_#0a0a0a]">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#E2ECFF] border border-[#0a0a0a] text-xs font-black">2</span>
+              <h3 className="font-black text-sm text-[#0a0a0a]">Eligibility & Community Age</h3>
+            </div>
+            <p className="text-xs text-[#5b5b55] leading-relaxed font-medium">
+              You must be at least 13 years of age to use Buzz. By using this service, you confirm that you meet this minimum age requirement under applicable digital protection laws.
+            </p>
+          </div>
+
+          {/* 3. Acceptable Use & Zero Abuse */}
+          <div className="bz-card p-6 bg-white border-2 border-[#0a0a0a] shadow-[0_4px_0_0_#0a0a0a]">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#DCF4E4] border border-[#0a0a0a] text-xs font-black">3</span>
+              <h3 className="font-black text-sm text-[#0a0a0a]">User Conduct & Prohibited Activities</h3>
+            </div>
+            <p className="text-xs text-[#5b5b55] leading-relaxed font-medium">
+              You agree not to use Buzz for harassment, unlawful impersonation, automated spamming, or sharing illegal content. Violations result in immediate username termination.
+            </p>
+          </div>
+
+          {/* 4. Peer-to-Peer Calls & Privacy */}
+          <div className="bz-card p-6 bg-white border-2 border-[#0a0a0a] shadow-[0_4px_0_0_#0a0a0a]">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#FFF6B8] border border-[#0a0a0a] text-xs font-black">4</span>
+              <h3 className="font-black text-sm text-[#0a0a0a]">WebRTC Calling & Ephemeral Moments</h3>
+            </div>
+            <p className="text-xs text-[#5b5b55] leading-relaxed font-medium">
+              Voice and video calls connect directly peer-to-peer and are never recorded on our servers. Moments (24-hour status stories) automatically expire and are purged from storage.
+            </p>
+          </div>
+
+          {/* 5. Multi-Device & Account Security */}
+          <div className="bz-card p-6 bg-white border-2 border-[#0a0a0a] shadow-[0_4px_0_0_#0a0a0a]">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#FCE314] border border-[#0a0a0a] text-xs font-black">5</span>
+              <h3 className="font-black text-sm text-[#0a0a0a]">Device Linking & Remote Logout</h3>
+            </div>
+            <p className="text-xs text-[#5b5b55] leading-relaxed font-medium">
+              You can pair secondary devices via QR codes. You are responsible for revoking sessions from public computers using <strong>Settings ➔ Linked Devices</strong>.
+            </p>
+          </div>
+
+          {/* 6. Indian IT Act Grievance Officer */}
+          <div className="bz-card p-6 bg-white border-2 border-[#0a0a0a] shadow-[0_4px_0_0_#0a0a0a]">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#E2ECFF] border border-[#0a0a0a] text-xs font-black">6</span>
+              <h3 className="font-black text-sm text-[#0a0a0a]">Grievance & Support Contact</h3>
+            </div>
+            <p className="text-xs text-[#5b5b55] leading-relaxed font-medium">
+              In accordance with the Information Technology Act, 2000 and rules made thereunder, questions or grievances can be addressed directly to our Grievance Desk at{" "}
+              <a href="mailto:prasadprem904@gmail.com" className="font-bold underline text-[#0a0a0a]">
+                prasadprem904@gmail.com
+              </a>
+              .
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom CTA */}
+        <div className="text-center pt-4">
+          <button onClick={onLogin} className="bz-btn bz-btn-yellow px-8 py-3 text-xs font-black uppercase">
+            Accept & Open Buzz Account ➔
+          </button>
         </div>
       </div>
     );
