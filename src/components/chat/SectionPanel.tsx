@@ -193,8 +193,10 @@ const SectionPanel = ({
       return <ConnectPanel onBack={onBack} onStartChat={onStartChat} onStartCall={onStartCall} />;
     case "discover":
       return <DiscoverPanel onBack={onBack} onStartChat={onStartChat} onStartCall={onStartCall} />;
+       case "settings":
+      return <SettingsPanel onBack={onBack} username={username} />;
     case "settings":
-      return <SettingsPanel onBack={onBack} />;
+      return <SettingsPanel onBack={onBack} username={username} />;
     case "profile":
       return <ProfilePanel onBack={onBack} username={username} />;
     default:
@@ -633,7 +635,7 @@ const DiscoverPanel = ({
 /* ─── Settings Panel ─── */
 type SettingsView = "main" | "account" | "privacy" | "security" | "notifications" | "language" | "help" | "chat-themes" | "devices";
 
-const SettingsPanel = ({ onBack }: { onBack?: () => void }) => {
+const SettingsPanel = ({ onBack, username }: { onBack?: () => void; username?: string }) => {
   const lang = useAppLanguage();
   const { theme, setTheme } = useTheme();
   const [view, setView] = useState<SettingsView>("main");
