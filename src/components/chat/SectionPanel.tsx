@@ -1445,18 +1445,21 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
                   </div>
                 </div>
 
-                {!selectedDevice.isCurrent ? (
-                  <button
-                    onClick={() => handleRevokeSingle(selectedDevice.id, selectedDevice.name)}
-                    className="bz-btn bz-btn-ink w-full py-2.5 text-xs font-black uppercase text-red-300 hover:text-red-100 flex items-center justify-center gap-2"
-                  >
-                    <LogOut className="h-4 w-4" /> Disconnect This Device
-                  </button>
-                ) : (
-                  <p className="text-center text-[11px] font-bold text-emerald-700 bg-emerald-50 py-1.5 rounded-lg border border-emerald-300">
-                    This is your current active device.
-                  </p>
-                )}
+                                <button
+                  onClick={() => {
+                    if (selectedDevice.isCurrent) {
+                      if (confirm(tr(lang, "Log out from Buzz on this device?", "क्या आप इस डिवाइस से लॉग आउट करना चाहते हैं?"))) {
+                        supabase.auth.signOut();
+                        window.location.reload();
+                      }
+                    } else {
+                      handleRevokeSingle(selectedDevice.id, selectedDevice.name);
+                    }
+                  }}
+                  className="bz-btn bz-btn-ink w-full py-2.5 text-xs font-black uppercase text-red-300 hover:text-red-100 flex items-center justify-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" /> {selectedDevice.isCurrent ? tr(lang, "Log Out This Device", "इस डिवाइस को लॉग आउट करें") : tr(lang, "Disconnect Remotely", "रिमोटली डिस्कनेक्ट करें")}
+                </button>
 
                 <button
                   onClick={() => setSelectedDevice(null)}
@@ -1469,7 +1472,7 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
           )}
         </Dialog>
 
-        {/* Active Devices List with Full Login Information */}
+        {/* Active Devices List with Full Login Information & Action Buttons */}
         <div className="space-y-2">
           <p className="text-xs font-black uppercase tracking-wider text-[#5b5b55]">
             {tr(lang, "Active Linked Sessions", "सक्रिय लिंक्ड सेशन्स")}
@@ -1481,20 +1484,20 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
               onClick={() => setSelectedDevice(dev)}
               className="bz-card p-3.5 bg-white border-2 border-[#0a0a0a] shadow-[0_3px_0_0_#0a0a0a] hover:bg-[#FFFDF5] cursor-pointer transition-all space-y-2"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#E2E8F0] shadow-[0_2px_0_0_#0a0a0a]">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#E2E8F0] shadow-[0_2px_0_0_#0a0a0a]">
                     {dev.type === "mobile" ? <Smartphone className="h-5 w-5 text-[#0a0a0a]" /> : <Laptop className="h-5 w-5 text-[#0a0a0a]" />}
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-xs font-black text-[#0a0a0a]">{dev.name}</p>
+                      <p className="text-xs font-black text-[#0a0a0a] truncate">{dev.name}</p>
                       {dev.isCurrent ? (
-                        <span className="rounded-full bg-emerald-100 border border-emerald-500 px-1.5 py-0.2 text-[9px] font-black text-emerald-800">
+                        <span className="rounded-full bg-emerald-100 border border-emerald-500 px-1.5 py-0.2 text-[9px] font-black text-emerald-800 flex-shrink-0">
                           {tr(lang, "This Device", "यह डिवाइस")}
                         </span>
                       ) : (
-                        <span className="rounded-full bg-amber-100 border border-amber-500 px-1.5 py-0.2 text-[9px] font-black text-amber-800">
+                        <span className="rounded-full bg-amber-100 border border-amber-500 px-1.5 py-0.2 text-[9px] font-black text-amber-800 flex-shrink-0">
                           Linked
                         </span>
                       )}
@@ -1506,18 +1509,29 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
                   </div>
                 </div>
 
-                {!dev.isCurrent && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
+                {/* Hamesha Disconnect / Logout button show hoga */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (dev.isCurrent) {
+                      if (confirm(tr(lang, "Log out from this device?", "क्या आप इस डिवाइस से लॉग आउट करना चाहते हैं?"))) {
+                        supabase.auth.signOut();
+                        window.location.reload();
+                      }
+                    } else {
                       handleRevokeSingle(dev.id, dev.name);
-                    }}
-                    className="rounded-lg border-2 border-red-500 bg-red-50 px-2.5 py-1 text-[11px] font-black text-red-700 hover:bg-red-100 shadow-[0_2px_0_0_#ef4444]"
-                    title="Remote Logout"
-                  >
-                    {tr(lang, "Disconnect", "हटाएं")}
-                  </button>
-                )}
+                    }
+                  }}
+                  className={`flex-shrink-0 rounded-lg border-2 px-2.5 py-1 text-[11px] font-black shadow-[0_2px_0_0_#0a0a0a] flex items-center gap-1 ${
+                    dev.isCurrent
+                      ? "border-[#0a0a0a] bg-zinc-50 text-[#0a0a0a] hover:bg-zinc-100"
+                      : "border-red-500 bg-red-50 text-red-700 hover:bg-red-100"
+                  }`}
+                  title={dev.isCurrent ? "Log Out" : "Remote Disconnect"}
+                >
+                  <LogOut className="h-3 w-3" />
+                  {dev.isCurrent ? tr(lang, "Log Out", "लॉग आउट") : tr(lang, "Disconnect", "हटाएं")}
+                </button>
               </div>
 
               {/* Login Timing Details Banner */}
@@ -1527,6 +1541,13 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
               </div>
             </div>
           ))}
+
+          {otherDevicesCount === 0 && (
+            <div className="rounded-xl border border-dashed border-[#0a0a0a]/25 bg-[#FFFBEA] p-3 text-center space-y-1 mt-2">
+              <p className="text-xs font-bold text-[#0a0a0a]">No other devices linked yet</p>
+              <p className="text-[10px] text-[#5b5b55]">Tap "Link a New Device" above to connect your laptop with QR or PIN.</p>
+            </div>
+          )}
         </div>
 
         {/* Emergency Remote Logout All Button */}
