@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 // src/lib/buzzConnect.ts
 export interface BuzzDevice {
   id: string;
@@ -99,19 +100,44 @@ export const saveDevices = (devices: BuzzDevice[], username?: string) => {
   }
 };
 
-// Remote logout a single device
-export const revokeDevice = (deviceId: string, username?: string) => {
+// Remote logout a single device (Across different devices & computers via Realtime)
+export const revokeDevice = async (deviceId: string, username?: string) => {
   const current = getLinkedDevices(username);
   const updated = current.map((d) => (d.id === deviceId ? { ...d, status: "revoked" as const } : d));
   saveDevices(updated, username);
 
-  // Broadcast remote logout alert
   localStorage.setItem("buzz:remote-logout-signal", JSON.stringify({ deviceId, time: Date.now() }));
   window.dispatchEvent(new CustomEvent("buzz:devices-changed"));
+
+  // Realtime WebSocket signal to that specific computer
+  try {
+    const channel = supabase.channel(`buzz-device-logout:${deviceId}`);
+    await new Promise<void>((resolve) => {
+      const t = setTimeout(() => resolve(), 2500);
+      channel.subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          clearTimeout(t);
+          resolve();
+        }
+      });
+    });
+
+    for (let i = 0; i < 3; i++) {
+      await channel.send({
+        type: "broadcast",
+        event: "device-revoked",
+        payload: { deviceId, reason: "This device was remotely logged out from your phone." },
+      });
+      await new Promise((r) => setTimeout(r, 120));
+    }
+    supabase.removeChannel(channel);
+  } catch (err) {
+    console.error("Realtime revoke failed:", err);
+  }
 };
 
 // Remote logout all other devices
-export const revokeAllOtherDevices = (username?: string) => {
+export const revokeAllOtherDevices = async (username?: string) => {
   const currentId = getCurrentDeviceId();
   const current = getLinkedDevices(username);
   const updated = current.map((d) => (d.id !== currentId ? { ...d, status: "revoked" as const } : d));
@@ -119,14 +145,42 @@ export const revokeAllOtherDevices = (username?: string) => {
 
   localStorage.setItem("buzz:remote-logout-signal", JSON.stringify({ deviceId: "ALL_OTHERS", except: currentId, time: Date.now() }));
   window.dispatchEvent(new CustomEvent("buzz:devices-changed"));
+
+  try {
+    const channel = supabase.channel(`buzz-user-security:${(username || "user").toLowerCase()}`);
+    await new Promise<void>((resolve) => {
+      const t = setTimeout(() => resolve(), 2500);
+      channel.subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          clearTimeout(t);
+          resolve();
+        }
+      });
+    });
+
+    for (let i = 0; i < 3; i++) {
+      await channel.send({
+        type: "broadcast",
+        event: "logout-all-others",
+        payload: { except: currentId, reason: "All other sessions were logged out remotely." },
+      });
+      await new Promise((r) => setTimeout(r, 120));
+    }
+    supabase.removeChannel(channel);
+  } catch (err) {
+    console.error("Realtime revoke all failed:", err);
+  }
 };
-// Remote Logout Realtime Listener for Buzz Connect
-export const listenForRemoteLogout = (onLogout: (reason: string) => void) => {
+
+// Realtime Listener: Active computer/device par logout pakadne ke liye
+export const listenForRemoteLogout = (username: string | undefined, onLogout: (reason: string) => void) => {
+  const myId = getCurrentDeviceId();
+
+  // 1. Same-device tab listener
   const checkSignal = (e: StorageEvent) => {
     if (e.key === "buzz:remote-logout-signal" && e.newValue) {
       try {
         const data = JSON.parse(e.newValue);
-        const myId = getCurrentDeviceId();
         if (data.deviceId === "ALL_OTHERS" && data.except !== myId) {
           onLogout("This device was remotely logged out by your primary Buzz session.");
         } else if (data.deviceId === myId) {
@@ -137,7 +191,29 @@ export const listenForRemoteLogout = (onLogout: (reason: string) => void) => {
       }
     }
   };
-
   window.addEventListener("storage", checkSignal);
-  return () => window.removeEventListener("storage", checkSignal);
+
+  // 2. Cross-device Realtime channel (Phone -> Laptop)
+  const deviceChannel = supabase.channel(`buzz-device-logout:${myId}`);
+  deviceChannel
+    .on("broadcast", { event: "device-revoked" }, ({ payload }) => {
+      onLogout(payload?.reason || "This device was remotely disconnected.");
+    })
+    .subscribe();
+
+  const userChannel = supabase.channel(`buzz-user-security:${(username || "user").toLowerCase()}`);
+  userChannel
+    .on("broadcast", { event: "logout-all-others" }, ({ payload }) => {
+      if (payload?.except !== myId) {
+        onLogout(payload?.reason || "All secondary devices were logged out remotely.");
+      }
+    })
+    .subscribe();
+
+  return () => {
+    window.removeEventListener("storage", checkSignal);
+    supabase.removeChannel(deviceChannel);
+    supabase.removeChannel(userChannel);
+  };
 };
+
