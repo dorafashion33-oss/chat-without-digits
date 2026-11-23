@@ -42,10 +42,13 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
     const channel = supabase.channel(channelName);
 
     channel
-      .on("broadcast", { event: "auth-grant" }, async ({ payload }) => {
+            .on("broadcast", { event: "auth-grant" }, async ({ payload }) => {
         if (payload?.access_token && payload?.refresh_token) {
           setIsPairingLoggingIn(true);
           toast.success("Phone paired successfully! Welcome to Buzz 🚀");
+
+          // Save exact device ID on this laptop so phone can disconnect it remotely
+          localStorage.setItem("buzz:current-device-id", `dev_web_${pinCode.toLowerCase()}`);
 
           try {
             const { error: sessionErr } = await supabase.auth.setSession({
