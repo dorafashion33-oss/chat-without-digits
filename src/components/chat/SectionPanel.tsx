@@ -1215,11 +1215,27 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
           payload: {
             access_token: session.access_token,
             refresh_token: session.refresh_token,
-            username: username || session.user.user_metadata?.username || "user",
+                       username: username || session.user.user_metadata?.username || "user",
           },
         });
         await new Promise((r) => setTimeout(r, 150));
       }
+
+      // Record this newly linked computer with exact pairing timestamp
+      const nowIso = new Date().toISOString();
+      const newDev: BuzzDevice = {
+        id: "dev_web_" + cleanPin,
+        name: `Buzz Web (${cleanPin.toUpperCase()})`,
+        type: "desktop",
+        browser: "Desktop Browser",
+        os: "Web",
+        isCurrent: false,
+        pairedAt: nowIso,
+        lastActive: nowIso,
+        status: "active",
+      };
+      const existing = getLinkedDevices(username);
+      saveDevices([newDev, ...existing.filter((d) => d.id !== newDev.id)], username);
 
       toast.success(tr(lang, "Computer Authorized! Logging in... 🚀", "कंप्यूटर अधिकृत हो गया! लॉगिन हो रहा है... 🚀"));
       setShowScannerModal(false);
@@ -1233,10 +1249,30 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
     }
   };
 
+  const [selectedDevice, setSelectedDevice] = useState<BuzzDevice | null>(null);
+
+  const formatDeviceDate = (isoString?: string) => {
+    if (!isoString) return "Recently";
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return "Recently";
+      return d.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return "Recently";
+    }
+  };
+
   const handleRevokeSingle = (devId: string, name: string) => {
     if (confirm(tr(lang, `Disconnect ${name}?`, `क्या आप ${name} को डिस्कनेक्ट करना चाहते हैं?`))) {
       revokeDevice(devId, username);
       toast.success(tr(lang, "Device disconnected remotely", "डिवाइस सफलतापूर्वक डिस्कनेक्ट हो गया"));
+      setSelectedDevice(null);
       refreshDevices();
     }
   };
@@ -1245,15 +1281,15 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
     if (confirm(tr(lang, "Disconnect all other linked devices?", "क्या आप बाकी सभी लिंक्ड डिवाइसेस को डिस्कनेक्ट करना चाहते हैं?"))) {
       revokeAllOtherDevices(username);
       toast.success(tr(lang, "All other sessions logged out!", "बाकी सभी सेशन्स लॉग आउट हो गए!"));
+      setSelectedDevice(null);
       refreshDevices();
-      }
+    }
   };
 
   const otherDevicesCount = devices.filter((d) => !d.isCurrent).length;
 
   return (
     <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
-
       <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-5 py-3.5 shadow-sm text-[#0a0a0a]">
         <div className="flex items-center gap-2">
           <button
@@ -1372,42 +1408,123 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
           </DialogContent>
         </Dialog>
 
-        {/* Active Devices List */}
+        {/* Detailed Device Info Dialog */}
+        <Dialog open={!!selectedDevice} onOpenChange={(open) => !open && setSelectedDevice(null)}>
+          {selectedDevice && (
+            <DialogContent className="max-w-sm border-2 border-[#0a0a0a] bg-[#FFFBEA] p-5">
+              <DialogTitle className="text-base font-black text-[#0a0a0a] flex items-center gap-2">
+                {selectedDevice.type === "mobile" ? <Smartphone className="h-5 w-5" /> : <Laptop className="h-5 w-5" />}
+                {selectedDevice.name}
+              </DialogTitle>
+
+              <div className="mt-3 space-y-3">
+                <div className="rounded-xl border-2 border-[#0a0a0a] bg-white p-3 space-y-2 text-xs">
+                  <div className="flex justify-between border-b pb-1.5">
+                    <span className="font-bold text-[#5b5b55]">Status:</span>
+                    <span className="font-black text-emerald-600">
+                      {selectedDevice.isCurrent ? "Active (This Device) 🟢" : "Linked Session 🟢"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b pb-1.5">
+                    <span className="font-bold text-[#5b5b55]">Linked on:</span>
+                    <span className="font-black font-mono text-[#0a0a0a]">{formatDeviceDate(selectedDevice.pairedAt)}</span>
+                  </div>
+                  <div className="flex justify-between border-b pb-1.5">
+                    <span className="font-bold text-[#5b5b55]">Last Active:</span>
+                    <span className="font-black font-mono text-[#0a0a0a]">
+                      {selectedDevice.isCurrent ? "Right now" : formatDeviceDate(selectedDevice.lastActive)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-b pb-1.5">
+                    <span className="font-bold text-[#5b5b55]">Platform:</span>
+                    <span className="font-black text-[#0a0a0a]">{selectedDevice.os || "Web"} · {selectedDevice.browser || "Browser"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-bold text-[#5b5b55]">Session ID:</span>
+                    <span className="font-mono text-[10px] font-bold text-[#0a0a0a]">{selectedDevice.id.replace("dev_", "").toUpperCase()}</span>
+                  </div>
+                </div>
+
+                {!selectedDevice.isCurrent ? (
+                  <button
+                    onClick={() => handleRevokeSingle(selectedDevice.id, selectedDevice.name)}
+                    className="bz-btn bz-btn-ink w-full py-2.5 text-xs font-black uppercase text-red-300 hover:text-red-100 flex items-center justify-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" /> Disconnect This Device
+                  </button>
+                ) : (
+                  <p className="text-center text-[11px] font-bold text-emerald-700 bg-emerald-50 py-1.5 rounded-lg border border-emerald-300">
+                    This is your current active device.
+                  </p>
+                )}
+
+                <button
+                  onClick={() => setSelectedDevice(null)}
+                  className="bz-btn bz-btn-white w-full py-2 text-xs font-bold"
+                >
+                  Close
+                </button>
+              </div>
+            </DialogContent>
+          )}
+        </Dialog>
+
+        {/* Active Devices List with Full Login Information */}
         <div className="space-y-2">
           <p className="text-xs font-black uppercase tracking-wider text-[#5b5b55]">
             {tr(lang, "Active Linked Sessions", "सक्रिय लिंक्ड सेशन्स")}
           </p>
 
           {devices.map((dev) => (
-            <div key={dev.id} className="bz-card p-3 flex items-center justify-between bg-white">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#E2E8F0] shadow-[0_2px_0_0_#0a0a0a]">
-                  {dev.type === "mobile" ? <Smartphone className="h-5 w-5 text-[#0a0a0a]" /> : <Laptop className="h-5 w-5 text-[#0a0a0a]" />}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs font-black text-[#0a0a0a]">{dev.name}</p>
-                    {dev.isCurrent && (
-                      <span className="rounded-full bg-emerald-100 border border-emerald-500 px-1.5 py-0.2 text-[9px] font-black text-emerald-800">
-                        {tr(lang, "This Device", "यह डिवाइस")}
-                      </span>
-                    )}
+            <div
+              key={dev.id}
+              onClick={() => setSelectedDevice(dev)}
+              className="bz-card p-3.5 bg-white border-2 border-[#0a0a0a] shadow-[0_3px_0_0_#0a0a0a] hover:bg-[#FFFDF5] cursor-pointer transition-all space-y-2"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#E2E8F0] shadow-[0_2px_0_0_#0a0a0a]">
+                    {dev.type === "mobile" ? <Smartphone className="h-5 w-5 text-[#0a0a0a]" /> : <Laptop className="h-5 w-5 text-[#0a0a0a]" />}
                   </div>
-                  <p className="text-[10px] font-semibold text-[#5b5b55]">
-                    {dev.isCurrent ? tr(lang, "Active now 🟢", "अभी सक्रिय 🟢") : tr(lang, "Last active recently", "हाल ही में सक्रिय")}
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-black text-[#0a0a0a]">{dev.name}</p>
+                      {dev.isCurrent ? (
+                        <span className="rounded-full bg-emerald-100 border border-emerald-500 px-1.5 py-0.2 text-[9px] font-black text-emerald-800">
+                          {tr(lang, "This Device", "यह डिवाइस")}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-amber-100 border border-amber-500 px-1.5 py-0.2 text-[9px] font-black text-amber-800">
+                          Linked
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] font-semibold text-[#5b5b55] flex items-center gap-1.5 mt-0.5">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                      {dev.isCurrent ? "Active now" : `Last active ${formatDeviceDate(dev.lastActive)}`}
+                    </p>
+                  </div>
                 </div>
+
+                {!dev.isCurrent && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRevokeSingle(dev.id, dev.name);
+                    }}
+                    className="rounded-lg border-2 border-red-500 bg-red-50 px-2.5 py-1 text-[11px] font-black text-red-700 hover:bg-red-100 shadow-[0_2px_0_0_#ef4444]"
+                    title="Remote Logout"
+                  >
+                    {tr(lang, "Disconnect", "हटाएं")}
+                  </button>
+                )}
               </div>
 
-              {!dev.isCurrent && (
-                <button
-                  onClick={() => handleRevokeSingle(dev.id, dev.name)}
-                  className="rounded-lg border-2 border-red-500 bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100"
-                  title="Remote Logout"
-                >
-                  {tr(lang, "Disconnect", "हटाएं")}
-                </button>
-              )}
+              {/* Login Timing Details Banner */}
+              <div className="rounded-lg border border-[#0a0a0a]/15 bg-[#FFFBEA] px-2.5 py-1.5 text-[10px] font-bold text-[#5b5b55] flex items-center justify-between">
+                <span>📅 Linked: <strong className="text-[#0a0a0a]">{formatDeviceDate(dev.pairedAt)}</strong></span>
+                <span className="font-mono text-[9px] uppercase text-[#71717a]">ID: {dev.id.replace("dev_", "").substring(0, 8)}</span>
+              </div>
             </div>
           ))}
         </div>
