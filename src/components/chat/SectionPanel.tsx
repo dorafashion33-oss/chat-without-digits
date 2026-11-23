@@ -1246,11 +1246,14 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
       revokeAllOtherDevices(username);
       toast.success(tr(lang, "All other sessions logged out!", "बाकी सभी सेशन्स लॉग आउट हो गए!"));
       refreshDevices();
-    }
+      }
   };
+
+  const otherDevicesCount = devices.filter((d) => !d.isCurrent).length;
 
   return (
     <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
+
       <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-5 py-3.5 shadow-sm text-[#0a0a0a]">
         <div className="flex items-center gap-2">
           <button
