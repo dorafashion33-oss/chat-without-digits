@@ -1268,18 +1268,18 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
     }
   };
 
-  const handleRevokeSingle = (devId: string, name: string) => {
+    const handleRevokeSingle = async (devId: string, name: string) => {
     if (confirm(tr(lang, `Disconnect ${name}?`, `क्या आप ${name} को डिस्कनेक्ट करना चाहते हैं?`))) {
-      revokeDevice(devId, username);
+      await revokeDevice(devId, username);
       toast.success(tr(lang, "Device disconnected remotely", "डिवाइस सफलतापूर्वक डिस्कनेक्ट हो गया"));
       setSelectedDevice(null);
       refreshDevices();
     }
   };
 
-  const handleRevokeAllOthers = () => {
+  const handleRevokeAllOthers = async () => {
     if (confirm(tr(lang, "Disconnect all other linked devices?", "क्या आप बाकी सभी लिंक्ड डिवाइसेस को डिस्कनेक्ट करना चाहते हैं?"))) {
-      revokeAllOtherDevices(username);
+      await revokeAllOtherDevices(username);
       toast.success(tr(lang, "All other sessions logged out!", "बाकी सभी सेशन्स लॉग आउट हो गए!"));
       setSelectedDevice(null);
       refreshDevices();
