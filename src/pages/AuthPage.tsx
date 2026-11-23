@@ -24,34 +24,45 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Unique session token for this computer screen
-  const [sessionId, setSessionId] = useState<string>(() => "bz_" + Math.random().toString(36).substring(2, 8));
+    // Unique 6-character clean PIN for this computer screen
+  const [pinCode, setPinCode] = useState<string>(() => Math.random().toString(36).substring(2, 8).toUpperCase());
   const [qrCountdown, setQrCountdown] = useState(120);
+  const [isPairingLoggingIn, setIsPairingLoggingIn] = useState(false);
 
   const refreshQR = () => {
-    setSessionId("bz_" + Math.random().toString(36).substring(2, 8));
+    setPinCode(Math.random().toString(36).substring(2, 8).toUpperCase());
     setQrCountdown(120);
   };
 
-  // Realtime WebSocket Listener: Phone scan karte hi computer par instant login
+  // Realtime WebSocket Listener: Phone scan/PIN hote hi instant login with loading screen
   useEffect(() => {
     if (!isLogin || authMethod !== "qr") return;
 
-    const channel = supabase.channel(`buzz-web-pair:${sessionId}`);
+    const channelName = `buzz-web-pair:${pinCode.toLowerCase()}`;
+    const channel = supabase.channel(channelName);
 
     channel
       .on("broadcast", { event: "auth-grant" }, async ({ payload }) => {
         if (payload?.access_token && payload?.refresh_token) {
+          setIsPairingLoggingIn(true);
           toast.success("Phone paired successfully! Welcome to Buzz 🚀");
-          const { error: sessionErr } = await supabase.auth.setSession({
-            access_token: payload.access_token,
-            refresh_token: payload.refresh_token,
-          });
 
-          if (!sessionErr) {
-            onAuth();
-          } else {
-            toast.error("Pairing session expired. Please refresh QR.");
+          try {
+            const { error: sessionErr } = await supabase.auth.setSession({
+              access_token: payload.access_token,
+              refresh_token: payload.refresh_token,
+            });
+
+            if (!sessionErr) {
+              setTimeout(() => {
+                onAuth();
+              }, 400);
+            } else {
+              setIsPairingLoggingIn(false);
+              toast.error("Pairing session expired. Please reload QR.");
+            }
+          } catch {
+            setIsPairingLoggingIn(false);
           }
         }
       })
@@ -65,7 +76,7 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
       supabase.removeChannel(channel);
       clearInterval(interval);
     };
-  }, [isLogin, authMethod, sessionId, onAuth]);
+  }, [isLogin, authMethod, pinCode, onAuth]);
 
   const normalizeUsername = (val: string) =>
     val.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
@@ -133,10 +144,10 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
     }
   };
 
-  const pairingPayload = JSON.stringify({
+    const pairingPayload = JSON.stringify({
     type: "buzz-web-login",
-    sessionId,
-    url: `https://buzzofficial.vercel.app/pair?s=${sessionId}`,
+    sessionId: pinCode,
+    url: `https://buzzofficial.vercel.app/pair?s=${pinCode}`,
   });
 
   return (
@@ -193,9 +204,15 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center border-l-2 border-[#0a0a0a]/10 pl-10 space-y-4">
+                    <div className="flex flex-col items-center justify-center border-l-2 border-[#0a0a0a]/10 pl-10 space-y-4">
             <div className="relative rounded-3xl border-3 border-[#0a0a0a] bg-white p-5 shadow-[0_6px_0_0_#0a0a0a]">
-              {qrCountdown > 0 ? (
+              {isPairingLoggingIn ? (
+                <div className="h-[220px] w-[220px] flex flex-col items-center justify-center bg-[#FAF9F6] rounded-2xl text-center p-4 space-y-3">
+                  <div className="h-10 w-10 rounded-full border-4 border-[#0a0a0a] border-t-transparent animate-spin"></div>
+                  <p className="text-sm font-black text-[#0a0a0a]">Device Authorized! 🚀</p>
+                  <p className="text-xs font-bold text-[#5b5b55]">Logging in to Buzz...</p>
+                </div>
+              ) : qrCountdown > 0 ? (
                 <QRCodeSVG value={pairingPayload} size={220} level="H" />
               ) : (
                 <div className="h-[220px] w-[220px] flex flex-col items-center justify-center bg-[#FAF9F6] rounded-2xl text-center p-4">
@@ -213,14 +230,14 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
               </span>
             </div>
 
-            {qrCountdown > 0 && (
+            {qrCountdown > 0 && !isPairingLoggingIn && (
               <div className="text-center space-y-1.5">
-                <div className="rounded-lg border-2 border-[#0a0a0a] bg-[#FFFBEA] py-1 px-3 font-mono text-xs font-black text-[#0a0a0a]">
-                  Pairing PIN: {sessionId.toUpperCase()}
+                <div className="rounded-lg border-2 border-[#0a0a0a] bg-[#FFFBEA] py-1.5 px-4 font-mono text-sm font-black text-[#0a0a0a] tracking-widest shadow-[0_2px_0_0_#0a0a0a]">
+                  PIN: {pinCode}
                 </div>
                 <p className="text-[11px] font-semibold text-[#5b5b55] flex items-center justify-center gap-1.5">
                   <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Listening for mobile scan ({qrCountdown}s)
+                  Listening for scan or PIN ({qrCountdown}s)
                 </p>
               </div>
             )}
