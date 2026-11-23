@@ -1,5 +1,7 @@
 import { syncPush } from "@/lib/push";
 import { runAutoCleanup } from "@/lib/autoCleanup";
+import { listenForRemoteLogout } from "@/lib/buzzConnect";
+import { toast } from "sonner";
 import { useState, useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,12 +49,28 @@ const Index = () => {
     groupCall.startGroupCall(groupId, gName, memberIds, type);
   }, [groupCall, fetchGroupMembers, currentUserId]);
 
-  useEffect(() => {
+      useEffect(() => {
     if (currentUserId) {
       syncPush(currentUserId);
       runAutoCleanup(currentUserId);
     }
   }, [currentUserId]);
+
+  // Remote Logout Listener: Phone se disconnect hote hi ye computer instant log out ho jayega
+  useEffect(() => {
+    if (!username) return;
+
+    const unsubscribe = listenForRemoteLogout(username, async (reason) => {
+      toast.error(reason, { duration: 5000 });
+      await supabase.auth.signOut();
+      localStorage.removeItem("buzz:current-device-id");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    });
+
+    return () => unsubscribe();
+  }, [username]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
