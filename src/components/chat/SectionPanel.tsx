@@ -1011,13 +1011,19 @@ const SecurityView = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
-/* ─── Linked Devices (Buzz Connect) View ─── */
+/* ─── Linked Devices (Buzz Connect) View (REAL CAMERA + ROCK-SOLID REALTIME) ─── */
 const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?: string }) => {
   const lang = useAppLanguage();
   const [devices, setDevices] = useState<BuzzDevice[]>([]);
   const [showScannerModal, setShowScannerModal] = useState(false);
   const [inputPin, setInputPin] = useState("");
   const [authorizing, setAuthorizing] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const [cameraActive, setCameraActive] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanIntervalRef = useRef<any>(null);
 
   const refreshDevices = () => {
     setDevices(getLinkedDevices(username));
@@ -1030,10 +1036,148 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
     return () => window.removeEventListener("buzz:devices-changed", handler);
   }, [username]);
 
-  // Phone se computer ko authorize karna
-  const handleAuthorizeWeb = async () => {
-    if (!inputPin.trim()) {
-      toast.error(tr(lang, "Enter the PIN shown on your computer screen", "कंप्यूटर स्क्रीन पर दिख रहा PIN डालें"));
+  // Clean camera stream on close
+  const stopCamera = () => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setCameraActive(false);
+  };
+
+  // Helper: load universal QR decoder fallback if native detector unavailable
+  const ensureJsQR = async (): Promise<any> => {
+    if ((window as any).jsQR) return (window as any).jsQR;
+    return new Promise((resolve) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+      s.onload = () => resolve((window as any).jsQR);
+      s.onerror = () => resolve(null);
+      document.head.appendChild(s);
+    });
+  };
+
+  // Start Real Hardware Camera & Scanner Loop
+  useEffect(() => {
+    if (!showScannerModal) {
+      stopCamera();
+      return;
+    }
+
+    let isMounted = true;
+
+    const startCamera = async () => {
+      setCameraError("");
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false,
+        });
+
+        if (!isMounted) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+          setCameraActive(true);
+        }
+
+        // Start frame capture loop
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        const hasNativeDetector = "BarcodeDetector" in window;
+        let barcodeDetector: any = null;
+        if (hasNativeDetector) {
+          try {
+            barcodeDetector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
+          } catch {
+            barcodeDetector = null;
+          }
+        }
+        const jsQRFallback = barcodeDetector ? null : await ensureJsQR();
+
+        scanIntervalRef.current = setInterval(async () => {
+          if (!videoRef.current || videoRef.current.readyState < 2 || authorizing) return;
+
+          const video = videoRef.current;
+          let scannedRawText = "";
+
+          // Fast native GPU scanner (Chrome Android / iOS 17+)
+          if (barcodeDetector) {
+            try {
+              const barcodes = await barcodeDetector.detect(video);
+              if (barcodes && barcodes.length > 0) {
+                scannedRawText = barcodes[0].rawValue;
+              }
+            } catch {
+              // fallback
+            }
+          }
+
+          // Fallback canvas frame scanner
+          if (!scannedRawText && jsQRFallback && ctx) {
+            canvas.width = video.videoWidth || 320;
+            canvas.height = video.videoHeight || 240;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQRFallback(imgData.data, imgData.width, imgData.height);
+            if (code && code.data) {
+              scannedRawText = code.data;
+            }
+          }
+
+          if (scannedRawText) {
+            try {
+              navigator.vibrate?.(100);
+            } catch {}
+            stopCamera();
+            await performAuthorization(scannedRawText);
+          }
+        }, 180);
+      } catch (err: any) {
+        setCameraError("Camera permission blocked or camera not found. Use PIN below.");
+      }
+    };
+
+    startCamera();
+
+    return () => {
+      isMounted = false;
+      stopCamera();
+    };
+  }, [showScannerModal]);
+
+  // Guaranteed Realtime Authorization (Both QR and PIN)
+  const performAuthorization = async (rawCodeOrPin: string) => {
+    let cleanPin = rawCodeOrPin.trim();
+
+    // Check if JSON QR payload
+    try {
+      const parsed = JSON.parse(cleanPin);
+      if (parsed.sessionId) cleanPin = parsed.sessionId;
+    } catch {}
+
+    // Check if URL payload
+    if (cleanPin.includes("?s=")) {
+      try {
+        const u = new URL(cleanPin);
+        cleanPin = u.searchParams.get("s") || cleanPin;
+      } catch {}
+    }
+
+    // Normalize: remove "bz_" prefix and lowercase
+    cleanPin = cleanPin.toLowerCase().replace(/^bz_/, "").trim();
+
+    if (!cleanPin) {
+      toast.error(tr(lang, "Invalid QR Code or PIN", "अमान्य QR कोड या PIN"));
       return;
     }
 
@@ -1041,27 +1185,43 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast.error("No active session. Please log in first.");
+        toast.error("Please login first to link devices.");
         setAuthorizing(false);
         return;
       }
 
-      const cleanPin = inputPin.trim().toLowerCase();
-      const channel = supabase.channel(`buzz-web-pair:${cleanPin}`);
-      await channel.subscribe();
+      const channelName = `buzz-web-pair:${cleanPin}`;
+      const channel = supabase.channel(channelName);
 
-      // Realtime signal to computer screen
-      await channel.send({
-        type: "broadcast",
-        event: "auth-grant",
-        payload: {
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-          username: username || "user",
-        },
+      // CRITICAL: Wait until WebSocket status is SUBSCRIBED before sending payload
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("Pairing timeout. Ensure computer shows QR/PIN.")), 8000);
+        channel.subscribe((status, err) => {
+          if (status === "SUBSCRIBED") {
+            clearTimeout(timeout);
+            resolve();
+          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            clearTimeout(timeout);
+            reject(err || new Error(`Channel status: ${status}`));
+          }
+        });
       });
 
-      toast.success(tr(lang, "Computer authorized! Logging in... 🚀", "कंप्यूटर अधिकृत हो गया! लॉगिन हो रहा है... 🚀"));
+      // Send 3 bursts (150ms apart) to guarantee delivery across the websocket
+      for (let i = 0; i < 3; i++) {
+        await channel.send({
+          type: "broadcast",
+          event: "auth-grant",
+          payload: {
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            username: username || session.user.user_metadata?.username || "user",
+          },
+        });
+        await new Promise((r) => setTimeout(r, 150));
+      }
+
+      toast.success(tr(lang, "Computer Authorized! Logging in... 🚀", "कंप्यूटर अधिकृत हो गया! लॉगिन हो रहा है... 🚀"));
       setShowScannerModal(false);
       setInputPin("");
       refreshDevices();
@@ -1069,6 +1229,7 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
       toast.error(e.message || "Failed to link device");
     } finally {
       setAuthorizing(false);
+      stopCamera();
     }
   };
 
@@ -1087,8 +1248,6 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
       refreshDevices();
     }
   };
-
-  const otherDevicesCount = devices.filter((d) => !d.isCurrent).length;
 
   return (
     <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
@@ -1116,8 +1275,8 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
           <p className="text-[11px] font-semibold text-[#5b5b55] leading-relaxed">
             {tr(
               lang,
-              "Pair your laptop or secondary browser instantly using QR Scanner or Pairing PIN. No phone numbers ever required.",
-              "अपने लैपटॉप या दूसरे ब्राउज़र को QR स्कैनर या PIN से तुरंत लिंक करें। फोन नंबर की कोई ज़रूरत नहीं।"
+              "Pair your laptop or secondary browser instantly using Real Camera QR Scanner or Pairing PIN. No phone numbers ever required.",
+              "अपने लैपटॉप या दूसरे ब्राउज़र को असली कैमरा QR स्कैनर या PIN से तुरंत लिंक करें। फोन नंबर की कोई ज़रूरत नहीं।"
             )}
           </p>
           <button
@@ -1128,8 +1287,8 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
           </button>
         </div>
 
-        {/* WhatsApp-Style Scanner & Authorize Dialog */}
-        <Dialog open={showScannerModal} onOpenChange={setShowScannerModal}>
+        {/* WhatsApp-Style REAL CAMERA SCANNER & Authorize Dialog */}
+        <Dialog open={showScannerModal} onOpenChange={(open) => { setShowScannerModal(open); if (!open) stopCamera(); }}>
           <DialogContent className="max-w-sm border-2 border-[#0a0a0a] bg-[#FFFBEA] p-5">
             <DialogTitle className="text-base font-black text-[#0a0a0a] text-center flex items-center justify-center gap-2">
               <Camera className="h-5 w-5" />
@@ -1137,16 +1296,45 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
             </DialogTitle>
 
             <div className="mt-2 flex flex-col items-center space-y-4">
-              {/* WhatsApp-Style Camera Viewfinder */}
-              <div className="relative h-44 w-full rounded-2xl border-2 border-[#0a0a0a] bg-black overflow-hidden flex flex-col items-center justify-center shadow-[0_4px_0_0_#0a0a0a]">
-                <div className="relative h-32 w-32 border-2 border-emerald-400 rounded-xl overflow-hidden flex items-center justify-center">
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse"></div>
-                  <Camera className="h-8 w-8 text-white/40" />
+              {/* Live Hardware Camera Viewfinder */}
+              <div className="relative h-52 w-full rounded-2xl border-2 border-[#0a0a0a] bg-black overflow-hidden flex flex-col items-center justify-center shadow-[0_4px_0_0_#0a0a0a]">
+                <video
+                  ref={videoRef}
+                  playsInline
+                  autoPlay
+                  muted
+                  className={`w-full h-full object-cover ${cameraActive ? "opacity-100" : "opacity-0"}`}
+                />
+
+                {/* Laser scan targeting box */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="relative h-36 w-36 border-2 border-emerald-400 rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(52,211,153,0.5)]">
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-400 shadow-[0_0_10px_#34d399] animate-pulse"></div>
+                  </div>
                 </div>
-                <p className="mt-2 text-[10px] font-bold text-white/80">
-                  {tr(lang, "Point camera at your computer screen", "कंप्यूटर स्क्रीन के QR पर कैमरा रखें")}
-                </p>
+
+                {!cameraActive && !cameraError && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white gap-2">
+                    <div className="h-6 w-6 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+                    <p className="text-[11px] font-bold">Starting camera...</p>
+                  </div>
+                )}
+
+                {cameraError && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 p-4 text-center">
+                    <p className="text-xs font-bold text-red-400 mb-2">{cameraError}</p>
+                    <p className="text-[10px] text-white/80">You can still enter the Pairing PIN below</p>
+                  </div>
+                )}
               </div>
+
+              {/* Authorizing Indicator */}
+              {authorizing && (
+                <div className="w-full rounded-xl border-2 border-[#0a0a0a] bg-[#FFF6B8] p-3 text-center space-y-1 animate-pulse">
+                  <p className="text-xs font-black text-[#0a0a0a]">Authorizing Computer Screen...</p>
+                  <p className="text-[10px] font-bold text-[#5b5b55]">Sending encrypted login handshake 🚀</p>
+                </div>
+              )}
 
               {/* Enter Computer PIN Option */}
               <div className="w-full space-y-2">
@@ -1156,23 +1344,23 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="e.g. BZ_8A3F"
+                    placeholder="e.g. 7K9P2X"
                     value={inputPin}
-                    onChange={(e) => setInputPin(e.target.value.toLowerCase().trim())}
-                    className="flex-1 rounded-xl border-2 border-[#0a0a0a] bg-white px-3 py-2 text-xs font-mono font-black uppercase outline-none"
+                    onChange={(e) => setInputPin(e.target.value)}
+                    className="flex-1 rounded-xl border-2 border-[#0a0a0a] bg-white px-3 py-2 text-xs font-mono font-black uppercase outline-none text-center tracking-widest"
                   />
                   <button
-                    onClick={handleAuthorizeWeb}
-                    disabled={authorizing || !inputPin}
+                    onClick={() => performAuthorization(inputPin)}
+                    disabled={authorizing || !inputPin.trim()}
                     className="bz-btn bz-btn-yellow px-4 py-2 text-xs font-black uppercase disabled:opacity-50"
                   >
-                    {authorizing ? tr(lang, "Linking...", "लिंक हो रहा है...") : tr(lang, "Authorize", "लॉगिन करें")}
+                    {authorizing ? "..." : tr(lang, "Authorize", "लॉगिन करें")}
                   </button>
                 </div>
               </div>
 
               <button
-                onClick={() => setShowScannerModal(false)}
+                onClick={() => { setShowScannerModal(false); stopCamera(); }}
                 className="bz-btn bz-btn-white w-full py-2 text-xs font-bold"
               >
                 {tr(lang, "Cancel", "रद्द करें")}
