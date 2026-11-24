@@ -581,7 +581,7 @@ const DiscoverPanel = ({
       {showQR && me && (
         <div className="p-4 border-b-2 border-[#0a0a0a] bg-[#E2ECFF] flex flex-col items-center">
           <div className="rounded-2xl border-3 border-[#0a0a0a] bg-white p-4 shadow-[0_4px_0_0_#0a0a0a]">
-            <QRCodeSVG value={`https://chat-without-digits.lovable.app/c/${me.username}`} size={140} level="H" />
+            <QRCodeSVG value={`https://buzzofficial.vercel.app/c/${me.username}`} size={140} level="H" />
           </div>
           <p className="mt-2 font-mono text-xs font-black text-[#0a0a0a]">@{me.username}</p>
         </div>
