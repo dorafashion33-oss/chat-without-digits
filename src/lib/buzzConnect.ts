@@ -52,6 +52,23 @@ export const detectCurrentDeviceInfo = (): { name: string; type: "desktop" | "mo
   };
 };
 
+// Helper to normalize username key across sessions
+export const normalizeUserStorageKey = (username?: string) =>
+  `${STORAGE_KEY}:${(username || "user").replace(/^@/, "").toLowerCase().trim()}`;
+
+// Clean logout: Chat tab par redirect hone se rokta hai aur seedha /auth bhejta hai
+export const performFullLogout = async () => {
+  try {
+    localStorage.removeItem("buzz:current-device-id");
+    localStorage.removeItem("buzz:remote-logout-signal");
+    await supabase.auth.signOut();
+  } catch (e) {
+    console.error("SignOut error:", e);
+  } finally {
+    window.location.href = "/auth";
+  }
+};
+
 // Fetch all linked devices for the current user
 export const getLinkedDevices = (username?: string): BuzzDevice[] => {
   const currentId = getCurrentDeviceId();
@@ -60,7 +77,7 @@ export const getLinkedDevices = (username?: string): BuzzDevice[] => {
 
   let stored: BuzzDevice[] = [];
   try {
-    const raw = localStorage.getItem(`${STORAGE_KEY}:${username || "user"}`);
+    const raw = localStorage.getItem(normalizeUserStorageKey(username));
     if (raw) stored = JSON.parse(raw);
   } catch {
     stored = [];
@@ -93,7 +110,7 @@ export const getLinkedDevices = (username?: string): BuzzDevice[] => {
 
 export const saveDevices = (devices: BuzzDevice[], username?: string) => {
   try {
-    localStorage.setItem(`${STORAGE_KEY}:${username || "user"}`, JSON.stringify(devices));
+    localStorage.setItem(normalizeUserStorageKey(username), JSON.stringify(devices));
     window.dispatchEvent(new CustomEvent("buzz:devices-changed"));
   } catch (e) {
     console.error("Failed to save devices:", e);
@@ -226,15 +243,16 @@ export const listenForRemoteLogout = (username: string | undefined, onLogout: (r
     })
     .subscribe();
 
-  const userChannel = supabase.channel(`buzz-user-security:${cleanUser}`);
+   const userChannel = supabase.channel(`buzz-user-security:${cleanUser}`);
   userChannel
     .on("broadcast", { event: "device-revoked" }, ({ payload }) => {
-      if (!payload?.deviceId || payload.deviceId === myId || payload.deviceId === "ALL_OTHERS") {
+      // Sirf wahi specific secondary device logout hoga jiska ID match karta hai
+      if (payload?.deviceId && payload.deviceId === myId) {
         onLogout(payload?.reason || "This device was remotely logged out.");
       }
     })
     .on("broadcast", { event: "logout-all-others" }, ({ payload }) => {
-      if (payload?.except !== myId) {
+      if (payload?.except && payload.except !== myId) {
         onLogout(payload?.reason || "All secondary devices were logged out remotely.");
       }
     })
