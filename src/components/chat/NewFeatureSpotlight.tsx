@@ -137,8 +137,7 @@ export default function NewFeatureSpotlight({ userId }: { userId: string }) {
 
         ctx.fillStyle = "#5B5B55";
         ctx.font = "bold 20px sans-serif";
-        ctx.fillText("chat-without-digits.lovable.app", canvas.width / 2, 815);
-
+        ctx.fillText("buzzofficial.vercel.app", canvas.width / 2, 815);
         const pngUrl = canvas.toDataURL("image/png");
         const a = document.createElement("a");
         a.href = pngUrl;
