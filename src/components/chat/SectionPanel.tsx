@@ -34,11 +34,13 @@ import {
 } from "lucide-react";
 import {
   getLinkedDevices,
+  saveDevices,
   revokeDevice,
   revokeAllOtherDevices,
-  getCurrentDeviceId,
+  performFullLogout,
   type BuzzDevice,
 } from "@/lib/buzzConnect";
+import { CheckCircle2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
@@ -640,9 +642,9 @@ const SettingsPanel = ({ onBack, username }: { onBack?: () => void; username?: s
   const { theme, setTheme } = useTheme();
   const [view, setView] = useState<SettingsView>("main");
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success(tr(lang, "Logged out of Buzz", "Buzz से लॉग आउट हो गए"));
+    const handleLogout = async () => {
+    toast.success(tr(lang, "Logging out...", "लॉग आउट हो रहा है..."));
+    await performFullLogout();
   };
 
   if (view === "account") return <AccountView onBack={() => setView("main")} />;
@@ -1014,13 +1016,13 @@ const SecurityView = ({ onBack }: { onBack: () => void }) => {
 /* ─── Linked Devices (Buzz Connect) View (REAL CAMERA + ROCK-SOLID REALTIME) ─── */
 const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?: string }) => {
   const lang = useAppLanguage();
-  const [devices, setDevices] = useState<BuzzDevice[]>([]);
+    const [devices, setDevices] = useState<BuzzDevice[]>([]);
   const [showScannerModal, setShowScannerModal] = useState(false);
+  const [justLinkedDevice, setJustLinkedDevice] = useState<BuzzDevice | null>(null);
   const [inputPin, setInputPin] = useState("");
   const [authorizing, setAuthorizing] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const [cameraActive, setCameraActive] = useState(false);
-
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanIntervalRef = useRef<any>(null);
@@ -1221,13 +1223,13 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
         await new Promise((r) => setTimeout(r, 150));
       }
 
-      // Record this newly linked computer with exact pairing timestamp
+            // Record this newly linked computer with exact pairing timestamp
       const nowIso = new Date().toISOString();
       const newDev: BuzzDevice = {
         id: "dev_web_" + cleanPin,
         name: `Buzz Web (${cleanPin.toUpperCase()})`,
         type: "desktop",
-        browser: "Desktop Browser",
+        browser: "Desktop Web",
         os: "Web",
         isCurrent: false,
         pairedAt: nowIso,
@@ -1237,10 +1239,12 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
       const existing = getLinkedDevices(username);
       saveDevices([newDev, ...existing.filter((d) => d.id !== newDev.id)], username);
 
-      toast.success(tr(lang, "Computer Authorized! Logging in... 🚀", "कंप्यूटर अधिकृत हो गया! लॉगिन हो रहा है... 🚀"));
+      // Close scanner and trigger visual confirmation popup
       setShowScannerModal(false);
       setInputPin("");
+      setJustLinkedDevice(newDev);
       refreshDevices();
+      toast.success(tr(lang, "Computer Authorized! 🚀", "कंप्यूटर सफलतापूर्वक लिंक हो गया! 🚀"));
     } catch (e: any) {
       toast.error(e.message || "Failed to link device");
     } finally {
@@ -1407,6 +1411,36 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
             </div>
           </DialogContent>
         </Dialog>
+        {/* Device Linked Success Confirmation Modal */}
+        <Dialog open={!!justLinkedDevice} onOpenChange={(open) => !open && setJustLinkedDevice(null)}>
+          <DialogContent className="max-w-sm border-2 border-[#0a0a0a] bg-[#FFFBEA] p-5 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-[#0a0a0a] bg-[#86EFAC] shadow-[0_3px_0_0_#0a0a0a]">
+              <Check className="h-8 w-8 text-[#0a0a0a]" />
+            </div>
+            <DialogTitle className="text-base font-black text-[#0a0a0a] mt-3">
+              {tr(lang, "Device Linked Successfully! 🎉", "डिवाइस सफलतापूर्वक लिंक हो गया! 🎉")}
+            </DialogTitle>
+            <div className="rounded-xl border-2 border-[#0a0a0a] bg-white p-3 text-left space-y-1.5 my-2 shadow-[0_2px_0_0_#0a0a0a]">
+              <div className="flex items-center gap-2 font-black text-xs text-[#0a0a0a]">
+                <Laptop className="h-4 w-4" />
+                <span>{justLinkedDevice?.name}</span>
+              </div>
+              <p className="text-[11px] text-[#5b5b55] font-semibold leading-relaxed">
+                {tr(
+                  lang,
+                  "Your Buzz account is now connected and running on this computer. You can manage or log it out anytime below.",
+                  "आपका Buzz खाता अब इस कंप्यूटर पर एक्टिव हो गया है। आप नीचे से कभी भी इसे लॉग आउट कर सकते हैं।"
+                )}
+              </p>
+            </div>
+            <button
+              onClick={() => setJustLinkedDevice(null)}
+              className="bz-btn bz-btn-yellow w-full py-2.5 text-xs font-black uppercase shadow-[0_3px_0_0_#0a0a0a] mt-1"
+            >
+              {tr(lang, "Done / View Sessions", "हो गया / सेशन्स देखें")}
+            </button>
+          </DialogContent>
+        </Dialog>
 
         {/* Detailed Device Info Dialog */}
         <Dialog open={!!selectedDevice} onOpenChange={(open) => !open && setSelectedDevice(null)}>
@@ -1513,14 +1547,14 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (dev.isCurrent) {
+                                       if (dev.isCurrent) {
                       if (confirm(tr(lang, "Log out from this device?", "क्या आप इस डिवाइस से लॉग आउट करना चाहते हैं?"))) {
-                        supabase.auth.signOut();
-                        window.location.reload();
+                        await performFullLogout();
                       }
                     } else {
                       handleRevokeSingle(dev.id, dev.name);
                     }
+
                   }}
                   className={`flex-shrink-0 rounded-lg border-2 px-2.5 py-1 text-[11px] font-black shadow-[0_2px_0_0_#0a0a0a] flex items-center gap-1 ${
                     dev.isCurrent
