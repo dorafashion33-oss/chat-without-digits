@@ -1072,13 +1072,26 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
 
     let isMounted = true;
 
-    const startCamera = async () => {
+        const startCamera = async () => {
       setCameraError("");
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" }, width: { ideal: 640 }, height: { ideal: 480 } },
-          audio: false,
-        });
+        if (!navigator?.mediaDevices?.getUserMedia) {
+          throw new Error("Camera API not supported on this browser.");
+        }
+
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" } },
+            audio: false,
+          });
+        } catch {
+          // Fallback if rear camera constraint fails
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+        }
 
         if (!isMounted) {
           stream.getTracks().forEach((t) => t.stop());
@@ -1086,13 +1099,35 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
         }
 
         streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-          setCameraActive(true);
+
+        // Auto-attach video stream: Radix modal animation ke dauran video element aane tak wait karega
+        const attachStream = async () => {
+          if (!isMounted || !streamRef.current) return false;
+          const vid = videoRef.current;
+          if (vid) {
+            vid.srcObject = streamRef.current;
+            vid.muted = true;
+            vid.setAttribute("playsinline", "true");
+            try {
+              await vid.play();
+            } catch (playErr) {
+              console.warn("Video play error:", playErr);
+            }
+            if (isMounted) setCameraActive(true);
+            return true;
+          }
+          return false;
+        };
+
+        if (!(await attachStream())) {
+          for (let attempt = 0; attempt < 10; attempt++) {
+            await new Promise((r) => setTimeout(r, 100));
+            if (!isMounted) break;
+            if (await attachStream()) break;
+          }
         }
 
-        // Start frame capture loop
+        // Fast Native BarcodeDetector (Android Chrome / iOS)
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
         const hasNativeDetector = "BarcodeDetector" in window;
@@ -1100,11 +1135,13 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
         if (hasNativeDetector) {
           try {
             barcodeDetector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
-          } catch {
-            barcodeDetector = null;
-          }
+          } catch {}
         }
-        const jsQRFallback = barcodeDetector ? null : await ensureJsQR();
+
+        let jsQRFallback: any = null;
+        if (!barcodeDetector) {
+          ensureJsQR().then((fn) => { jsQRFallback = fn; });
+        }
 
         scanIntervalRef.current = setInterval(async () => {
           if (!videoRef.current || videoRef.current.readyState < 2 || authorizing) return;
@@ -1112,28 +1149,26 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
           const video = videoRef.current;
           let scannedRawText = "";
 
-          // Fast native GPU scanner (Chrome Android / iOS 17+)
           if (barcodeDetector) {
             try {
               const barcodes = await barcodeDetector.detect(video);
               if (barcodes && barcodes.length > 0) {
                 scannedRawText = barcodes[0].rawValue;
               }
-            } catch {
-              // fallback
-            }
+            } catch {}
           }
 
-          // Fallback canvas frame scanner
           if (!scannedRawText && jsQRFallback && ctx) {
-            canvas.width = video.videoWidth || 320;
-            canvas.height = video.videoHeight || 240;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQRFallback(imgData.data, imgData.width, imgData.height);
-            if (code && code.data) {
-              scannedRawText = code.data;
-            }
+            try {
+              canvas.width = video.videoWidth || 320;
+              canvas.height = video.videoHeight || 240;
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const code = jsQRFallback(imgData.data, imgData.width, imgData.height);
+              if (code && code.data) {
+                scannedRawText = code.data;
+              }
+            } catch {}
           }
 
           if (scannedRawText) {
