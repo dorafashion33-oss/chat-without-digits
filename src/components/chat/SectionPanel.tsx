@@ -1542,9 +1542,8 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
                     </p>
                   </div>
                 </div>
-
-                {/* Hamesha Disconnect / Logout button show hoga */}
-                                               <button
+                
+            <button
                   onClick={async (e) => {
                     e.stopPropagation();
                     if (dev.isCurrent) {
