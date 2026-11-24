@@ -1,3 +1,4 @@
+import { compressImage } from "@/lib/imageCompress";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -108,11 +109,14 @@ export function useMoments(currentUserId: string | undefined) {
         toast.error("File too large. Max 10MB allowed.");
         return;
       }
-      const ext = imageFile.name.split(".").pop() || "jpg";
+            // Moment photo ko instant 50KB WebP mein compress karna
+      const compressed = await compressImage(imageFile);
+      const ext = compressed.name.split(".").pop() || "webp";
       const path = `${currentUserId}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("moments")
-        .upload(path, imageFile, { cacheControl: "3600", upsert: false });
+        .upload(path, compressed, { cacheControl: "3600", upsert: false });
+
       if (uploadError) {
         toast.error("Image upload failed: " + uploadError.message);
         return;
