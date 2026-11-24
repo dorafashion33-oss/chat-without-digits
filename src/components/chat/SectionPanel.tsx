@@ -1558,7 +1558,7 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
                   </div>
                 </div>
                 
-            <button
+                           <button
                   onClick={async (e) => {
                     e.stopPropagation();
                     if (dev.isCurrent) {
@@ -1570,16 +1570,6 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
                     }
                   }}
                   className={`flex-shrink-0 rounded-lg border-2 px-2.5 py-1 text-[11px] font-black shadow-[0_2px_0_0_#0a0a0a] flex items-center gap-1 ${
-                    dev.isCurrent
-                      ? "border-[#0a0a0a] bg-zinc-50 text-[#0a0a0a] hover:bg-zinc-100"
-                      : "border-red-500 bg-red-50 text-red-700 hover:bg-red-100"
-                  }`}
-                  title={dev.isCurrent ? "Log Out" : "Remote Disconnect"}
-                >
-                  <LogOut className="h-3 w-3" />
-                  {dev.isCurrent ? tr(lang, "Log Out", "लॉग आउट") : tr(lang, "Disconnect", "हटाएं")}
-                </button>
-                
                     dev.isCurrent
                       ? "border-[#0a0a0a] bg-zinc-50 text-[#0a0a0a] hover:bg-zinc-100"
                       : "border-red-500 bg-red-50 text-red-700 hover:bg-red-100"
