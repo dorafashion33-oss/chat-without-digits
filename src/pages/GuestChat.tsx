@@ -123,10 +123,15 @@ export default function GuestChat() {
     if (data) setMsgs(data as Msg[]);
   };
 
-  useEffect(() => {
+   useEffect(() => {
     if (!session) return;
     loadMsgs();
-    const iv = setInterval(loadMsgs, 3500);
+    // Smart Poller: Sirf tab open/active hone par 5s mein refresh, background mein zero request
+    const iv = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        loadMsgs();
+      }
+    }, 5000);
     return () => clearInterval(iv);
   }, [session]);
 
