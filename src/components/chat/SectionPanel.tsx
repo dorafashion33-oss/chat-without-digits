@@ -1544,17 +1544,18 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
                 </div>
 
                 {/* Hamesha Disconnect / Logout button show hoga */}
-                <button
-                  onClick={(e) => {
+                                <button
+                  onClick={async (e) => {
                     e.stopPropagation();
-                                       if (dev.isCurrent) {
+                    if (dev.isCurrent) {
                       if (confirm(tr(lang, "Log out from this device?", "क्या आप इस डिवाइस से लॉग आउट करना चाहते हैं?"))) {
                         await performFullLogout();
                       }
                     } else {
                       handleRevokeSingle(dev.id, dev.name);
                     }
-
+                  }}
+                                  
                   }}
                   className={`flex-shrink-0 rounded-lg border-2 px-2.5 py-1 text-[11px] font-black shadow-[0_2px_0_0_#0a0a0a] flex items-center gap-1 ${
                     dev.isCurrent
