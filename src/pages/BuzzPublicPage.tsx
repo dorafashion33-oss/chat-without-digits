@@ -232,7 +232,7 @@ export default function BuzzPublicPage({
               <span className="sarvam-gradient-berry bz-squig">Zero login required.</span>
             </h1>
             <p className="mt-5 text-base sm:text-lg text-[#5b5b55] font-medium leading-relaxed">
-              Every Buzz user gets a permanent personal link: <code className="bg-[#FFF6B8] px-2 py-0.5 rounded font-black border border-[#0a0a0a]">buzz.app/c/@yourname</code>. Share it on your Instagram bio or WhatsApp status. Anyone can message you without an account!
+              Every Buzz user gets a permanent personal link: <code className="bg-[#FFF6B8] px-2 py-0.5 rounded font-black border border-[#0a0a0a]">buzzofficial.vercel.app/c/@yourname</code>. Share it on your Instagram bio or WhatsApp status. Anyone can message you without an account!
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <button onClick={onLogin} className="bz-btn bz-btn-yellow px-7 py-3.5 text-sm font-black">
@@ -642,7 +642,7 @@ export default function BuzzPublicPage({
               <span className="sarvam-gradient-spectrum">Scan with Phone to Install</span>
             </h3>
             <div className="inline-block rounded-2xl border-3 border-[#0a0a0a] bg-white p-4 shadow-[0_4px_0_0_#0a0a0a]">
-              <QRCodeSVG value="https://chat-without-digits.lovable.app" size={160} level="H" />
+             <QRCodeSVG value="https://buzzofficial.vercel.app" size={160} level="H" />
             </div>
             <p className="mt-3 text-[11px] font-mono font-bold text-[#5b5b55]">
               https://chat-without-digits.lovable.app
