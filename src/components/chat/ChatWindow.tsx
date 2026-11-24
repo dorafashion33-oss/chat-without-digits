@@ -1,3 +1,4 @@
+import { compressImage } from "@/lib/imageCompress";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Phone, Video, Send, ArrowLeft, Smile, Trash2, Reply, X, Paperclip, Check, CheckCheck } from "lucide-react";
 import { type ChatThread, type DbMessage, type DbProfile } from "@/hooks/useRealtimeMessages";
@@ -103,9 +104,13 @@ const ChatWindow = ({
     if (attachedFile) {
       setUploading(true);
       try {
-        const ext = attachedFile.name.split(".").pop();
+                // 10MB photo ko 50KB WebP mein compress karna
+        const fileToUpload = attachedFile.type.startsWith("image/")
+          ? await compressImage(attachedFile)
+          : attachedFile;
+        const ext = fileToUpload.name.split(".").pop() || "webp";
         const path = `${currentUserId}/${Date.now()}.${ext}`;
-        const { error: uploadError } = await supabase.storage.from("chat-media").upload(path, attachedFile);
+        const { error: uploadError } = await supabase.storage.from("chat-media").upload(path, fileToUpload);
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabase.storage.from("chat-media").getPublicUrl(path);
 
