@@ -1236,12 +1236,27 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
         lastActive: nowIso,
         status: "active",
       };
-      const existing = getLinkedDevices(username);
-      saveDevices([newDev, ...existing.filter((d) => d.id !== newDev.id)], username);
+            // Save newly linked computer safely
+      const existing = typeof getLinkedDevices === "function" ? getLinkedDevices(username) : [];
+      const updatedList = [newDev, ...existing.filter((d) => d.id !== newDev.id)];
+      
+      try {
+        if (typeof saveDevices === "function") {
+          saveDevices(updatedList, username);
+        } else {
+          localStorage.setItem(`buzz_devices_${(username || "user").replace(/^@/, "").toLowerCase()}`, JSON.stringify(updatedList));
+          window.dispatchEvent(new CustomEvent("buzz:devices-changed"));
+        }
+      } catch (saveErr) {
+        console.warn("Could not save device locally:", saveErr);
+      }
 
-      // Close scanner and trigger visual confirmation popup
+      // Close scanner camera & modal immediately
+      stopCamera();
       setShowScannerModal(false);
       setInputPin("");
+      
+      // Trigger Green Confirmation Popup and refresh active sessions
       setJustLinkedDevice(newDev);
       refreshDevices();
       toast.success(tr(lang, "Computer Authorized! 🚀", "कंप्यूटर सफलतापूर्वक लिंक हो गया! 🚀"));
