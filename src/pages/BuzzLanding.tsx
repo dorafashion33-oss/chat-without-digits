@@ -661,7 +661,7 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
                 />
                 <FaqCard
                   q="Guest Mode kya hai aur yeh kaise kaam karta hai?"
-                  a="Har Buzz user ko ek personal link milta hai: buzz.app/c/@yourname. Jab aap ise Instagram bio ya status par lagate hain, toh koi bhi visitor bina account banaye ya app download kiye aapko secret message aur Ghost Voice notes bhej sakta hai."
+                  a="Har Buzz user ko ek personal link milta hai: buzzofficial.vercel.app/c/@yourname. Jab aap ise Instagram bio ya status par lagate hain, toh koi bhi visitor bina account banaye ya app download kiye aapko secret message aur Ghost Voice notes bhej sakta hai."
                 />
                 <FaqCard
                   q="Kya Buzz par audio aur video calls bilkul free hain?"
