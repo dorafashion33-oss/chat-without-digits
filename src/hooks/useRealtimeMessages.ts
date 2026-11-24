@@ -94,12 +94,39 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
       .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
       .order("created_at", { ascending: true });
 
-    const { data: profs } = await supabase
-      .from("profiles")
-      .select("*")
-      .neq("user_id", currentUserId);
+        // Scalability Fix: Sirf un users ke profiles maango jinse conversation hui hai ya limit 50
+    const contactIds = new Set<string>();
+    for (const msg of localMessages) {
+      contactIds.add(msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id);
+    }
+    if (serverMessages) {
+      for (const msg of serverMessages) {
+        contactIds.add(msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id);
+      }
+    }
+    contactIds.delete(currentUserId);
+    const neededIds = Array.from(contactIds);
 
-    const mergedProfiles = profs || localProfiles;
+    let profsData: DbProfile[] = [];
+    if (neededIds.length > 0) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("user_id", neededIds);
+      if (data) profsData = data;
+    } else {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .neq("user_id", currentUserId)
+        .limit(50);
+      if (data) profsData = data;
+    }
+
+    const pMap = new Map<string, DbProfile>();
+    for (const p of localProfiles) pMap.set(p.user_id, p);
+    for (const p of profsData) pMap.set(p.user_id, p);
+    const mergedProfiles = Array.from(pMap.values());
     if (mergedProfiles.length) setProfiles(mergedProfiles);
 
     // 3. WhatsApp Store-and-Relay: Merge local cached messages with server messages (dedup by message id)
@@ -133,11 +160,33 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
 
     fetchMessages();
 
+        // Scalability Fix: Channel ko user-scoped banaya aur filter lagaya taaki dusro ke message par fetch na ho
     const channel = supabase
-      .channel("messages-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
-        fetchMessages();
-      })
+      .channel(`messages-${currentUserId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `receiver_id=eq.${currentUserId}`,
+        },
+        () => {
+          fetchMessages();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `sender_id=eq.${currentUserId}`,
+        },
+        () => {
+          fetchMessages();
+        }
+      )
       .subscribe();
 
     // Typing indicator channel
