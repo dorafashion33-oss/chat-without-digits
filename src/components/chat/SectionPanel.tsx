@@ -581,7 +581,7 @@ const DiscoverPanel = ({
       {showQR && me && (
         <div className="p-4 border-b-2 border-[#0a0a0a] bg-[#E2ECFF] flex flex-col items-center">
           <div className="rounded-2xl border-3 border-[#0a0a0a] bg-white p-4 shadow-[0_4px_0_0_#0a0a0a]">
-            <QRCodeSVG value={`https://buzzofficial.vercel.app/c/$%7Bme.username%7D%60%7D}`} size={140} level="H" />
+            <QRCodeSVG value={`https://buzzofficial.vercel.app/c/${me.username}`} size={140} level="H" />
           </div>
           <p className="mt-2 font-mono text-xs font-black text-[#0a0a0a]">@{me.username}</p>
         </div>
@@ -1970,7 +1970,7 @@ const ProfilePanel = ({ onBack, username }: { onBack?: () => void; username?: st
           {showQR && username && (
             <div className="mt-3 flex flex-col items-center pt-3 border-t-2 border-[#0a0a0a]/15">
               <div className="rounded-2xl border-2 border-[#0a0a0a] bg-white p-3 shadow-[0_3px_0_0_#0a0a0a]">
-                <QRCodeSVG value={`https://buzzofficial.vercel.app/c/$%7Busername%7D%60%7D}`} size={130} level="H" />
+                <QRCodeSVG value={`https://buzzofficial.vercel.app/c/${username}`} size={130} level="H" />
               </div>
               <p className="mt-2 text-[10px] font-mono font-bold text-[#5b5b55]">Scan to chat with @{username}</p>
             </div>
