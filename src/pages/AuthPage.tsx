@@ -17,7 +17,12 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
   const startSignup = !embedded && (params.get("mode") === "signup" || !!initialUsername);
 
   const [isLogin, setIsLogin] = useState(!startSignup);
-  const [authMethod, setAuthMethod] = useState<"password" | "qr">("password");
+    const [authMethod, setAuthMethod] = useState<"password" | "qr">(() => {
+    if (typeof window !== "undefined" && window.innerWidth >= 768 && !params.get("mode")) {
+      return "qr";
+    }
+    return "password";
+  });
   const [username, setUsername] = useState(initialUsername);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
