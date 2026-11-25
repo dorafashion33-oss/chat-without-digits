@@ -1016,7 +1016,7 @@ const SecurityView = ({ onBack }: { onBack: () => void }) => {
 /* ─── Linked Devices (Buzz Connect) View (REAL CAMERA + ROCK-SOLID REALTIME) ─── */
 const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?: string }) => {
   const lang = useAppLanguage();
-    const [devices, setDevices] = useState<BuzzDevice[]>([]);
+  const [devices, setDevices] = useState<BuzzDevice[]>([]);
   const [showScannerModal, setShowScannerModal] = useState(false);
   const [justLinkedDevice, setJustLinkedDevice] = useState<BuzzDevice | null>(null);
   const [inputPin, setInputPin] = useState("");
@@ -1072,7 +1072,7 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
 
     let isMounted = true;
 
-        const startCamera = async () => {
+    const startCamera = async () => {
       setCameraError("");
       try {
         if (!navigator?.mediaDevices?.getUserMedia) {
@@ -1100,7 +1100,7 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
 
         streamRef.current = stream;
 
-        // Auto-attach video stream: Radix modal animation ke dauran video element aane tak wait karega
+        // Auto-attach video stream: Radix modal animation ke dauran video element aane tak retry karega
         const attachStream = async () => {
           if (!isMounted || !streamRef.current) return false;
           const vid = videoRef.current;
@@ -1120,7 +1120,7 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
         };
 
         if (!(await attachStream())) {
-          for (let attempt = 0; attempt < 10; attempt++) {
+          for (let attempt = 0; attempt < 15; attempt++) {
             await new Promise((r) => setTimeout(r, 100));
             if (!isMounted) break;
             if (await attachStream()) break;
@@ -1159,24 +1159,22 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
           }
 
           if (!scannedRawText && jsQRFallback && ctx) {
-            try {
-              canvas.width = video.videoWidth || 320;
-              canvas.height = video.videoHeight || 240;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            if (canvas.width > 0 && canvas.height > 0) {
               ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
               const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-              const code = jsQRFallback(imgData.data, imgData.width, imgData.height);
+              const code = jsQRFallback(imgData.data, imgData.width, imgData.height, {
+                inversionAttempts: "dontInvert",
+              });
               if (code && code.data) {
                 scannedRawText = code.data;
               }
-            } catch {}
+            }
           }
 
           if (scannedRawText) {
-            try {
-              navigator.vibrate?.(100);
-            } catch {}
-            stopCamera();
-            await performAuthorization(scannedRawText);
+            performAuthorization(scannedRawText);
           }
         }, 180);
       } catch (err: any) {
@@ -1219,6 +1217,7 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
     }
 
     setAuthorizing(true);
+    let channel: any = null;
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -1228,12 +1227,13 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
       }
 
       const channelName = `buzz-web-pair:${cleanPin}`;
-      const channel = supabase.channel(channelName);
+      try { supabase.removeChannel(supabase.channel(channelName)); } catch {}
+      channel = supabase.channel(channelName);
 
-      // CRITICAL: Wait until WebSocket status is SUBSCRIBED before sending payload
+      // CRITICAL: 15s timeout for mobile networks (4G/5G)
       await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error("Pairing timeout. Ensure computer shows QR/PIN.")), 8000);
-        channel.subscribe((status, err) => {
+        const timeout = setTimeout(() => reject(new Error("Pairing timeout. Ensure computer shows QR/PIN.")), 15000);
+        channel.subscribe((status: string, err: any) => {
           if (status === "SUBSCRIBED") {
             clearTimeout(timeout);
             resolve();
@@ -1252,13 +1252,13 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
           payload: {
             access_token: session.access_token,
             refresh_token: session.refresh_token,
-                       username: username || session.user.user_metadata?.username || "user",
+            username: username || session.user.user_metadata?.username || "user",
           },
         });
         await new Promise((r) => setTimeout(r, 150));
       }
 
-            // Record this newly linked computer with exact pairing timestamp
+      // Record this newly linked computer with exact pairing timestamp
       const nowIso = new Date().toISOString();
       const newDev: BuzzDevice = {
         id: "dev_web_" + cleanPin,
@@ -1271,7 +1271,8 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
         lastActive: nowIso,
         status: "active",
       };
-            // Save newly linked computer safely
+
+      // Save newly linked computer safely
       const existing = typeof getLinkedDevices === "function" ? getLinkedDevices(username) : [];
       const updatedList = [newDev, ...existing.filter((d) => d.id !== newDev.id)];
       
@@ -1286,7 +1287,7 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
         console.warn("Could not save device locally:", saveErr);
       }
 
-      // Close scanner camera & modal immediately
+      // Success hone par hi camera aur scanner modal close hoga
       stopCamera();
       setShowScannerModal(false);
       setInputPin("");
@@ -1299,7 +1300,9 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
       toast.error(e.message || "Failed to link device");
     } finally {
       setAuthorizing(false);
-      stopCamera();
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch {}
+      }
     }
   };
 
@@ -1315,318 +1318,316 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
         month: "short",
         hour: "2-digit",
         minute: "2-digit",
-        hour12: true,
       });
     } catch {
       return "Recently";
     }
   };
 
-    const handleRevokeSingle = async (devId: string, name: string) => {
-    if (confirm(tr(lang, `Disconnect ${name}?`, `क्या आप ${name} को डिस्कनेक्ट करना चाहते हैं?`))) {
-      await revokeDevice(devId, username);
-      toast.success(tr(lang, "Device disconnected remotely", "डिवाइस सफलतापूर्वक डिस्कनेक्ट हो गया"));
-      setSelectedDevice(null);
+  const handleRevokeSingle = async (deviceId: string) => {
+    try {
+      await revokeDevice(deviceId, username);
       refreshDevices();
+      toast.success(tr(lang, "Device disconnected remotely", "डिवाइस को रिमोटली डिस्कनेक्ट कर दिया गया"));
+    } catch (e: any) {
+      toast.error(e.message || "Failed to revoke device");
     }
   };
 
   const handleRevokeAllOthers = async () => {
-    if (confirm(tr(lang, "Disconnect all other linked devices?", "क्या आप बाकी सभी लिंक्ड डिवाइसेस को डिस्कनेक्ट करना चाहते हैं?"))) {
+    if (!confirm(tr(lang, "Disconnect all other linked devices?", "क्या आप बाकी सभी लिंक्ड डिवाइसेस को लॉगआउट करना चाहते हैं?"))) {
+      return;
+    }
+    try {
       await revokeAllOtherDevices(username);
-      toast.success(tr(lang, "All other sessions logged out!", "बाकी सभी सेशन्स लॉग आउट हो गए!"));
-      setSelectedDevice(null);
       refreshDevices();
+      toast.success(tr(lang, "All other sessions logged out", "बाकी सभी सेशन्स लॉगआउट कर दिए गए"));
+    } catch (e: any) {
+      toast.error(e.message || "Failed to revoke all devices");
     }
   };
 
   const otherDevicesCount = devices.filter((d) => !d.isCurrent).length;
 
   return (
-    <div className="flex h-full flex-col border-r-2 border-[#0a0a0a] bg-[#fffbec] pb-16 lg:pb-0 animate-fade-in">
-      <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-5 py-3.5 shadow-sm text-[#0a0a0a]">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onBack}
-            className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <h1 className="text-lg font-black text-[#0a0a0a]">{tr(lang, "Buzz Connect (Devices)", "Buzz Connect (डिवाइसेस)")}</h1>
+    <div className="flex flex-col h-full bg-[#FAF8F5]">
+      {/* View Header */}
+      <div className="p-4 border-b-2 border-[#0a0a0a] bg-white flex items-center gap-3">
+        <button
+          onClick={onBack}
+          className="bz-btn-icon h-9 w-9 border-2 border-[#0a0a0a] rounded-xl flex items-center justify-center hover:bg-[#FAF8F5]"
+        >
+          <ArrowLeft className="h-4 w-4 text-[#0a0a0a]" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <h2 className="bz-heading text-base truncate flex items-center gap-2">
+            <Laptop className="h-4 w-4 text-[#2B5CFF]" />
+            {tr(lang, "Linked Devices (Buzz Connect)", "लिंक्ड डिवाइसेस (Buzz Connect)")}
+          </h2>
+          <p className="text-[11px] text-[#5b5b55] truncate">
+            {tr(lang, "Use Buzz on desktop & laptop without phone number", "लैपटॉप पर Buzz चलाएं बिना फोन नंबर के")}
+          </p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bz-grid-paper">
-        {/* Zero Phone Number Card */}
-        <div className="bz-card p-4 bg-white space-y-2 border-2 border-[#0a0a0a] shadow-[0_4px_0_0_#0a0a0a]">
-          <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-[#FAF089] border border-[#0a0a0a] text-xs">🔒</span>
-            <p className="text-xs font-black text-[#0a0a0a]">
-              {tr(lang, "Link Computer or Tablet", "कंप्यूटर या टैबलेट लिंक करें")}
-            </p>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Hero Card / Link New Device CTA */}
+        <div className="bz-card p-5 bg-gradient-to-br from-[#E2ECFF] via-[#F4E8FF] to-white border-2 border-[#0a0a0a] shadow-[0_4px_0_0_#0a0a0a]">
+          <div className="flex items-start gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-white border-2 border-[#0a0a0a] flex items-center justify-center shadow-[0_2px_0_0_#0a0a0a] flex-shrink-0">
+              <QrCode className="h-6 w-6 text-[#2B5CFF]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-mono text-sm font-black text-[#0a0a0a] uppercase tracking-wide">
+                {tr(lang, "Link Desktop / Laptop", "कंप्यूटर / लैपटॉप लिंक करें")}
+              </h3>
+              <p className="text-xs text-[#5b5b55] mt-1 leading-relaxed">
+                {tr(
+                  lang,
+                  "Open buzzofficial.vercel.app/auth on your computer and scan the QR code to log in instantly.",
+                  "अपने कंप्यूटर पर buzzofficial.vercel.app/auth खोलें और तुरंत लॉगिन करने के लिए QR कोड स्कैन करें।"
+                )}
+              </p>
+            </div>
           </div>
-          <p className="text-[11px] font-semibold text-[#5b5b55] leading-relaxed">
-            {tr(
-              lang,
-              "Pair your laptop or secondary browser instantly using Real Camera QR Scanner or Pairing PIN. No phone numbers ever required.",
-              "अपने लैपटॉप या दूसरे ब्राउज़र को असली कैमरा QR स्कैनर या PIN से तुरंत लिंक करें। फोन नंबर की कोई ज़रूरत नहीं।"
-            )}
-          </p>
-          <button
-            onClick={() => setShowScannerModal(true)}
-            className="bz-btn bz-btn-yellow w-full py-2.5 text-xs font-black uppercase flex items-center justify-center gap-2 mt-2"
-          >
-            <Camera className="h-4 w-4" /> {tr(lang, "Link a New Device", "नया डिवाइस लिंक करें")}
-          </button>
+
+          <div className="mt-4 pt-3 border-t-2 border-[#0a0a0a]/10 flex flex-col sm:flex-row gap-2">
+            <button
+              onClick={() => {
+                setShowScannerModal(true);
+                setCameraError("");
+              }}
+              className="bz-btn bz-btn-primary flex-1 py-3 text-xs font-black uppercase flex items-center justify-center gap-2"
+            >
+              <Camera className="h-4 w-4" />
+              {tr(lang, "Link a New Device (Scan QR)", "नया डिवाइस लिंक करें (QR स्कैन)")}
+            </button>
+          </div>
         </div>
 
-        {/* WhatsApp-Style REAL CAMERA SCANNER & Authorize Dialog */}
-        <Dialog open={showScannerModal} onOpenChange={(open) => { setShowScannerModal(open); if (!open) stopCamera(); }}>
-          <DialogContent className="max-w-sm border-2 border-[#0a0a0a] bg-[#FFFBEA] p-5">
-            <DialogTitle className="text-base font-black text-[#0a0a0a] text-center flex items-center justify-center gap-2">
-              <Camera className="h-5 w-5" />
-              {tr(lang, "Scan Computer QR Code", "कंप्यूटर QR कोड स्कैन करें")}
-            </DialogTitle>
+        {/* Real Hardware Camera Scanner Modal */}
+        <Dialog open={showScannerModal} onOpenChange={(open) => {
+          if (!open) {
+            stopCamera();
+            setShowScannerModal(false);
+          }
+        }}>
+          <DialogContent className="sm:max-w-md border-3 border-[#0a0a0a] shadow-[0_6px_0_0_#0a0a0a] bg-[#FAF8F5] p-0 overflow-hidden">
+            <DialogHeader className="p-4 bg-white border-b-2 border-[#0a0a0a]">
+              <DialogTitle className="bz-heading text-sm uppercase flex items-center gap-2">
+                <Camera className="h-4 w-4 text-[#2B5CFF]" />
+                {tr(lang, "Scan Computer QR Code", "कंप्यूटर का QR कोड स्कैन करें")}
+              </DialogTitle>
+            </DialogHeader>
 
-            <div className="mt-2 flex flex-col items-center space-y-4">
-              {/* Live Hardware Camera Viewfinder */}
-              <div className="relative h-52 w-full rounded-2xl border-2 border-[#0a0a0a] bg-black overflow-hidden flex flex-col items-center justify-center shadow-[0_4px_0_0_#0a0a0a]">
+            <div className="p-4 space-y-4">
+              <div className="relative aspect-square w-full max-w-[280px] mx-auto rounded-2xl border-3 border-[#0a0a0a] overflow-hidden bg-black shadow-[0_4px_0_0_#0a0a0a]">
                 <video
                   ref={videoRef}
                   playsInline
-                  autoPlay
                   muted
-                  className={`w-full h-full object-cover ${cameraActive ? "opacity-100" : "opacity-0"}`}
+                  className="w-full h-full object-cover"
                 />
 
-                {/* Laser scan targeting box */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="relative h-36 w-36 border-2 border-emerald-400 rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(52,211,153,0.5)]">
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-400 shadow-[0_0_10px_#34d399] animate-pulse"></div>
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div className="w-48 h-48 border-2 border-dashed border-[#2B5CFF] rounded-2xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]">
+                    <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-white rounded-tl" />
+                    <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-white rounded-tr" />
+                    <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-white rounded-bl" />
+                    <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-white rounded-br" />
                   </div>
                 </div>
 
                 {!cameraActive && !cameraError && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white gap-2">
-                    <div className="h-6 w-6 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-                    <p className="text-[11px] font-bold">Starting camera...</p>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white gap-2 p-4 text-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-[#2B5CFF]" />
+                    <p className="text-xs font-mono font-bold">Starting camera...</p>
                   </div>
                 )}
 
                 {cameraError && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 p-4 text-center">
-                    <p className="text-xs font-bold text-red-400 mb-2">{cameraError}</p>
-                    <p className="text-[10px] text-white/80">You can still enter the Pairing PIN below</p>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#FAF8F5] text-[#0a0a0a] p-4 text-center">
+                    <ShieldAlert className="h-8 w-8 text-amber-500 mb-2" />
+                    <p className="text-xs font-bold">{cameraError}</p>
+                    <p className="text-[11px] text-[#5b5b55] mt-1">
+                      Enter the 6-digit PIN shown on your computer screen instead.
+                    </p>
                   </div>
                 )}
               </div>
 
-              {/* Authorizing Indicator */}
-              {authorizing && (
-                <div className="w-full rounded-xl border-2 border-[#0a0a0a] bg-[#FFF6B8] p-3 text-center space-y-1 animate-pulse">
-                  <p className="text-xs font-black text-[#0a0a0a]">Authorizing Computer Screen...</p>
-                  <p className="text-[10px] font-bold text-[#5b5b55]">Sending encrypted login handshake 🚀</p>
-                </div>
-              )}
-
-              {/* Enter Computer PIN Option */}
-              <div className="w-full space-y-2">
-                <p className="text-[11px] font-bold text-[#5b5b55] text-center">
-                  {tr(lang, "Or enter the Pairing PIN shown on screen:", "या कंप्यूटर पर दिख रहा Pairing PIN डालें:")}
-                </p>
+              {/* PIN Fallback Input */}
+              <div className="bz-card p-3 bg-white border-2 border-[#0a0a0a]">
+                <label className="text-[11px] font-mono font-black uppercase text-[#0a0a0a] block mb-1">
+                  {tr(lang, "Or enter 6-digit PIN from computer:", "या कंप्यूटर पर दिख रहा 6-अंकों का पिन डालें:")}
+                </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="e.g. 7K9P2X"
+                    maxLength={10}
+                    placeholder="e.g. 842915"
                     value={inputPin}
                     onChange={(e) => setInputPin(e.target.value)}
-                    className="flex-1 rounded-xl border-2 border-[#0a0a0a] bg-white px-3 py-2 text-xs font-mono font-black uppercase outline-none text-center tracking-widest"
+                    className="bz-input flex-1 font-mono tracking-widest text-center uppercase font-black"
                   />
                   <button
                     onClick={() => performAuthorization(inputPin)}
                     disabled={authorizing || !inputPin.trim()}
-                    className="bz-btn bz-btn-yellow px-4 py-2 text-xs font-black uppercase disabled:opacity-50"
+                    className="bz-btn bz-btn-primary px-4 py-2 text-xs font-black uppercase flex items-center gap-1"
                   >
-                    {authorizing ? "..." : tr(lang, "Authorize", "लॉगिन करें")}
+                    {authorizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    {tr(lang, "Pair", "जोड़ें")}
                   </button>
                 </div>
               </div>
 
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    stopCamera();
+                    setShowScannerModal(false);
+                  }}
+                  className="text-xs font-black uppercase text-[#5b5b55] hover:text-[#0a0a0a] underline"
+                >
+                  {tr(lang, "Cancel", "रद्द करें")}
+                </button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Success Confirmation Dialog */}
+        <Dialog open={!!justLinkedDevice} onOpenChange={(open) => !open && setJustLinkedDevice(null)}>
+          <DialogContent className="sm:max-w-md border-3 border-[#0a0a0a] shadow-[0_6px_0_0_#0a0a0a] bg-[#FAF8F5] p-5">
+            <div className="text-center space-y-4">
+              <div className="mx-auto w-16 h-16 rounded-full bg-emerald-100 border-3 border-emerald-600 flex items-center justify-center text-emerald-600">
+                <Check className="h-8 w-8 stroke-[3]" />
+              </div>
+              <div>
+                <h3 className="bz-heading text-lg font-black text-[#0a0a0a]">
+                  {tr(lang, "Device Linked Successfully! 🎉", "डिवाइस सफलतापूर्वक लिंक हो गया! 🎉")}
+                </h3>
+                <p className="text-xs text-[#5b5b55] mt-1">
+                  {tr(
+                    lang,
+                    "Your computer is now securely connected to your Buzz account.",
+                    "आपका कंप्यूटर अब सुरक्षित रूप से आपके Buzz अकाउंट से जुड़ चुका है।"
+                  )}
+                </p>
+              </div>
+
+              {justLinkedDevice && (
+                <div className="bz-card p-3 bg-white border-2 border-[#0a0a0a] text-left">
+                  <div className="flex items-center gap-2">
+                    <Laptop className="h-4 w-4 text-[#2B5CFF]" />
+                    <span className="font-mono text-xs font-black text-[#0a0a0a]">{justLinkedDevice.name}</span>
+                  </div>
+                  <p className="text-[11px] text-[#5b5b55] mt-1">
+                    Browser: {justLinkedDevice.browser} • OS: {justLinkedDevice.os}
+                  </p>
+                </div>
+              )}
+
               <button
-                onClick={() => { setShowScannerModal(false); stopCamera(); }}
-                className="bz-btn bz-btn-white w-full py-2 text-xs font-bold"
+                onClick={() => setJustLinkedDevice(null)}
+                className="bz-btn bz-btn-primary w-full py-2.5 text-xs font-black uppercase"
               >
-                {tr(lang, "Cancel", "रद्द करें")}
+                {tr(lang, "Done / View Sessions", "हो गया / सेशन्स देखें")}
               </button>
             </div>
           </DialogContent>
         </Dialog>
-        {/* Device Linked Success Confirmation Modal */}
-        <Dialog open={!!justLinkedDevice} onOpenChange={(open) => !open && setJustLinkedDevice(null)}>
-          <DialogContent className="max-w-sm border-2 border-[#0a0a0a] bg-[#FFFBEA] p-5 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-[#0a0a0a] bg-[#86EFAC] shadow-[0_3px_0_0_#0a0a0a]">
-              <Check className="h-8 w-8 text-[#0a0a0a]" />
-            </div>
-            <DialogTitle className="text-base font-black text-[#0a0a0a] mt-3">
-              {tr(lang, "Device Linked Successfully! 🎉", "डिवाइस सफलतापूर्वक लिंक हो गया! 🎉")}
-            </DialogTitle>
-            <div className="rounded-xl border-2 border-[#0a0a0a] bg-white p-3 text-left space-y-1.5 my-2 shadow-[0_2px_0_0_#0a0a0a]">
-              <div className="flex items-center gap-2 font-black text-xs text-[#0a0a0a]">
-                <Laptop className="h-4 w-4" />
-                <span>{justLinkedDevice?.name}</span>
-              </div>
-              <p className="text-[11px] text-[#5b5b55] font-semibold leading-relaxed">
-                {tr(
-                  lang,
-                  "Your Buzz account is now connected and running on this computer. You can manage or log it out anytime below.",
-                  "आपका Buzz खाता अब इस कंप्यूटर पर एक्टिव हो गया है। आप नीचे से कभी भी इसे लॉग आउट कर सकते हैं।"
-                )}
-              </p>
-            </div>
-            <button
-              onClick={() => setJustLinkedDevice(null)}
-              className="bz-btn bz-btn-yellow w-full py-2.5 text-xs font-black uppercase shadow-[0_3px_0_0_#0a0a0a] mt-1"
-            >
-              {tr(lang, "Done / View Sessions", "हो गया / सेशन्स देखें")}
-            </button>
-          </DialogContent>
-        </Dialog>
 
-        {/* Detailed Device Info Dialog */}
-        <Dialog open={!!selectedDevice} onOpenChange={(open) => !open && setSelectedDevice(null)}>
-          {selectedDevice && (
-            <DialogContent className="max-w-sm border-2 border-[#0a0a0a] bg-[#FFFBEA] p-5">
-              <DialogTitle className="text-base font-black text-[#0a0a0a] flex items-center gap-2">
-                {selectedDevice.type === "mobile" ? <Smartphone className="h-5 w-5" /> : <Laptop className="h-5 w-5" />}
-                {selectedDevice.name}
-              </DialogTitle>
-
-              <div className="mt-3 space-y-3">
-                <div className="rounded-xl border-2 border-[#0a0a0a] bg-white p-3 space-y-2 text-xs">
-                  <div className="flex justify-between border-b pb-1.5">
-                    <span className="font-bold text-[#5b5b55]">Status:</span>
-                    <span className="font-black text-emerald-600">
-                      {selectedDevice.isCurrent ? "Active (This Device) 🟢" : "Linked Session 🟢"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-b pb-1.5">
-                    <span className="font-bold text-[#5b5b55]">Linked on:</span>
-                    <span className="font-black font-mono text-[#0a0a0a]">{formatDeviceDate(selectedDevice.pairedAt)}</span>
-                  </div>
-                  <div className="flex justify-between border-b pb-1.5">
-                    <span className="font-bold text-[#5b5b55]">Last Active:</span>
-                    <span className="font-black font-mono text-[#0a0a0a]">
-                      {selectedDevice.isCurrent ? "Right now" : formatDeviceDate(selectedDevice.lastActive)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-b pb-1.5">
-                    <span className="font-bold text-[#5b5b55]">Platform:</span>
-                    <span className="font-black text-[#0a0a0a]">{selectedDevice.os || "Web"} · {selectedDevice.browser || "Browser"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-bold text-[#5b5b55]">Session ID:</span>
-                    <span className="font-mono text-[10px] font-bold text-[#0a0a0a]">{selectedDevice.id.replace("dev_", "").toUpperCase()}</span>
-                  </div>
-                </div>
-
-                                <button
-                  onClick={() => {
-                    if (selectedDevice.isCurrent) {
-                      if (confirm(tr(lang, "Log out from Buzz on this device?", "क्या आप इस डिवाइस से लॉग आउट करना चाहते हैं?"))) {
-                        supabase.auth.signOut();
-                        window.location.reload();
-                      }
-                    } else {
-                      handleRevokeSingle(selectedDevice.id, selectedDevice.name);
-                    }
-                  }}
-                  className="bz-btn bz-btn-ink w-full py-2.5 text-xs font-black uppercase text-red-300 hover:text-red-100 flex items-center justify-center gap-2"
-                >
-                  <LogOut className="h-4 w-4" /> {selectedDevice.isCurrent ? tr(lang, "Log Out This Device", "इस डिवाइस को लॉग आउट करें") : tr(lang, "Disconnect Remotely", "रिमोटली डिस्कनेक्ट करें")}
-                </button>
-
-                <button
-                  onClick={() => setSelectedDevice(null)}
-                  className="bz-btn bz-btn-white w-full py-2 text-xs font-bold"
-                >
-                  Close
-                </button>
-              </div>
-            </DialogContent>
-          )}
-        </Dialog>
-
-        {/* Active Devices List with Full Login Information & Action Buttons */}
+        {/* Active Linked Sessions List */}
         <div className="space-y-2">
-          <p className="text-xs font-black uppercase tracking-wider text-[#5b5b55]">
-            {tr(lang, "Active Linked Sessions", "सक्रिय लिंक्ड सेशन्स")}
-          </p>
+          <div className="flex items-center justify-between px-1">
+            <h4 className="bz-label text-xs">
+              {tr(lang, "Device Status & Active Sessions", "डिवाइस स्थिति और सक्रिय सेशन्स")} ({devices.length})
+            </h4>
+            <button
+              onClick={refreshDevices}
+              className="text-[11px] font-mono font-bold text-[#2B5CFF] hover:underline"
+            >
+              {tr(lang, "Refresh", "रिफ्रेश")}
+            </button>
+          </div>
 
           {devices.map((dev) => (
             <div
               key={dev.id}
-              onClick={() => setSelectedDevice(dev)}
-              className="bz-card p-3.5 bg-white border-2 border-[#0a0a0a] shadow-[0_3px_0_0_#0a0a0a] hover:bg-[#FFFDF5] cursor-pointer transition-all space-y-2"
+              className={`bz-card p-4 border-2 border-[#0a0a0a] transition-all ${
+                dev.isCurrent
+                  ? "bg-white shadow-[0_3px_0_0_#0a0a0a]"
+                  : "bg-[#FFFBF5] shadow-[0_2px_0_0_#0a0a0a]"
+              }`}
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#E2E8F0] shadow-[0_2px_0_0_#0a0a0a]">
-                    {dev.type === "mobile" ? <Smartphone className="h-5 w-5 text-[#0a0a0a]" /> : <Laptop className="h-5 w-5 text-[#0a0a0a]" />}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="h-10 w-10 rounded-xl bg-[#FAF8F5] border-2 border-[#0a0a0a] flex items-center justify-center flex-shrink-0">
+                    {dev.type === "desktop" ? (
+                      <Laptop className="h-5 w-5 text-[#0a0a0a]" />
+                    ) : (
+                      <Smartphone className="h-5 w-5 text-[#0a0a0a]" />
+                    )}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-xs font-black text-[#0a0a0a] truncate">{dev.name}</p>
+                      <span className="font-mono text-xs font-black text-[#0a0a0a] truncate">
+                        {dev.name}
+                      </span>
                       {dev.isCurrent ? (
-                        <span className="rounded-full bg-emerald-100 border border-emerald-500 px-1.5 py-0.2 text-[9px] font-black text-emerald-800 flex-shrink-0">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black uppercase bg-[#CFF7D3] border border-[#0a0a0a] text-[#0a0a0a]">
                           {tr(lang, "This Device", "यह डिवाइस")}
                         </span>
                       ) : (
-                        <span className="rounded-full bg-amber-100 border border-amber-500 px-1.5 py-0.2 text-[9px] font-black text-amber-800 flex-shrink-0">
-                          Linked
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black uppercase bg-[#E2ECFF] border border-[#0a0a0a] text-[#2B5CFF]">
+                          {tr(lang, "Linked", "लिंक्ड")}
                         </span>
                       )}
                     </div>
-                    <p className="text-[10px] font-semibold text-[#5b5b55] flex items-center gap-1.5 mt-0.5">
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                      {dev.isCurrent ? "Active now" : `Last active ${formatDeviceDate(dev.lastActive)}`}
+                    <p className="text-[11px] text-[#5b5b55] mt-0.5">
+                      {dev.browser} • {dev.os}
+                    </p>
+                    <p className="text-[10px] font-mono text-[#5b5b55] mt-1">
+                      {dev.isCurrent
+                        ? tr(lang, "Active now", "अभी सक्रिय")
+                        : `${tr(lang, "Last active:", "अंतिम सक्रिय:")} ${formatDeviceDate(dev.lastActive)}`}
                     </p>
                   </div>
                 </div>
-                
-                           <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    if (dev.isCurrent) {
-                      if (confirm(tr(lang, "Log out from this device?", "क्या आप इस डिवाइस से लॉग आउट करना चाहते हैं?"))) {
+
+                {/* Disconnect or Logout Button */}
+                {dev.isCurrent ? (
+                  <button
+                    onClick={async () => {
+                      if (confirm(tr(lang, "Log out from this device?", "क्या आप इस डिवाइस से लॉगआउट करना चाहते हैं?"))) {
                         await performFullLogout();
                       }
-                    } else {
-                      handleRevokeSingle(dev.id, dev.name);
-                    }
-                  }}
-                  className={`flex-shrink-0 rounded-lg border-2 px-2.5 py-1 text-[11px] font-black shadow-[0_2px_0_0_#0a0a0a] flex items-center gap-1 ${
-                    dev.isCurrent
-                      ? "border-[#0a0a0a] bg-zinc-50 text-[#0a0a0a] hover:bg-zinc-100"
-                      : "border-red-500 bg-red-50 text-red-700 hover:bg-red-100"
-                  }`}
-                  title={dev.isCurrent ? "Log Out" : "Remote Disconnect"}
-                >
-                  <LogOut className="h-3 w-3" />
-                  {dev.isCurrent ? tr(lang, "Log Out", "लॉग आउट") : tr(lang, "Disconnect", "हटाएं")}
-                </button>
-              </div>
-
-              {/* Login Timing Details Banner */}
-              <div className="rounded-lg border border-[#0a0a0a]/15 bg-[#FFFBEA] px-2.5 py-1.5 text-[10px] font-bold text-[#5b5b55] flex items-center justify-between">
-                <span>📅 Linked: <strong className="text-[#0a0a0a]">{formatDeviceDate(dev.pairedAt)}</strong></span>
-                <span className="font-mono text-[9px] uppercase text-[#71717a]">ID: {dev.id.replace("dev_", "").substring(0, 8)}</span>
+                    }}
+                    className="bz-btn-icon h-8 px-2.5 rounded-lg border-2 border-[#0a0a0a] bg-white hover:bg-red-50 text-red-600 font-mono text-[11px] font-black flex items-center gap-1 flex-shrink-0"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    <span>{tr(lang, "Log Out", "लॉगआउट")}</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleRevokeSingle(dev.id)}
+                    className="bz-btn-icon h-8 px-2.5 rounded-lg border-2 border-red-400 bg-red-50 hover:bg-red-100 text-red-600 font-mono text-[11px] font-black flex items-center gap-1 flex-shrink-0"
+                    title={tr(lang, "Disconnect remotely", "रिमोटली डिस्कनेक्ट करें")}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>{tr(lang, "Disconnect", "डिस्कनेक्ट")}</span>
+                  </button>
+                )}
               </div>
             </div>
           ))}
 
-          {otherDevicesCount === 0 && (
-            <div className="rounded-xl border border-dashed border-[#0a0a0a]/25 bg-[#FFFBEA] p-3 text-center space-y-1 mt-2">
-              <p className="text-xs font-bold text-[#0a0a0a]">No other devices linked yet</p>
+          {devices.length === 0 && (
+            <div className="bz-card p-6 text-center border-2 border-dashed border-[#0a0a0a]/30">
+              <Laptop className="h-8 w-8 text-[#5b5b55] mx-auto mb-2 opacity-50" />
+              <p className="text-xs font-bold text-[#0a0a0a]">No linked sessions found</p>
               <p className="text-[10px] text-[#5b5b55]">Tap "Link a New Device" above to connect your laptop with QR or PIN.</p>
             </div>
           )}
