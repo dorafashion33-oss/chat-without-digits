@@ -102,14 +102,31 @@ const NewChatDialog = ({
                   onClick={() => handleSelect(profile.user_id)}
                   className="flex w-full items-center gap-3 rounded-xl border-2 border-[#0a0a0a] bg-white p-2.5 text-left transition-all hover:-translate-y-0.5 hover:bg-[#FFF6B8] hover:shadow-[0_4px_0_0_#0a0a0a]"
                 >
-                  <div className="relative">
-                    <div className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] gradient-brand text-xs font-black text-white shadow-[0_2px_0_0_#0a0a0a]">
-                      {initials}
+                  <div className="relative flex-shrink-0">
+                    <div className="h-10 w-10 rounded-xl border-2 border-[#0a0a0a] overflow-hidden bg-white shadow-[0_2px_0_0_#0a0a0a]">
+                      {profile.avatar_url ? (
+                        <img
+                          src={profile.avatar_url}
+                          alt={displayName}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className={`h-full w-full gradient-brand flex items-center justify-center text-xs font-black text-white ${
+                          profile.avatar_url ? "hidden" : "flex"
+                        }`}
+                      >
+                        {initials}
+                      </div>
                     </div>
                     {profile.is_online && (
                       <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border border-[#0a0a0a] bg-emerald-500" />
                     )}
                   </div>
+
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-extrabold text-[#0a0a0a] truncate">{displayName}</p>
                     <p className="text-[11px] font-mono text-[#5b5b55] truncate">@{profile.username}</p>
