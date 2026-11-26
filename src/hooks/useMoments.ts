@@ -101,13 +101,13 @@ export function useMoments(currentUserId: string | undefined) {
   }, [currentUserId, fetchMoments]);
 
   const postMoment = useCallback(async (text: string, imageFile?: File) => {
-    if (!currentUserId) return;
+    if (!currentUserId) return false;
     let image_url: string | null = null;
 
     if (imageFile) {
       if (imageFile.size > 10 * 1024 * 1024) {
         toast.error("File too large. Max 10MB allowed.");
-        return;
+        return false;
       }
             // Moment photo ko instant 50KB WebP mein compress karna
       const compressed = await compressImage(imageFile);
@@ -119,7 +119,7 @@ export function useMoments(currentUserId: string | undefined) {
 
       if (uploadError) {
         toast.error("Image upload failed: " + uploadError.message);
-        return;
+        return false;
       }
       const { data: urlData } = supabase.storage.from("moments").getPublicUrl(path);
       image_url = urlData.publicUrl;
@@ -133,9 +133,11 @@ export function useMoments(currentUserId: string | undefined) {
 
     if (error) {
       toast.error("Failed to post moment");
+      return false;
     } else {
       toast.success("Moment posted! ✨");
       fetchMoments();
+      return true;
     }
   }, [currentUserId, fetchMoments]);
 
