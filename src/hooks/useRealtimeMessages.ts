@@ -325,7 +325,7 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
     [currentUserId]
   );
 
-  const sendTyping = useCallback(
+    const sendTyping = useCallback(
     async (receiverId: string) => {
       if (!currentUserId) return;
       await supabase.channel("typing-indicators").send({
@@ -335,6 +335,60 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
       });
     },
     [currentUserId]
+  );
+
+  // WhatsApp-Style Clear Chat (अंदर के सारे मैसेज हटाना)
+  const clearChat = useCallback(
+    async (otherUserId: string) => {
+      if (!currentUserId) return;
+      try {
+        // 1. Delete sent messages from DB
+        await supabase
+          .from("messages")
+          .delete()
+          .eq("sender_id", currentUserId)
+          .eq("receiver_id", otherUserId);
+
+        // 2. Clear from local storage cache
+        const k = cacheKey(currentUserId);
+        const cached = JSON.parse(localStorage.getItem(k) || "null");
+        if (cached?.messages) {
+          cached.messages = cached.messages.filter(
+            (m: DbMessage) => !(m.sender_id === otherUserId || m.receiver_id === otherUserId)
+          );
+          localStorage.setItem(k, JSON.stringify(cached));
+        }
+
+        // 3. Clear in-memory messages for this thread
+        setThreads((prev) =>
+          prev.map((t) =>
+            t.id === otherUserId
+              ? { ...t, messages: [], lastMessage: "Chat cleared", unreadCount: 0 }
+              : t
+          )
+        );
+      } catch (e) {
+        console.error("Failed to clear chat:", e);
+      }
+    },
+    [currentUserId]
+  );
+
+  // WhatsApp-Style Delete Chat (पूरी चैट को लिस्ट से हटाना)
+  const deleteChat = useCallback(
+    async (otherUserId: string) => {
+      if (!currentUserId) return;
+      await clearChat(otherUserId);
+      const delKey = `buzz:deleted-chats-${currentUserId}`;
+      try {
+        const deleted = JSON.parse(localStorage.getItem(delKey) || "[]");
+        if (!deleted.includes(otherUserId)) {
+          localStorage.setItem(delKey, JSON.stringify([...deleted, otherUserId]));
+        }
+      } catch {}
+      setThreads((prev) => prev.filter((t) => t.id !== otherUserId));
+    },
+    [currentUserId, clearChat]
   );
 
   return {
@@ -347,6 +401,8 @@ export function useRealtimeMessages(currentUserId: string | undefined) {
     markAsRead,
     sendTyping,
     typingUsers,
+    clearChat,
+    deleteChat,
     refetch: fetchMessages,
   };
 }
