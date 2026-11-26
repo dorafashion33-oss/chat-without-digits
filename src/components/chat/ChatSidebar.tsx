@@ -25,6 +25,8 @@ interface ChatSidebarProps {
   onToggleGroups?: () => void;
   username?: string;
   onNavigate?: (section: NavSection) => void;
+  onClearChat?: (chatId: string) => void;
+  onDeleteChat?: (chatId: string) => void;
 }
 
 const readJSON = <T,>(key: string, fallback: T): T => {
@@ -45,12 +47,16 @@ const ChatSidebar = ({
   username,
   onNavigate,
   onToggleGroups,
+  onClearChat,
+  onDeleteChat,
 }: ChatSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFolder, setActiveFolder] = useState<string>("All");
   const [showNewChat, setShowNewChat] = useState(false);
   const [online, setOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
   const [pinned, setPinned] = useState<string[]>(() => readJSON<string[]>(PINS_KEY, []));
+  const [mutedChats, setMutedChats] = useState<string[]>(() => readJSON<string[]>("buzz:muted-chats", []));
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const [customFolders, setCustomFolders] = useState<string[]>(() => readJSON<string[]>(FOLDERS_KEY, []));
   const [assignments, setAssignments] = useState<Record<string, string>>(() => readJSON<Record<string, string>>(FOLDER_ASSIGN_KEY, {}));
   const [newFolderOpen, setNewFolderOpen] = useState(false);
@@ -191,11 +197,26 @@ const ChatSidebar = ({
             const name = t.profile?.display_name || t.profile?.username || "Unknown";
             const lastMsg = t.messages[t.messages.length - 1]?.text || "No messages yet";
 
+                        const isMuted = mutedChats.includes(t.id);
+
             return (
               <div
                 key={t.id}
                 onClick={() => onSelectChat(t.id)}
-                className={`flex items-center gap-3 rounded-2xl p-3 cursor-pointer transition-all border-2 ${
+                onTouchStart={() => {
+                  const timer = setTimeout(() => {
+                    const el = document.getElementById(`dots-btn-${t.id}`);
+                    el?.click();
+                  }, 500); // 500ms long-press
+                  setLongPressTimer(timer);
+                }}
+                onTouchEnd={() => {
+                  if (longPressTimer) clearTimeout(longPressTimer);
+                }}
+                onTouchMove={() => {
+                  if (longPressTimer) clearTimeout(longPressTimer);
+                }}
+                className={`group flex items-center gap-3 rounded-2xl p-3 cursor-pointer transition-all border-2 relative ${
                   isSelected
                     ? "border-[#0a0a0a] bg-[#FFF6B8] shadow-[0_4px_0_0_#0a0a0a]"
                     : "border-transparent bg-white/70 hover:border-[#0a0a0a] hover:bg-white hover:shadow-[0_2px_0_0_#0a0a0a]"
@@ -213,7 +234,10 @@ const ChatSidebar = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-extrabold text-[#0a0a0a] truncate">@{name}</p>
-                    {pinned.includes(t.id) && <Pin className="h-3 w-3 text-[#0a0a0a]" />}
+                    <div className="flex items-center gap-1.5">
+                      {isMuted && <VolumeX className="h-3 w-3 text-[#5b5b55]" />}
+                      {pinned.includes(t.id) && <Pin className="h-3 w-3 text-[#0a0a0a]" />}
+                    </div>
                   </div>
                   <p className="text-[11px] font-medium text-[#5b5b55] truncate mt-0.5">{lastMsg}</p>
                 </div>
@@ -223,6 +247,71 @@ const ChatSidebar = ({
                     {t.unreadCount}
                   </span>
                 )}
+
+                {/* 3-Dots Action Menu (WhatsApp style) */}
+                <div onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        id={`dots-btn-${t.id}`}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-[#0a0a0a]/10 text-[#0a0a0a] transition-opacity"
+                        title="Chat Options"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48 rounded-xl border-2 border-[#0a0a0a] bg-white p-1 shadow-[0_4px_0_0_#0a0a0a]">
+                      <DropdownMenuItem
+                        onClick={() => togglePin(t.id)}
+                        className="cursor-pointer gap-2 rounded-lg text-xs font-bold text-[#0a0a0a] hover:bg-[#FFF6B8]"
+                      >
+                        {pinned.includes(t.id) ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+                        {pinned.includes(t.id) ? "Unpin Chat" : "Pin Chat"}
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() => {
+                          const updated = isMuted ? mutedChats.filter((x) => x !== t.id) : [...mutedChats, t.id];
+                          setMutedChats(updated);
+                          localStorage.setItem("buzz:muted-chats", JSON.stringify(updated));
+                          toast.success(isMuted ? "Chat unmuted" : "Chat muted");
+                        }}
+                        className="cursor-pointer gap-2 rounded-lg text-xs font-bold text-[#0a0a0a] hover:bg-[#FFF6B8]"
+                      >
+                        {isMuted ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                        {isMuted ? "Unmute Notifications" : "Mute Notifications"}
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator className="bg-[#0a0a0a]/10 my-1" />
+
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (confirm(`Clear all messages in chat with @${name}?`)) {
+                            onClearChat?.(t.id);
+                            toast.success("Chat cleared");
+                          }
+                        }}
+                        className="cursor-pointer gap-2 rounded-lg text-xs font-bold text-amber-600 hover:bg-amber-50"
+                      >
+                        <Eraser className="h-3.5 w-3.5" />
+                        Clear Chat (खाली करें)
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (confirm(`Delete conversation with @${name}?`)) {
+                            onDeleteChat?.(t.id);
+                            toast.success("Chat deleted");
+                          }
+                        }}
+                        className="cursor-pointer gap-2 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete Chat (हटाएं)
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             );
           })
