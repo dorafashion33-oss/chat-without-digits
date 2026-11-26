@@ -253,18 +253,24 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
         </div>
       ) : (
         /* ── 2. STANDARD LOGIN CARD (Mobile par clean, Desktop par QR switch button ke sath) ── */
-        <div className="w-full max-w-sm rounded-3xl border-4 border-[#0a0a0a] bg-white p-7 shadow-[0_10px_0_0_#0a0a0a] animate-fade-in">
+                <div className="w-full max-w-sm rounded-3xl border-4 border-[#0a0a0a] bg-white p-7 shadow-[0_10px_0_0_#0a0a0a] animate-fade-in relative overflow-hidden">
+          {/* 🇮🇳 Tiranga Ambient Top Indicator Ribbon */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#FF9933] via-white to-[#138808]" />
+
           <div className="flex flex-col items-center text-center mb-5">
             <div className="relative">
-              <img
-                src={buzzLogo}
-                alt="Buzz"
-                className="h-16 w-16 rounded-2xl border-2 border-[#0a0a0a] object-cover shadow-[0_4px_0_0_#0a0a0a]"
-              />
+              <div className="p-1 rounded-2xl bg-gradient-to-tr from-[#FF9933] via-white to-[#138808] border-2 border-[#0a0a0a] shadow-[0_4px_0_0_#0a0a0a]">
+                <img
+                  src={buzzLogo}
+                  alt="Buzz"
+                  className="h-14 w-14 rounded-xl object-cover"
+                />
+              </div>
               <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#0a0a0a] bg-[#FCE314] shadow-[0_2px_0_0_#0a0a0a]">
                 <Sparkles className="h-3 w-3 text-[#0a0a0a]" />
               </div>
             </div>
+
             <h1 className="mt-3 text-2xl font-black text-[#0a0a0a] flex items-center gap-1.5 tracking-tight">
               {isLogin ? "Log in to " : "Join "}
               <span className="bz-squig">Buzz</span>
@@ -335,21 +341,23 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
               </div>
             )}
 
-            <button
+              <button
               onClick={handleSubmit}
               disabled={loading}
-              className="bz-btn bz-btn-yellow w-full py-3.5 text-sm font-black uppercase tracking-wider"
+              className="bz-btn bz-btn-yellow w-full py-3.5 text-sm font-black uppercase tracking-wider relative overflow-hidden group"
             >
+              {/* 🇮🇳 Tiranga Shimmer Wave on Hover */}
+              <span className="absolute inset-0 bg-gradient-to-r from-[#FF9933]/20 via-transparent to-[#138808]/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               {loading ? (
                 <div className="flex items-center gap-2 justify-center">
                   <div className="h-4 w-4 rounded-full border-2 border-[#0a0a0a] border-t-transparent animate-spin" />
                   Please wait...
                 </div>
               ) : (
-                <>
+                <span className="relative z-10 flex items-center justify-center gap-2">
                   {isLogin ? "Log In" : "Create Account"}
                   <ArrowRight className="h-4 w-4" />
-                </>
+                </span>
               )}
             </button>
           </div>
