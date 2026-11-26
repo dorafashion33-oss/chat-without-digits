@@ -195,8 +195,6 @@ const SectionPanel = ({
       return <ConnectPanel onBack={onBack} onStartChat={onStartChat} onStartCall={onStartCall} />;
     case "discover":
       return <DiscoverPanel onBack={onBack} onStartChat={onStartChat} onStartCall={onStartCall} />;
-       case "settings":
-      return <SettingsPanel onBack={onBack} username={username} />;
     case "settings":
       return <SettingsPanel onBack={onBack} username={username} />;
     case "profile":
@@ -310,11 +308,26 @@ const MomentsPanel = ({
               className="bz-card p-3 cursor-pointer hover:bg-white transition-all shadow-[0_3px_0_0_#0a0a0a]"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-black text-[#0a0a0a]">@{m.profile?.username || "user"}</span>
+                <div className="flex items-center gap-2">
+                  {/* 🇮🇳 Tiranga Moment Status Ring */}
+                  <div className="relative p-[2px] rounded-full bg-gradient-to-tr from-[#FF9933] via-white to-[#138808] border border-[#0a0a0a]">
+                    <div className="h-7 w-7 rounded-full overflow-hidden bg-white">
+                      {m.profile?.avatar_url ? (
+                        <img src={m.profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full gradient-brand flex items-center justify-center text-[10px] font-black text-white">
+                          {(m.profile?.display_name || m.profile?.username || "U")[0]?.toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-xs font-black text-[#0a0a0a]">@{m.profile?.username || "user"}</span>
+                </div>
                 <span className="text-[10px] font-mono text-[#5b5b55]">
                   {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </span>
               </div>
+
               {m.image_url && (
                 <img src={m.image_url} alt="" className="w-full max-h-40 rounded-xl object-cover border-2 border-[#0a0a0a] mb-2" />
               )}
