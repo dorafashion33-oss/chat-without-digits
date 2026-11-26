@@ -281,7 +281,7 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
             </p>
           </div>
 
-          {/* Desktop Only QR Switcher Button */}
+       {/* Desktop Only QR Switcher Button with Tiranga Border Accent */}
           {isLogin && (
             <button
               type="button"
@@ -289,9 +289,9 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
                 setAuthMethod("qr");
                 refreshQR();
               }}
-              className="hidden md:flex w-full mb-4 py-2 px-3 items-center justify-center gap-2 rounded-xl border-2 border-[#0a0a0a] bg-[#FFFBEA] text-xs font-black text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] hover:bg-[#FFF6B8]"
+              className="hidden md:flex w-full mb-4 py-2.5 px-3 items-center justify-center gap-2 rounded-xl border-2 border-[#0a0a0a] bg-gradient-to-r from-[#FFF6E9] via-white to-[#E9F8EC] text-xs font-black text-[#0a0a0a] shadow-[0_3px_0_0_#0a0a0a] hover:shadow-[0_4px_0_0_#FF9933] transition-all"
             >
-              <QrCode className="h-4 w-4" /> Scan QR with Phone (Buzz Web) ➔
+              <QrCode className="h-4 w-4 text-[#0a0a0a]" /> Scan QR with Phone (Buzz Web) ➔
             </button>
           )}
 
