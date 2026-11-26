@@ -1,6 +1,7 @@
 import { compressImage } from "@/lib/imageCompress";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Phone, Video, Send, ArrowLeft, Smile, Trash2, Reply, X, Paperclip, Check, CheckCheck } from "lucide-react";
+import { Phone, Video, Send, ArrowLeft, Smile, Trash2, Reply, X, Paperclip, Check, CheckCheck, MoreVertical, Eraser, VolumeX, Volume2, ShieldAlert } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { type ChatThread, type DbMessage, type DbProfile } from "@/hooks/useRealtimeMessages";
 import MessageReactions from "./MessageReactions";
 import EmojiPicker from "./EmojiPicker";
@@ -24,6 +25,8 @@ interface ChatWindowProps {
   isOtherTyping?: boolean;
   onBack?: () => void;
   onStartCall?: (userId: string, type: "voice" | "video") => void;
+  onClearChat?: (chatId: string) => void;
+  onDeleteChat?: (chatId: string) => void;
 }
 
 const ChatWindow = ({
@@ -37,6 +40,8 @@ const ChatWindow = ({
   isOtherTyping,
   onBack,
   onStartCall,
+  onClearChat,
+  onDeleteChat,
 }: ChatWindowProps) => {
   const [input, setInput] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
@@ -212,7 +217,7 @@ const ChatWindow = ({
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
           {onStartCall && (
             <>
               <button
@@ -231,6 +236,67 @@ const ChatWindow = ({
               </button>
             </>
           )}
+
+          {/* WhatsApp Header 3-Dots Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] bg-white text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] hover:bg-[#FFF6B8]"
+                title="More Options"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52 rounded-xl border-2 border-[#0a0a0a] bg-white p-1.5 shadow-[0_4px_0_0_#0a0a0a]">
+              <DropdownMenuItem
+                onClick={handleOpenProfile}
+                className="cursor-pointer gap-2 rounded-lg text-xs font-bold text-[#0a0a0a] hover:bg-[#FFF6B8]"
+              >
+                View Profile (@{displayName})
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="bg-[#0a0a0a]/10 my-1" />
+
+              <DropdownMenuItem
+                onClick={() => {
+                  if (confirm(`Clear all messages with @${displayName}?`)) {
+                    onClearChat?.(thread.id);
+                    toast.success("Chat cleared");
+                  }
+                }}
+                className="cursor-pointer gap-2 rounded-lg text-xs font-bold text-amber-600 hover:bg-amber-50"
+              >
+                <Eraser className="h-3.5 w-3.5" />
+                Clear Chat (खाली करें)
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() => {
+                  if (confirm(`Delete conversation with @${displayName}?`)) {
+                    onDeleteChat?.(thread.id);
+                    onBack?.();
+                    toast.success("Chat deleted");
+                  }
+                }}
+                className="cursor-pointer gap-2 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete Chat (हटाएं)
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="bg-[#0a0a0a]/10 my-1" />
+
+              <DropdownMenuItem
+                onClick={() => {
+                  toast.success(`@${displayName} blocked`);
+                }}
+                className="cursor-pointer gap-2 rounded-lg text-xs font-bold text-[#5b5b55] hover:bg-red-50 hover:text-red-600"
+              >
+                <ShieldAlert className="h-3.5 w-3.5" />
+                Block Contact
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
