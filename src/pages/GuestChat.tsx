@@ -133,7 +133,7 @@ export default function GuestChat() {
       setError(rpcError?.message || "User not found or link expired.");
       return;
     }
-    const res = data as { thread_id: string; guest_token: string; owner_name: string };
+    const res = data as unknown as { thread_id: string; guest_token: string; owner_name: string };
     const s: Session = { thread: res.thread_id, token: res.guest_token, owner: res.owner_name };
     setSession(s);
     try {
