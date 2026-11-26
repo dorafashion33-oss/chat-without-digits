@@ -37,7 +37,7 @@ const Index = () => {
   const [username, setUsername] = useState<string>("");
 
   const currentUserId = session?.user?.id;
-  const { threads, profiles, sendMessage, deleteMessage, editMessage, markAsRead, sendTyping, typingUsers } = useRealtimeMessages(currentUserId);
+  const { threads, profiles, sendMessage, deleteMessage, editMessage, markAsRead, sendTyping, typingUsers, clearChat, deleteChat } = useRealtimeMessages(currentUserId);
   const { moments, postMoment, deleteMoment, recordView } = useMoments(currentUserId);
   const { groups, createGroup, fetchGroupMessages, sendGroupMessage, deleteGroupMessage, fetchGroupMembers, addMember, removeMember, deleteGroup, refetch: refetchGroups } = useGroups(currentUserId);
   const { callState, callType, remoteProfile, callDuration, localVideoRef, remoteVideoRef, isRemoteOnline, startCall, endCall, acceptCall, rejectCall, toggleMute, toggleVideo } = useWebRTC(currentUserId);
@@ -241,7 +241,7 @@ const Index = () => {
                 onBack={() => setShowGroups(false)}
               />
             ) : (
-              <ChatSidebar
+                <ChatSidebar
                 threads={threads}
                 profiles={profiles}
                 activeChatId={activeChatId}
@@ -250,7 +250,10 @@ const Index = () => {
                 username={username}
                 onNavigate={handleNavigate}
                 onToggleGroups={handleToggleGroups}
+                onClearChat={clearChat}
+                onDeleteChat={deleteChat}
               />
+              
             )
           ) : (
             <SectionPanel
@@ -290,7 +293,7 @@ const Index = () => {
               onDeleteMessage={deleteGroupMessage}
             />
           ) : isStreamsSection && activeThread ? (
-            <ChatWindow
+              <ChatWindow
               thread={activeThread}
               currentUserId={session.user.id}
               onSendMessage={handleSendMessage}
@@ -301,7 +304,10 @@ const Index = () => {
               isOtherTyping={isOtherTyping}
               onBack={() => setActiveChatId(null)}
               onStartCall={handleStartCall}
+              onClearChat={clearChat}
+              onDeleteChat={deleteChat}
             />
+
           ) : (
             <EmptyChat />
           )}
