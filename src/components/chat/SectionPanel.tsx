@@ -31,6 +31,7 @@ import {
   Smartphone,
   Radio,
   ShieldAlert,
+  Loader2,
 } from "lucide-react";
 import {
   getLinkedDevices,
@@ -53,8 +54,7 @@ import ChatThemesPanel from "./ChatThemesPanel";
 import { QRCodeSVG } from "qrcode.react";
 import { getCallHistory, clearCallHistory, type CallLog } from "@/lib/callHistory";
 import { setupAppPin } from "./AppLockDialog";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 interface SectionPanelProps {
   section: NavSection;
   onBack?: () => void;
