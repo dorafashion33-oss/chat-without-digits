@@ -852,13 +852,66 @@ const AccountView = ({ onBack }: { onBack: () => void }) => {
               />
             </div>
 
-            <button
+                        <button
               onClick={save}
               disabled={saving}
               className="bz-btn bz-btn-yellow w-full py-3 text-xs font-black uppercase disabled:opacity-50"
             >
               {saving ? tr(lang, "Saving...", "सेव हो रहा है...") : tr(lang, "Save Account Changes", "बदलाव सेव करें")}
             </button>
+
+            {/* WhatsApp Danger Zone: Delete My Account */}
+            <div className="mt-8 rounded-2xl border-2 border-red-500 bg-red-50 p-4 shadow-[0_4px_0_0_#ef4444]">
+              <div className="flex items-center gap-2 text-red-600">
+                <ShieldAlert className="h-5 w-5" />
+                <h3 className="text-xs font-black uppercase tracking-wider">
+                  {tr(lang, "Danger Zone / खतरा क्षेत्र", "Danger Zone / खतरा क्षेत्र")}
+                </h3>
+              </div>
+              <p className="mt-1.5 text-[11px] font-semibold text-red-700 leading-relaxed">
+                {tr(
+                  lang,
+                  "Deleting your account will permanently erase your @username, all messages, moments, and linked devices. This cannot be undone.",
+                  "खाता डिलीट करने पर आपका @username, चैट हिस्ट्री, मूवमेंट्स और लिंक्ड डिवाइसेस हमेशा के लिए मिट जाएंगे। इसे वापस नहीं लाया जा सकता।"
+                )}
+              </p>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  const typed = prompt(
+                    `Type your username "${profile.username}" to confirm permanent account deletion:`
+                  );
+                  if (typed !== profile.username) {
+                    if (typed !== null) toast.error("Username did not match. Deletion cancelled.");
+                    return;
+                  }
+
+                  const sure = confirm("Are you absolutely sure? All data will be permanently lost.");
+                  if (!sure) return;
+
+                  try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                      // 1. Delete messages & profile from cloud
+                      await supabase.from("messages").delete().or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+                      await supabase.from("profiles").delete().eq("user_id", user.id);
+                    }
+                    // 2. Disconnect all linked sessions & clear cache
+                    localStorage.clear();
+                    await supabase.auth.signOut();
+                    toast.success("Account deleted permanently");
+                    window.location.href = "/auth";
+                  } catch (err: any) {
+                    toast.error(err.message || "Failed to delete account");
+                  }
+                }}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-red-600 bg-red-600 py-2.5 text-xs font-black uppercase text-white shadow-[0_2px_0_0_#991b1b] hover:bg-red-700 active:translate-y-0.5"
+              >
+                <Trash2 className="h-4 w-4" />
+                {tr(lang, "Delete My Account Permanently", "खाता हमेशा के लिए हटाएं")}
+              </button>
+            </div>
           </>
         )}
       </div>
