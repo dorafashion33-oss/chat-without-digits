@@ -118,7 +118,11 @@ export default function NewFeatureSpotlight({ userId }: { userId: string }) {
 
         // QR Code Box
         ctx.fillStyle = "#FFFFFF";
-        ctx.roundRect?.(110, 200, 500, 500, 24) || ctx.fillRect(110, 200, 500, 500);
+       if (ctx.roundRect) {
+  ctx.roundRect(110, 200, 500, 500, 24);
+} else {
+  ctx.fillRect(110, 200, 500, 500);
+}
         ctx.fill();
 
         // Ink border around QR box
