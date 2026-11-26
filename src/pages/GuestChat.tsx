@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Mic, Send, Square, Sparkles, Ghost, ShieldCheck, ArrowRight } from "lucide-react";
+import { Mic, Send, Square, Sparkles, Ghost, ShieldCheck, ArrowRight, Shuffle, Check } from "lucide-react";
 import { disguiseVoice, GHOST_EFFECTS, MAX_VOICE_SECONDS, type GhostEffect } from "@/lib/ghostVoice";
 import { MessageText } from "@/components/chat/GhostVoiceBubble";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,23 @@ type Session = { thread: string; token: string; owner: string };
 
 const key = (u: string) => `buzz:guest:${u.toLowerCase()}`;
 const nicknameKey = (u: string) => `buzz:guest-nickname:${u.toLowerCase()}`;
+
+const RANDOM_NICKNAMES = [
+  "Secret Admirer",
+  "Late Night Thinker",
+  "Silent Watcher",
+  "Anonymous Bestie",
+  "Mystery Soul",
+  "Classroom Friend",
+];
+
+const PROMPT_IDEAS = [
+  "Drop an honest confession...",
+  "What is one thing I don't know about you?",
+  "Rate my vibe 1-10 honestly 🔥",
+  "Be honest, what was your first impression?",
+  "Drop a secret confession here 🤫",
+];
 
 const savedNickname = (username: string) => {
   try {
@@ -29,7 +46,7 @@ export default function GuestChat() {
       return null;
     }
   });
-  const [nick, setNick] = useState(() => savedNickname(username));
+  const [nick, setNick] = useState(() => savedNickname(username) || RANDOM_NICKNAMES[0]);
   const [text, setText] = useState("");
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [error, setError] = useState("");
@@ -38,8 +55,18 @@ export default function GuestChat() {
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [busy, setBusy] = useState(false);
   const [claimDismissed, setClaimDismissed] = useState(false);
+  const [promptIdx, setPromptIdx] = useState(0);
   const recRef = useRef<MediaRecorder | null>(null);
   const ownerReplied = msgs.some((m) => !m.from_guest);
+
+  const shuffleNickname = () => {
+    const next = RANDOM_NICKNAMES[(RANDOM_NICKNAMES.indexOf(nick) + 1) % RANDOM_NICKNAMES.length];
+    setNick(next);
+  };
+
+  const shufflePrompt = () => {
+    setPromptIdx((prev) => (prev + 1) % PROMPT_IDEAS.length);
+  };
 
   const startRec = async () => {
     setError("");
@@ -112,6 +139,18 @@ export default function GuestChat() {
     try {
       localStorage.setItem(key(username), JSON.stringify(s));
     } catch {}
+
+    // Agar initial text tha toh turant bhej do
+    if (text.trim()) {
+      const val = text.trim();
+      setText("");
+      setMsgs([{ id: `tmp-${Date.now()}`, from_guest: true, text: val, created_at: new Date().toISOString() }]);
+      await supabase.rpc("guest_send", {
+        _thread: res.thread_id,
+        _token: res.guest_token,
+        _text: val,
+      });
+    }
   };
 
   const loadMsgs = async () => {
@@ -123,10 +162,9 @@ export default function GuestChat() {
     if (data) setMsgs(data as Msg[]);
   };
 
-   useEffect(() => {
+  useEffect(() => {
     if (!session) return;
     loadMsgs();
-    // Smart Poller: Sirf tab open/active hone par 5s mein refresh, background mein zero request
     const iv = setInterval(() => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
         loadMsgs();
@@ -155,39 +193,77 @@ export default function GuestChat() {
     if (rpcErr) setError("Message failed to deliver.");
   };
 
-  // STEP 1: NICKNAME ENTRY SCREEN
+  // STEP 1: VIRAL NGL CONFESSION BOOTH
   if (!session) {
     return (
-      <main className="flex min-h-dvh flex-col items-center justify-center bz-grid-paper p-5">
-        <div className="w-full max-w-sm rounded-3xl border-4 border-[#0a0a0a] bg-white p-7 shadow-[0_10px_0_0_#0a0a0a]">
-          <div className="flex flex-col items-center text-center mb-6">
-            <img
-              src={buzzLogo}
-              alt="Buzz"
-              className="h-16 w-16 rounded-2xl border-2 border-[#0a0a0a] object-cover shadow-[0_4px_0_0_#0a0a0a]"
-            />
-            <div className="mt-4 inline-block rounded-lg border-2 border-[#0a0a0a] bg-[#E2ECFF] px-3 py-1 font-mono text-[11px] font-bold text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]">
-              ANONYMOUS GUEST CHAT
+      <main className="flex min-h-dvh flex-col items-center justify-center bg-[#FAF9F6] p-4">
+        <div className="w-full max-w-sm rounded-3xl border-3 border-[#0a0a0a] bg-white p-5 shadow-[0_8px_0_0_#0a0a0a]">
+          {/* Top Brand Sticker */}
+          <div className="rounded-2xl border-2 border-[#0a0a0a] bg-gradient-to-tr from-[#7C3AED] via-[#C026D3] to-[#F59E0B] p-4 text-white shadow-[0_3px_0_0_#0a0a0a]">
+            <div className="flex items-center justify-between text-xs font-bold text-white/90">
+              <span className="flex items-center gap-1.5">
+                <Ghost className="h-4 w-4" /> Send Confession to
+              </span>
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black uppercase backdrop-blur-xs">
+                100% Anonymous
+              </span>
             </div>
-            <h1 className="mt-3 text-xl font-black text-[#0a0a0a]">
-              Send a secret message to <span className="bz-squig">@{username}</span>
+            <h1 className="mt-1 text-base font-black tracking-tight text-white drop-shadow-sm">
+              @{username}
             </h1>
-            <p className="mt-2 text-xs font-medium text-[#5b5b55] leading-relaxed">
-              No app download or password needed. Choose a nickname to start chatting anonymously with Ghost Voice.
+            <p className="mt-1 text-xs text-white/90">
+              They will never know who sent this. Honest confessions only! 🤫
             </p>
           </div>
 
-          <div className="space-y-3">
-            <div className="rounded-xl border-2 border-[#0a0a0a] bg-[#fffbec] px-3.5 py-3 shadow-[0_2px_0_0_#0a0a0a]">
+          {/* Confession Box */}
+          <div className="mt-4 space-y-3">
+            <div className="relative rounded-2xl border-2 border-[#0a0a0a] bg-[#FAF9F6] p-3 shadow-[0_2px_0_0_#0a0a0a]">
+              <div className="flex items-center justify-between text-[11px] font-bold text-[#5b5b55] mb-1.5">
+                <span>Your Secret Message:</span>
+                <button
+                  type="button"
+                  onClick={shufflePrompt}
+                  className="inline-flex items-center gap-1 text-[10px] font-extrabold text-purple-700 hover:underline"
+                >
+                  <Shuffle className="h-3 w-3" /> Idea
+                </button>
+              </div>
+
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder={PROMPT_IDEAS[promptIdx]}
+                maxLength={1000}
+                rows={4}
+                className="w-full resize-none bg-transparent text-xs font-semibold text-[#0a0a0a] outline-none placeholder:text-[#5b5b55]/60"
+                autoFocus
+              />
+
+              <div className="text-right text-[10px] font-mono font-bold text-[#5b5b55]">
+                {text.length}/1000
+              </div>
+            </div>
+
+            {/* Disguised Nickname Picker */}
+            <div className="rounded-2xl border-2 border-[#0a0a0a] bg-white p-3 shadow-[0_2px_0_0_#0a0a0a]">
+              <div className="flex items-center justify-between text-[11px] font-bold text-[#5b5b55] mb-1.5">
+                <span>Disguised Sender Tag:</span>
+                <button
+                  type="button"
+                  onClick={shuffleNickname}
+                  className="inline-flex items-center gap-1 text-[10px] font-extrabold text-purple-700 hover:underline"
+                >
+                  <Shuffle className="h-3 w-3" /> Change
+                </button>
+              </div>
               <input
                 type="text"
-                placeholder="Choose a nickname (e.g. Secret Friend)"
                 value={nick}
                 onChange={(e) => setNick(e.target.value)}
                 maxLength={30}
-                className="w-full bg-transparent text-sm font-bold text-[#0a0a0a] outline-none placeholder:text-[#0a0a0a]/40"
-                onKeyDown={(e) => e.key === "Enter" && startSession()}
-                autoFocus
+                placeholder="Choose sender name..."
+                className="w-full bg-[#FAF9F6] rounded-xl border border-[#0a0a0a] px-3 py-1.5 text-xs font-bold text-[#0a0a0a] outline-none"
               />
             </div>
 
@@ -197,18 +273,20 @@ export default function GuestChat() {
               </div>
             )}
 
+            {/* Send Button */}
             <button
               onClick={startSession}
               disabled={busy || !nick.trim()}
-              className="bz-btn bz-btn-yellow w-full py-3.5 text-sm font-black uppercase tracking-wider"
+              className="w-full rounded-2xl border-2 border-[#0a0a0a] bg-[#FCE314] py-3.5 text-xs font-black uppercase tracking-wider text-[#0a0a0a] shadow-[0_3px_0_0_#0a0a0a] hover:translate-y-0.5 disabled:opacity-50"
             >
-              {busy ? "Starting..." : "Start Chatting"} <ArrowRight className="h-4 w-4" />
+              {busy ? "Sending Anonymously..." : "Send Confession 🚀"}
             </button>
           </div>
 
-          <div className="mt-6 pt-4 border-t-2 border-[#0a0a0a]/15 text-center">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#5b5b55]">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-700" /> 100% Anonymous & Zero Trace
+          {/* Privacy Guarantee */}
+          <div className="mt-4 pt-3 border-t-2 border-[#0a0a0a]/10 text-center">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#5b5b55]">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" /> End-to-end secret · No account or phone number required
             </span>
           </div>
         </div>
@@ -216,56 +294,50 @@ export default function GuestChat() {
     );
   }
 
-  // STEP 2: ACTIVE GUEST CHAT WINDOW
+  // STEP 2: ACTIVE CONVERSATION ARENA
   return (
     <main className="flex h-dvh flex-col bg-white">
-      {/* Neo-Brutalist Top Header */}
-      <header className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-4 py-3 shadow-sm flex items-center justify-between">
-        <div>
-          <p className="text-sm font-black text-[#0a0a0a]">{session.owner}</p>
-          <p className="text-[11px] font-mono font-bold text-[#5b5b55]">
-            @{username} · Anonymous Guest Chat
-          </p>
+      {/* Header */}
+      <header className="border-b-2 border-[#0a0a0a] bg-gradient-to-r from-purple-100 to-pink-50 px-4 py-2.5 shadow-sm flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="grid h-8 w-8 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-gradient-to-tr from-purple-600 to-pink-500 text-white text-sm">
+            👻
+          </div>
+          <div>
+            <p className="text-xs font-black text-[#0a0a0a]">{session.owner}</p>
+            <p className="text-[10px] font-mono font-bold text-[#5b5b55]">
+              @{username} · You are "{nick}"
+            </p>
+          </div>
         </div>
         <a
           href={`/auth?mode=signup&username=${encodeURIComponent(nick.trim() || "Guest")}`}
-          className="bz-btn bz-btn-ink px-3 py-1.5 text-xs font-bold"
+          className="rounded-xl border-2 border-[#0a0a0a] bg-[#FCE314] px-3 py-1.5 text-[11px] font-black text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a]"
         >
-          Claim @handle
+          Get My Link
         </a>
       </header>
 
-      {/* Conversion Banner */}
-      <div className="border-b-2 border-[#0a0a0a] bg-[#DCF4E4] px-4 py-2 text-center text-xs font-bold text-[#0a0a0a]">
-        Want to save this chat forever?{" "}
-        <a
-          href={`/auth?mode=signup&username=${encodeURIComponent(nick.trim() || "Guest")}`}
-          className="underline underline-offset-2 hover:text-black"
-        >
-          Claim your own @username on Buzz →
-        </a>
-      </div>
-
       {/* Messages Feed */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bz-grid-paper">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FAF9F6]">
         {msgs.length === 0 && (
-          <div className="pt-12 text-center">
-            <span className="inline-block rounded-xl border-2 border-[#0a0a0a] bg-white p-4 shadow-[0_4px_0_0_#0a0a0a] text-xs font-bold text-[#0a0a0a]">
-              Say hi or send a Ghost Voice note to @{username} 👻
+          <div className="pt-8 text-center">
+            <span className="inline-block rounded-2xl border-2 border-[#0a0a0a] bg-white p-4 shadow-[0_3px_0_0_#0a0a0a] text-xs font-bold text-[#0a0a0a]">
+              Confession sent! Wait for @{username} to reply here 👻
             </span>
           </div>
         )}
         {msgs.map((m) => (
           <div key={m.id} className={`flex ${m.from_guest ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs font-semibold border-2 border-[#0a0a0a] shadow-[0_3px_0_0_#0a0a0a] ${
+              className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs font-semibold border-2 border-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] ${
                 m.from_guest
-                  ? "bg-[#FCE314] text-[#0a0a0a] rounded-br-xs"
+                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-br-xs border-purple-900"
                   : "bg-white text-[#0a0a0a] rounded-bl-xs"
               }`}
             >
               <MessageText text={m.text} />
-              <div className="mt-1 text-right text-[9px] text-[#0a0a0a]/60">
+              <div className={`mt-1 text-right text-[9px] ${m.from_guest ? "text-white/70" : "text-[#5b5b55]"}`}>
                 {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </div>
             </div>
@@ -278,23 +350,20 @@ export default function GuestChat() {
 
       {/* Owner replied callout */}
       {ownerReplied && !claimDismissed && (
-        <div className="mx-3 mb-2 rounded-2xl border-3 border-[#0a0a0a] bg-[#EEE5FF] p-4 text-center shadow-[0_5px_0_0_#0a0a0a]">
-          <p className="font-black text-[#0a0a0a] text-sm">@{username} replied to your message! 🔥</p>
-          <p className="mt-1 text-xs font-medium text-[#4b306b]">
-            Save this conversation forever — claim your own unique @username in 5 seconds.
-          </p>
-          <div className="mt-3 flex gap-2 justify-center">
+        <div className="mx-3 mb-2 rounded-2xl border-2 border-[#0a0a0a] bg-purple-100 p-3 text-center shadow-[0_3px_0_0_#0a0a0a]">
+          <p className="font-black text-[#0a0a0a] text-xs">@{username} replied to your confession! 🔥</p>
+          <div className="mt-2 flex gap-2 justify-center">
             <button
               onClick={() => setClaimDismissed(true)}
-              className="bz-btn bz-btn-white px-4 py-1.5 text-xs font-bold"
+              className="rounded-xl border border-[#0a0a0a] bg-white px-3 py-1 text-[11px] font-bold"
             >
               Later
             </button>
             <a
               href={`/auth?mode=signup&username=${encodeURIComponent(nick.trim() || "Guest")}`}
-              className="bz-btn bz-btn-yellow px-5 py-1.5 text-xs font-black"
+              className="rounded-xl border border-[#0a0a0a] bg-[#FCE314] px-4 py-1 text-[11px] font-black text-[#0a0a0a]"
             >
-              Claim @{nick}
+              Claim your Buzz ID
             </a>
           </div>
         </div>
@@ -302,9 +371,9 @@ export default function GuestChat() {
 
       {/* Voice effect selection drawer */}
       {voiceBlob && (
-        <div className="border-t-2 border-[#0a0a0a] bg-[#fffbec] p-3 space-y-2">
+        <div className="border-t-2 border-[#0a0a0a] bg-white p-3 space-y-2">
           <p className="text-xs font-black text-[#0a0a0a] flex items-center gap-1.5">
-            <Ghost className="h-4 w-4" /> Pick a Ghost Voice filter:
+            <Ghost className="h-4 w-4 text-purple-600" /> Pick Ghost Voice filter:
           </p>
           <div className="grid grid-cols-2 gap-2">
             {GHOST_EFFECTS.map((e) => (
@@ -312,7 +381,7 @@ export default function GuestChat() {
                 key={e.id}
                 disabled={busy}
                 onClick={() => sendVoice(e.id)}
-                className="bz-btn bz-btn-white py-2 text-xs font-bold"
+                className="rounded-xl border-2 border-[#0a0a0a] bg-[#FAF9F6] py-2 text-xs font-bold shadow-[0_2px_0_0_#0a0a0a] hover:bg-purple-100"
               >
                 {e.label}
               </button>
@@ -328,32 +397,32 @@ export default function GuestChat() {
       )}
 
       {/* Bottom Input */}
-      <div className="border-t-2 border-[#0a0a0a] bg-[#fffbec] p-3 flex items-center gap-2">
+      <div className="border-t-2 border-[#0a0a0a] bg-white p-3 flex items-center gap-2">
         <button
           onClick={() => (recording ? recRef.current?.stop() : startRec())}
           className={`grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] ${
-            recording ? "bg-red-500 text-white animate-pulse" : "bg-white text-[#0a0a0a] hover:bg-[#FFF6B8]"
+            recording ? "bg-red-500 text-white animate-pulse" : "bg-[#FAF9F6] text-[#0a0a0a] hover:bg-purple-100"
           }`}
           title="Ghost Voice"
         >
           {recording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
         </button>
 
-        <div className="flex flex-1 items-center rounded-full border-2 border-[#0a0a0a] bg-white px-4 py-2 shadow-[0_2px_0_0_#0a0a0a]">
+        <div className="flex flex-1 items-center rounded-2xl border-2 border-[#0a0a0a] bg-[#FAF9F6] px-4 py-2 shadow-[0_2px_0_0_#0a0a0a]">
           <input
             value={text}
             maxLength={2000}
-            placeholder="Type an anonymous message..."
+            placeholder="Type your confession..."
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
-            className="w-full bg-transparent text-xs font-semibold text-[#0a0a0a] outline-none placeholder:text-[#0a0a0a]/40"
+            className="w-full bg-transparent text-xs font-semibold text-[#0a0a0a] outline-none placeholder:text-[#5b5b55]"
           />
         </div>
 
         <button
           onClick={send}
           disabled={!text.trim()}
-          className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-[#FCE314] text-[#0a0a0a] shadow-[0_2px_0_0_#0a0a0a] disabled:opacity-50"
+          className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] bg-gradient-to-tr from-purple-600 to-pink-500 text-white shadow-[0_2px_0_0_#0a0a0a] disabled:opacity-40"
         >
           <Send className="h-4 w-4" />
         </button>
