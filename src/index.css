@@ -428,10 +428,42 @@
   box-shadow: 0 2px 0 -1px var(--bz-ink) !important;
 }
 
+/* 🇮🇳 Tiranga Button Animated Light Beam (Sabhi Primary Buttons par Auto-Sweep) */
+@keyframes tiranga-beam {
+  0% {
+    left: -140%;
+  }
+  30%, 100% {
+    left: 170%;
+  }
+}
+
 .bz-btn-yellow {
   background: var(--bz-primary);
   color: var(--bz-ink);
   box-shadow: 0 5px 0 -1px var(--bz-ink);
+  position: relative;
+  overflow: hidden;
+}
+
+.bz-btn-yellow::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -140%;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 153, 51, 0.45) 25%,
+    rgba(255, 255, 255, 0.85) 50%,
+    rgba(19, 136, 8, 0.45) 75%,
+    transparent 100%
+  );
+  transform: skewX(-25deg);
+  animation: tiranga-beam 3.5s infinite ease-in-out;
+  pointer-events: none;
 }
 
 .bz-btn-yellow:hover {
