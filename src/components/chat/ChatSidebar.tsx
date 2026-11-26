@@ -222,9 +222,25 @@ const ChatSidebar = ({
                     : "border-transparent bg-white/70 hover:border-[#0a0a0a] hover:bg-white hover:shadow-[0_2px_0_0_#0a0a0a]"
                 }`}
               >
-                <div className="relative">
-                  <div className="h-11 w-11 rounded-full border-2 border-[#0a0a0a] gradient-brand flex items-center justify-center text-white font-extrabold text-sm shadow-[0_2px_0_0_#0a0a0a]">
-                    {name.slice(0, 2).toUpperCase()}
+                                <div className="relative flex-shrink-0">
+                  <div className="h-11 w-11 rounded-full border-2 border-[#0a0a0a] overflow-hidden bg-white shadow-[0_2px_0_0_#0a0a0a]">
+                    {t.profile?.avatar_url ? (
+                      <img
+                        src={t.profile.avatar_url}
+                        alt={name}
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className={`h-full w-full gradient-brand flex items-center justify-center text-white font-extrabold text-sm ${
+                        t.profile?.avatar_url ? "hidden" : "flex"
+                      }`}
+                    >
+                      {name.slice(0, 2).toUpperCase()}
+                    </div>
                   </div>
                   {t.profile?.is_online && (
                     <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border border-[#0a0a0a] bg-emerald-500" />
