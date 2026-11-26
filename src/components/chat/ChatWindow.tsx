@@ -199,9 +199,25 @@ const ChatWindow = ({
             className="flex items-center gap-2.5 text-left group cursor-pointer p-1 rounded-xl hover:bg-[#FFF6B8]/50 transition-colors"
             title="Click to view full profile"
           >
-            <div className="relative">
-              <div className="grid h-10 w-10 place-items-center rounded-xl border-2 border-[#0a0a0a] gradient-brand text-xs font-black text-white shadow-[0_2px_0_0_#0a0a0a] group-hover:scale-105 transition-transform">
-                {initials}
+            <div className="relative flex-shrink-0">
+              <div className="h-10 w-10 rounded-xl border-2 border-[#0a0a0a] overflow-hidden bg-white shadow-[0_2px_0_0_#0a0a0a] group-hover:scale-105 transition-transform">
+                {thread.profile?.avatar_url ? (
+                  <img
+                    src={thread.profile.avatar_url}
+                    alt={displayName}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={`h-full w-full gradient-brand flex items-center justify-center text-xs font-black text-white ${
+                    thread.profile?.avatar_url ? "hidden" : "flex"
+                  }`}
+                >
+                  {initials}
+                </div>
               </div>
               {thread.profile?.is_online && (
                 <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border border-[#0a0a0a] bg-emerald-500" />
