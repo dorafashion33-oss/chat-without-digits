@@ -341,20 +341,18 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
               </div>
             )}
 
-              <button
+            <button
               onClick={handleSubmit}
               disabled={loading}
-              className="bz-btn bz-btn-yellow w-full py-3.5 text-sm font-black uppercase tracking-wider relative overflow-hidden group"
+              className="bz-btn bz-btn-yellow w-full py-3.5 text-sm font-black uppercase tracking-wider shadow-[0_5px_0_0_#0a0a0a] active:translate-y-1"
             >
-              {/* 🇮🇳 Tiranga Shimmer Wave on Hover */}
-              <span className="absolute inset-0 bg-gradient-to-r from-[#FF9933]/20 via-transparent to-[#138808]/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               {loading ? (
                 <div className="flex items-center gap-2 justify-center">
                   <div className="h-4 w-4 rounded-full border-2 border-[#0a0a0a] border-t-transparent animate-spin" />
                   Please wait...
                 </div>
               ) : (
-                <span className="relative z-10 flex items-center justify-center gap-2">
+                <span className="relative z-10 flex items-center justify-center gap-2 font-black tracking-wider">
                   {isLogin ? "Log In" : "Create Account"}
                   <ArrowRight className="h-4 w-4" />
                 </span>
