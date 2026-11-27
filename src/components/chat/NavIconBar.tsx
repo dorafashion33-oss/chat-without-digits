@@ -47,14 +47,18 @@ const NavIconBar = ({ active, onNavigate }: NavIconBarProps) => {
                 <button
                   onClick={() => onNavigate(item.id)}
                   aria-label={item.label}
-                                   className={`relative flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-xl transition-all duration-200 ${
+                  className={`relative flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-xl transition-all duration-200 ${
                     isActive
-                      ? "border-2 border-[#0B192C] bg-[#E85A1C] text-white shadow-[0_3px_0_0_#0B192C]"
+                      ? "border-2 border-[#0B192C] bg-[#E85A1C] text-white shadow-[0_3px_0_0_#0B192C] scale-105"
                       : "text-[#0B192C]/70 hover:bg-white hover:border-2 hover:border-[#0B192C] hover:text-[#0B192C] hover:shadow-[0_2px_0_0_#0B192C]"
                   }`}
                 >
+                  {/* 🇮🇳 Active Tab Glowing Tiranga Edge Indicator */}
+                  {isActive && (
+                    <span className="absolute -left-1 top-1/2 -translate-y-1/2 h-4 w-1 rounded-r-full bg-gradient-to-b from-[#FF9933] via-white to-[#138808] animate-pulse shadow-sm" />
+                  )}
                   <Icon
-                    className="h-5 w-5"
+                    className="h-5 w-5 transition-transform"
                     strokeWidth={isActive ? 2.4 : 1.8}
                     fill={isActive ? "currentColor" : "none"}
                   />
