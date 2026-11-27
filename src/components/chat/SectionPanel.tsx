@@ -309,9 +309,10 @@ const MomentsPanel = ({
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  {/* 🇮🇳 Tiranga Moment Status Ring */}
-                  <div className="relative p-[2px] rounded-full bg-gradient-to-tr from-[#FF9933] via-white to-[#138808] border border-[#0a0a0a]">
-                    <div className="h-7 w-7 rounded-full overflow-hidden bg-white">
+                 {/* 🇮🇳 Tiranga Moment Rotating Status Ring */}
+                  <div className="relative h-8 w-8 flex items-center justify-center flex-shrink-0">
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#FF9933] via-white to-[#138808] border border-[#0a0a0a] animate-[spin_6s_linear_infinite]" />
+                    <div className="relative h-7 w-7 rounded-full overflow-hidden bg-white z-10">
                       {m.profile?.avatar_url ? (
                         <img src={m.profile.avatar_url} alt="" className="h-full w-full object-cover" />
                       ) : (
