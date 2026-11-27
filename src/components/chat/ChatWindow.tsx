@@ -179,8 +179,10 @@ const ChatWindow = ({
     );
   }, [profiles, currentUserId, thread.id, thread.messages.length]);
 
-  return (
+   return (
     <div className="flex h-full flex-col bg-white">
+      {/* 🇮🇳 Tiranga Chat Header Ribbon */}
+      <div className="h-1 w-full bg-gradient-to-r from-[#FF9933] via-white to-[#138808] flex-shrink-0 animate-pulse" />
       {/* Header */}
       <div className="flex items-center justify-between border-b-2 border-[#0a0a0a] bg-[#fffbec] px-4 py-3 shadow-sm">
         <div className="flex items-center gap-3">
@@ -458,9 +460,11 @@ const ChatWindow = ({
           <button
             onClick={handleSend}
             disabled={uploading || (!input.trim() && !attachedFile)}
-            className="bz-btn bz-btn-yellow h-10 px-4 text-xs font-black uppercase disabled:opacity-40"
+            className="bz-btn bz-btn-yellow relative overflow-hidden group h-10 px-4 text-xs font-black uppercase disabled:opacity-40"
           >
-            <Send className="h-4 w-4" />
+            {/* 🇮🇳 Tiranga Beam Sweep */}
+            <span className="pointer-events-none absolute -inset-full bg-gradient-to-r from-transparent via-white/50 to-transparent animate-[tiranga-beam_3.5s_infinite_ease-in-out]" />
+            <Send className="h-4 w-4 relative z-10" />
           </button>
         </div>
       </div>
