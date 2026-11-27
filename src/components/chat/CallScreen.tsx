@@ -54,12 +54,27 @@ const CallScreen = ({ callState, callType, remoteProfile, callDuration, localVid
       {(callState !== "connected" || !isVideoCall) && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 pb-36 text-center low-fade">
           <div className="relative">
-            {callState !== "connected" && isRemoteOnline !== false && <span className="absolute inset-0 animate-ping rounded-full bg-primary/30" />}
-            {remoteProfile?.avatar_url ? <img src={remoteProfile.avatar_url} alt={displayName} className="relative h-32 w-32 rounded-full object-cover ring-4 ring-primary-foreground/20 shadow-2xl" /> : <div className="gradient-brand relative flex h-32 w-32 items-center justify-center rounded-full text-4xl font-bold ring-4 ring-primary-foreground/20 shadow-2xl">{initials}</div>}
+            {/* 🇮🇳 Tiranga Acoustic Sound Pulse Waves during Ringing/Calling */}
+            {callState !== "connected" && (
+              <>
+                <span className="absolute -inset-6 animate-ping rounded-full bg-gradient-to-tr from-[#FF9933]/30 via-white/10 to-[#138808]/30 duration-1000" />
+                <span className="absolute -inset-10 animate-pulse rounded-full border-2 border-[#FF9933]/40" />
+                <span className="absolute -inset-14 animate-pulse rounded-full border border-[#138808]/30" />
+              </>
+            )}
+            <div className="relative p-1 rounded-full bg-gradient-to-tr from-[#FF9933] via-white to-[#138808] shadow-[0_0_25px_rgba(255,153,51,0.5)]">
+              {remoteProfile?.avatar_url ? (
+                <img src={remoteProfile.avatar_url} alt={displayName} className="h-32 w-32 rounded-full object-cover border-2 border-[#0a0a0a]" />
+              ) : (
+                <div className="gradient-brand flex h-32 w-32 items-center justify-center rounded-full text-4xl font-bold text-white border-2 border-[#0a0a0a]">
+                  {initials}
+                </div>
+              )}
+            </div>
           </div>
-          <h2 className="mt-6 text-2xl font-bold">{displayName}</h2>
-          <p className="mt-2 text-sm text-primary-foreground/70">{status}</p>
-          {callState === "calling" && !isRemoteOnline && <p className="mt-1 text-xs text-primary-foreground/50">Their phone may be offline</p>}
+          <h2 className="mt-6 text-2xl font-black text-white">{displayName}</h2>
+          <p className="mt-2 text-sm font-mono font-bold text-[#FF9933]">{status}</p>
+          {callState === "calling" && !isRemoteOnline && <p className="mt-1 text-xs text-white/60">Their phone may be offline</p>}
         </div>
       )}
 
