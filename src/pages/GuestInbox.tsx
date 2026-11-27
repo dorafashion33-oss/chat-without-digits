@@ -136,8 +136,11 @@ export default function GuestInbox() {
 
   return (
     <main className="flex h-dvh flex-col bg-[#FAF9F6]">
+      {/* 🇮🇳 Tiranga Top Accent Ribbon */}
+      <div className="h-1.5 w-full bg-gradient-to-r from-[#FF9933] via-white to-[#138808] flex-shrink-0 animate-pulse" />
       {/* Top Header */}
       <header className="border-b-2 border-[#0a0a0a] bg-white px-4 py-2.5 flex items-center justify-between shadow-sm flex-shrink-0">
+
         <div className="flex items-center gap-3">
           <a
             href="/"
