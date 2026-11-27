@@ -163,14 +163,20 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
       
       {/* ── 1. DEDICATED DESKTOP WHATSAPP-WEB STYLE TERMINAL (Only on Desktop) ── */}
       {isLogin && authMethod === "qr" ? (
-        <div className="hidden md:flex w-full max-w-4xl rounded-3xl border-4 border-[#0a0a0a] bg-white p-10 shadow-[0_12px_0_0_#0a0a0a] animate-fade-in gap-10 items-center justify-between">
+        <div className="hidden md:flex relative overflow-hidden w-full max-w-4xl rounded-3xl border-4 border-[#0a0a0a] bg-white p-10 shadow-[0_12px_0_0_#0a0a0a] animate-fade-in gap-10 items-center justify-between">
+          {/* 🇮🇳 Top Tiranga Animated Ribbon */}
+          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#FF9933] via-white to-[#138808] animate-pulse" />
+
           <div className="flex-1 space-y-6">
             <div className="flex items-center gap-3">
-              <img
-                src={buzzLogo}
-                alt="Buzz"
-                className="h-14 w-14 rounded-2xl border-2 border-[#0a0a0a] object-cover shadow-[0_3px_0_0_#0a0a0a]"
-              />
+              {/* 🇮🇳 Tiranga Logo Halo */}
+              <div className="p-1 rounded-2xl bg-gradient-to-tr from-[#FF9933] via-white to-[#138808] border-2 border-[#0a0a0a] shadow-[0_3px_0_0_#0a0a0a]">
+                <img
+                  src={buzzLogo}
+                  alt="Buzz"
+                  className="h-14 w-14 rounded-xl object-cover"
+                />
+              </div>
               <div>
                 <h1 className="text-2xl font-black text-[#0a0a0a] flex items-center gap-2">
                   Use Buzz on your <span className="bz-squig">Computer</span> 🇮🇳
@@ -183,19 +189,19 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
 
             <ol className="space-y-4 text-sm font-bold text-[#0a0a0a] pt-2">
               <li className="flex items-start gap-3">
-                <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] text-xs font-black">
+                <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full border-2 border-[#0a0a0a] bg-[#FF9933] text-white text-xs font-black shadow-[0_2px_0_0_#0a0a0a]">
                   1
                 </span>
                 <span>Open <strong>Buzz</strong> on your mobile phone</span>
               </li>
               <li className="flex items-start gap-3">
-                <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] text-xs font-black">
+                <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full border-2 border-[#000080] bg-white text-[#000080] text-xs font-black shadow-[0_2px_0_0_#000080]/30">
                   2
                 </span>
                 <span>Go to <strong>Settings ⚙️ ➔ Linked Devices (Buzz Connect)</strong></span>
               </li>
               <li className="flex items-start gap-3">
-                <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full border-2 border-[#0a0a0a] bg-[#FFF6B8] text-xs font-black">
+                <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-full border-2 border-[#0a0a0a] bg-[#138808] text-white text-xs font-black shadow-[0_2px_0_0_#0a0a0a]">
                   3
                 </span>
                 <span>Tap <strong>"Link a New Device"</strong> and scan this QR code or enter PIN</span>
@@ -212,8 +218,12 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
             </div>
           </div>
 
-                    <div className="flex flex-col items-center justify-center border-l-2 border-[#0a0a0a]/10 pl-10 space-y-4">
-            <div className="relative rounded-3xl border-3 border-[#0a0a0a] bg-white p-5 shadow-[0_6px_0_0_#0a0a0a]">
+          <div className="flex flex-col items-center justify-center border-l-2 border-[#0a0a0a]/10 pl-10 space-y-4">
+            <div className="relative rounded-3xl border-3 border-[#0a0a0a] bg-white p-5 shadow-[0_6px_0_0_#0a0a0a] overflow-hidden">
+              {/* 🇮🇳 Tiranga Animated Laser Scanner Line */}
+              {qrCountdown > 0 && !isPairingLoggingIn && (
+                <div className="pointer-events-none absolute left-4 right-4 h-1 bg-gradient-to-r from-[#FF9933] via-white to-[#138808] shadow-[0_0_12px_2px_#FF9933] animate-tiranga-laser z-20 rounded-full" />
+              )}
               {isPairingLoggingIn ? (
                 <div className="h-[220px] w-[220px] flex flex-col items-center justify-center bg-[#FAF9F6] rounded-2xl text-center p-4 space-y-3">
                   <div className="h-10 w-10 rounded-full border-4 border-[#0a0a0a] border-t-transparent animate-spin"></div>
@@ -240,9 +250,10 @@ const AuthPage = ({ onAuth, embedded = false }: AuthPageProps) => {
 
             {qrCountdown > 0 && !isPairingLoggingIn && (
               <div className="text-center space-y-1.5">
-                <div className="rounded-lg border-2 border-[#0a0a0a] bg-[#FFFBEA] py-1.5 px-4 font-mono text-sm font-black text-[#0a0a0a] tracking-widest shadow-[0_2px_0_0_#0a0a0a]">
+                <div className="rounded-lg border-2 border-[#0a0a0a] bg-gradient-to-r from-[#FFF6E9] via-white to-[#E9F8EC] py-1.5 px-4 font-mono text-sm font-black text-[#0a0a0a] tracking-widest shadow-[0_2px_0_0_#0a0a0a]">
                   PIN: {pinCode}
                 </div>
+
                 <p className="text-[11px] font-semibold text-[#5b5b55] flex items-center justify-center gap-1.5">
                   <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
                   Listening for scan or PIN ({qrCountdown}s)
