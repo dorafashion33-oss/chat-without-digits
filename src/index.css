@@ -438,6 +438,15 @@
   }
 }
 
+/* ⏱️ 5-Second Instagram/WhatsApp Story Progress Animation */
+@keyframes story-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+.animate-progress {
+  animation: story-progress 5s linear forwards;
+}
+
 .bz-btn-yellow {
   background: var(--bz-primary);
   color: var(--bz-ink);
