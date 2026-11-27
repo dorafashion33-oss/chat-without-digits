@@ -255,8 +255,9 @@ export default function BuzzLanding({ page = "/" }: { page?: string }) {
   return (
     <div id="top" className="min-h-screen bz-grid-paper text-[#0a0a0a]">
       <header className="sticky top-0 z-50 border-b-2 border-[#0a0a0a] bg-[#fffbec]/95 backdrop-blur">
+        {/* 🇮🇳 Tiranga Top Animated Ribbon across all public pages */}
+        <div className="h-1.5 w-full bg-gradient-to-r from-[#FF9933] via-white to-[#138808] animate-pulse" />
         <LaunchCountdownBar onClaim={openAuth} />
-
         <div className="mx-auto flex h-[68px] sm:h-[72px] max-w-[1160px] items-center justify-between px-4 sm:px-6">
           <Logo />
 
