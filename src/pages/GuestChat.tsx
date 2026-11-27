@@ -194,10 +194,12 @@ export default function GuestChat() {
   };
 
   // STEP 1: VIRAL NGL CONFESSION BOOTH
-  if (!session) {
+   if (!session) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center bg-[#FAF9F6] p-4">
-        <div className="w-full max-w-sm rounded-3xl border-3 border-[#0a0a0a] bg-white p-5 shadow-[0_8px_0_0_#0a0a0a]">
+        <div className="relative overflow-hidden w-full max-w-sm rounded-3xl border-3 border-[#0a0a0a] bg-white p-5 shadow-[0_8px_0_0_#0a0a0a]">
+          {/* 🇮🇳 Tiranga Top Ribbon */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#FF9933] via-white to-[#138808] animate-pulse" />
           {/* Top Brand Sticker */}
           <div className="rounded-2xl border-2 border-[#0a0a0a] bg-gradient-to-tr from-[#7C3AED] via-[#C026D3] to-[#F59E0B] p-4 text-white shadow-[0_3px_0_0_#0a0a0a]">
             <div className="flex items-center justify-between text-xs font-bold text-white/90">
