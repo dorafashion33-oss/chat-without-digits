@@ -1500,12 +1500,16 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
                   className="w-full h-full object-cover"
                 />
 
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div className="w-48 h-48 border-2 border-dashed border-[#2B5CFF] rounded-2xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]">
-                    <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-white rounded-tl" />
-                    <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-white rounded-tr" />
-                    <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-white rounded-bl" />
-                    <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-white rounded-br" />
+                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div className="w-48 h-48 border-2 border-dashed border-white/60 rounded-2xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] overflow-hidden">
+                    {/* 🇮🇳 Tiranga Moving Laser Scanner inside Camera Viewfinder */}
+                    <div className="pointer-events-none absolute left-2 right-2 h-1 bg-gradient-to-r from-[#FF9933] via-white to-[#138808] shadow-[0_0_10px_#FF9933] animate-tiranga-laser z-20 rounded-full" />
+                    {/* 🇮🇳 Saffron Top Brackets */}
+                    <div className="absolute top-0 left-0 w-5 h-5 border-t-4 border-l-4 border-[#FF9933] rounded-tl" />
+                    <div className="absolute top-0 right-0 w-5 h-5 border-t-4 border-r-4 border-[#FF9933] rounded-tr" />
+                    {/* 🇮🇳 Green Bottom Brackets */}
+                    <div className="absolute bottom-0 left-0 w-5 h-5 border-b-4 border-l-4 border-[#138808] rounded-bl" />
+                    <div className="absolute bottom-0 right-0 w-5 h-5 border-b-4 border-r-4 border-[#138808] rounded-br" />
                   </div>
                 </div>
 
