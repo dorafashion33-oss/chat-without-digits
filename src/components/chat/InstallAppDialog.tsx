@@ -142,8 +142,11 @@ const InstallAppDialog = ({ trigger }: InstallAppDialogProps) => {
           </button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-md rounded-3xl border-4 border-[#0a0a0a] bg-white p-0 shadow-[0_12px_0_0_#0a0a0a]">
+     <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-md rounded-3xl border-4 border-[#0a0a0a] bg-white p-0 shadow-[0_12px_0_0_#0a0a0a] overflow-hidden">
+        {/* 🇮🇳 Tiranga Top Ribbon */}
+        <div className="h-1.5 w-full bg-gradient-to-r from-[#FF9933] via-white to-[#138808] animate-pulse" />
         <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-5 py-4">
+          
           <DialogTitle className="flex items-center gap-2.5 text-lg font-black text-[#0a0a0a]">
             <img src={buzzLogo} alt="Buzz" className="h-8 w-8 rounded-lg border-2 border-[#0a0a0a] object-cover" />
             Install <span className="bz-squig">Buzz</span> 🇮🇳
@@ -161,14 +164,17 @@ const InstallAppDialog = ({ trigger }: InstallAppDialogProps) => {
             <p className="mt-1 text-xs font-medium text-[#5b5b55]">Fast access directly from your phone's home screen.</p>
           </div>
 
-          <button
+           <button
             onClick={handleInstall}
             disabled={installing || isInstalled}
-            className="bz-btn bz-btn-yellow h-12 w-full text-sm font-black uppercase tracking-wider"
+            className="bz-btn bz-btn-yellow relative overflow-hidden group h-12 w-full text-sm font-black uppercase tracking-wider"
           >
-            <Smartphone className="h-4 w-4" />
-            {isInstalled ? "Installed" : installing ? "Installing..." : "Install Buzz PWA"}
+            {/* 🇮🇳 Tiranga Continuous Light Beam */}
+            <span className="pointer-events-none absolute -inset-full bg-gradient-to-r from-transparent via-white/50 to-transparent animate-[tiranga-beam_3.5s_infinite_ease-in-out]" />
+            <Smartphone className="h-4 w-4 relative z-10" />
+            <span className="relative z-10">{isInstalled ? "Installed" : installing ? "Installing..." : "Install Buzz PWA"}</span>
           </button>
+
 
           {installHint && (
             <div className="flex w-full items-start gap-2 rounded-xl border-2 border-[#0a0a0a] bg-[#DCF4E4] p-3 text-xs font-bold text-[#2d5a3e] shadow-[0_2px_0_0_#0a0a0a]">
