@@ -346,7 +346,11 @@ const MomentsPanel = ({
 
       {viewingMoment && (
         <Dialog open={!!viewingMoment} onOpenChange={() => setViewingMoment(null)}>
-          <DialogContent className="max-w-sm overflow-hidden p-0 rounded-3xl border-4 border-[#0a0a0a] bg-white shadow-[0_10px_0_0_#0a0a0a]">
+            <DialogContent className="max-w-sm overflow-hidden p-0 rounded-3xl border-4 border-[#0a0a0a] bg-white shadow-[0_10px_0_0_#0a0a0a]">
+            {/* ⏱️ Story 5-Second Running Progress Bar */}
+            <div className="h-1.5 w-full bg-black/15 overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-[#FF9933] via-white to-[#138808] animate-progress origin-left" />
+            </div>
             <div className="border-b-2 border-[#0a0a0a] bg-[#FFF6B8] p-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="grid h-8 w-8 place-items-center rounded-lg border-2 border-[#0a0a0a] gradient-brand text-xs font-black text-white">
@@ -1644,7 +1648,11 @@ const LinkedDevicesView = ({ onBack, username }: { onBack: () => void; username?
                         {dev.name}
                       </span>
                       {dev.isCurrent ? (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black uppercase bg-[#CFF7D3] border border-[#0a0a0a] text-[#0a0a0a]">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-black uppercase bg-[#CFF7D3] border border-[#0a0a0a] text-[#0a0a0a]">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+                          </span>
                           {tr(lang, "This Device", "यह डिवाइस")}
                         </span>
                       ) : (
