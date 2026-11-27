@@ -258,8 +258,8 @@ const ChatSidebar = ({
                   <p className="text-[11px] font-medium text-[#5b5b55] truncate mt-0.5">{lastMsg}</p>
                 </div>
 
-                {t.unreadCount > 0 && (
-                  <span className="grid h-5 w-5 place-items-center rounded-full border border-[#0a0a0a] bg-[#FCE314] text-[10px] font-black text-[#0a0a0a] shadow-[0_1px_0_0_#0a0a0a]">
+               {t.unreadCount > 0 && (
+                  <span className="grid h-5 w-5 place-items-center rounded-full border border-[#0a0a0a] bg-[#FCE314] text-[10px] font-black text-[#0a0a0a] shadow-[0_1px_0_0_#0a0a0a] animate-pulse">
                     {t.unreadCount}
                   </span>
                 )}
