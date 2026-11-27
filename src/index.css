@@ -447,6 +447,25 @@
   animation: story-progress 5s linear forwards;
 }
 
+/* 🇮🇳 Tiranga QR Laser Scan Sweep Animation */
+@keyframes tiranga-laser {
+  0% {
+    top: 6%;
+    opacity: 0.7;
+  }
+  50% {
+    top: 92%;
+    opacity: 1;
+  }
+  100% {
+    top: 6%;
+    opacity: 0.7;
+  }
+}
+.animate-tiranga-laser {
+  animation: tiranga-laser 2.5s ease-in-out infinite;
+}
+
 .bz-btn-yellow {
   background: var(--bz-primary);
   color: var(--bz-ink);
