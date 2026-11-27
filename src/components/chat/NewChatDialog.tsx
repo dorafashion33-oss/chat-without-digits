@@ -47,9 +47,11 @@ const NewChatDialog = ({
       onClick={handleClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl border-4 border-[#0a0a0a] bg-white shadow-[0_10px_0_0_#0a0a0a] overflow-hidden animate-scale-in"
+        className="relative w-full max-w-md rounded-2xl border-4 border-[#0a0a0a] bg-white shadow-[0_10px_0_0_#0a0a0a] overflow-hidden animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* 🇮🇳 Tiranga Top Accent Ribbon */}
+        <div className="h-1.5 w-full bg-gradient-to-r from-[#FF9933] via-white to-[#138808] animate-pulse" />
         {/* Header */}
         <div className="flex items-center justify-between border-b-2 border-[#0a0a0a] bg-[#FFF6B8] px-4 py-3">
           <div className="flex items-center gap-2">
